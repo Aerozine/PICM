@@ -43,4 +43,19 @@ if(NOT TARGET nlohmann_json::nlohmann_json)
     )
     FetchContent_MakeAvailable(json)
 endif()
+# KOKKOS ?
+#find_package(Kokkos CONFIG) # Try to find Kokkos externally
+#if(Kokkos_FOUND)
+#message(STATUS "Found Kokkos: ${Kokkos_DIR} (version \"${Kokkos_VERSION}\")")
+#else()
+#message(STATUS "Kokkos not found externally. Fetching via FetchContent.")
+#include(FetchContent)
+#FetchContent_Declare(
+#Kokkos
+#URL https://github.com/kokkos/kokkos/archive/refs/tags/4.4.01.tar.gz
+#)
+#FetchContent_MakeAvailable(Kokkos)
+#endif()
+## ...
+
 add_subdirectory(src)

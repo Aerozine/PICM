@@ -14,6 +14,8 @@ set_target_properties(PIC PROPERTIES
 target_link_libraries(PIC PRIVATE Eigen3::Eigen)
 # JSON STYLE
 target_link_libraries(PIC PRIVATE nlohmann_json::nlohmann_json)
+#kokkos ? 
+#target_link_libraries(MyTarget PRIVATE Kokkos::kokkos)
 # Compiler warnings
 target_compile_options(PIC PRIVATE
     $<$<CXX_COMPILER_ID:GNU,Clang>:-Wall -Wextra -Wpedantic>
