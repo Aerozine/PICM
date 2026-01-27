@@ -1,0 +1,32 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build",
+            "type": "shell",
+            "command": "wsl",
+            "args": ["cmake", "--build", "build"],
+            "options": {"cwd": "${workspaceFolder}"},
+            "group": {"kind": "build", "isDefault": true},
+            "presentation": {"reveal": "always"},
+            "problemMatcher": ["$gcc"],
+            "dependsOn": ["Configure"]
+        },
+        {
+            "label": "Configure",
+            "type": "shell",
+            "command": "wsl",
+            "args": ["cmake", "-B", "build", "-S", "."],
+            "options": {"cwd": "${workspaceFolder}"},
+            "presentation": {"reveal": "always"}
+        },
+        {
+            "label": "Build & Run",
+            "type": "shell",
+            "command": "wsl",
+            "args": ["bash", "-c", "cd build && cmake .. && cmake --build . && ../bin/PIC"],
+            "options": {"cwd": "${workspaceFolder}"},
+            "presentation": {"reveal": "always", "focus": true}
+        }
+    ]
+}
