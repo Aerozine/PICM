@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<ParaViewData>
+  <Collection>
+      <DataSet timestep="0.000000" file="wave_0000.vti"/>
+      <DataSet timestep="1.000000" file="wave_0001.vti"/>
+      <DataSet timestep="2.000000" file="wave_0002.vti"/>
+      <DataSet timestep="3.000000" file="wave_0003.vti"/>
+      <DataSet timestep="4.000000" file="wave_0004.vti"/>
+      <DataSet timestep="5.000000" file="wave_0005.vti"/>
+      <DataSet timestep="6.000000" file="wave_0006.vti"/>
+      <DataSet timestep="7.000000" file="wave_0007.vti"/>
+      <DataSet timestep="8.000000" file="wave_0008.vti"/>
+      <DataSet timestep="9.000000" file="wave_0009.vti"/>
+  </Collection>
+</ParaViewData>
