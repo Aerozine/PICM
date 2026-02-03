@@ -119,8 +119,7 @@ void OutputWriter::finalisePVD() {
     throw std::runtime_error("OutputWriter: cannot open PVD file: " + pvd_path);
   }
 
-  out << "<?xml version=\"1.0\"?>\n"
-      << "<ParaViewData>\n"
+  out << "<VTKFile type=\"Collection\" version=\"0.1\" byte_order=\"LittleEndian\">\n"
       << "  <Collection>\n";
 
   // loop over pvd_entries and put them in out
@@ -128,7 +127,7 @@ void OutputWriter::finalisePVD() {
     out << entry;
 
   out << "  </Collection>\n"
-      << "</ParaViewData>\n";
+      << "</VTKFile>\n";
 
   out.close();
   pvd_finalised_ = true;

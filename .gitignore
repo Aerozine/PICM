@@ -69,3 +69,8 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+
+# rm paraview files
+*.pvd 
+*.vti

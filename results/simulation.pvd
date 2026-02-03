@@ -1,5 +1,4 @@
-<?xml version="1.0"?>
-<ParaViewData>
+<VTKFile type="Collection" version="0.1" byte_order="LittleEndian">
   <Collection>
       <DataSet timestep="0.000000" file="wave_0000.vti"/>
       <DataSet timestep="1.000000" file="wave_0001.vti"/>
@@ -12,4 +11,4 @@
       <DataSet timestep="8.000000" file="wave_0008.vti"/>
       <DataSet timestep="9.000000" file="wave_0009.vti"/>
   </Collection>
-</ParaViewData>
+</VTKFile>
