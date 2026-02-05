@@ -1,16 +1,5 @@
-#include "Grid2D.hpp"
-
-void InitRandomGrid(size_t nx, size_t ny){
-  grid = Grid2D(nx, ny);
-  
-  for(size_t j = 0, j < ny, j++){
-    for(size_t i = 0, i < nx, i++){
-      grid.A[i][j] = 0;  
-    }
-  }
-  return
-}
-
+#include "utilities.hpp"
+ 
 Grid2D div(Grid2D field){
 
   Grid2D div(field.nx - 1, field.ny - 1);
@@ -24,10 +13,4 @@ Grid2D div(Grid2D field){
     }
   } 
   return div;
-}
-
-varType Interpolate(Grid2D grid, size_t nx, size_t ny){
-
-
-
 }
