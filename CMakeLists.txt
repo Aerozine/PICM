@@ -10,24 +10,6 @@ endif()
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
-message(STATUS "Setting up Eigen")
-include(FetchContent)
-find_package(Eigen3 5.0 QUIET)
-if(NOT TARGET Eigen3::Eigen)
-  if(EXISTS "/usr/include/eigen3/Eigen/Core")
-    message(STATUS "Using system Eigen headers")
-    add_library(Eigen3::Eigen INTERFACE IMPORTED)
-    set_target_properties(Eigen3::Eigen PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                                   /usr/include/eigen3)
-  else()
-    message(STATUS "Fetching Eigen")
-    FetchContent_Declare(
-      eigen
-      GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-      GIT_TAG 5.0.1)
-    FetchContent_MakeAvailable(eigen)
-  endif()
-endif()
 message(STATUS "Setting nlohmannJson")
 include(FetchContent)
 

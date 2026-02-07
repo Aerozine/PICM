@@ -1,33 +1,30 @@
 #include "Grid2D.hpp"
 
-void InitRandomGrid(size_t nx, size_t ny){
-  grid = Grid2D(nx, ny);
-  
-  for(size_t j = 0, j < ny, j++){
-    for(size_t i = 0, i < nx, i++){
-      grid.A[i][j] = 0;  
+// prefer some macros ?
+Grid2D::varType Grid2D::Get(size_t i, size_t j) const{
+  return A[nx * (j) + (i)];
+}
+
+void Grid2D::Set(size_t i, size_t j, varType val){
+  A[nx * (j) + (i)] = val;
+  return;
+}
+
+// utility functions
+Grid2D Grid2D::InitRandomGrid(size_t nx, size_t ny) {
+  Grid2D grid(nx, ny);
+
+  std::mt19937 gen(42); // fixed seed
+  std::uniform_real_distribution<double> dist(-1.0, 1.0);
+
+  for(size_t j = 0; j < ny; j++){
+    for(size_t i = 0; i < nx; i++){
+      grid.Set(i, j, dist(gen));
     }
   }
-  return
+  return grid;
 }
 
-Grid2D div(Grid2D field){
-
-  Grid2D div(field.nx - 1, field.ny - 1);
-  
-  for(size_t j = 0; j < field.ny - 1; j++){
-    for(size_t i = 0; i < field.nx - 1; i++){
-      dfxdx = (field.A[i][j] - field.A[i][j + 1])/field.nx;
-      dfydy = (field.A[i][j] - field.A[i + 1][j])/field.ny;
-
-      div.A[i][j] = dfxdx + dfydy;
-    }
-  } 
-  return div;
-}
-
-varType Interpolate(Grid2D grid, size_t nx, size_t ny){
-
-
-
+Grid2D::varType Grid2D::Interpolate(size_t nx, size_t ny){
+  return 0.0;
 }

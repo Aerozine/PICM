@@ -1,10 +1,12 @@
 #include "core/Grid2D.hpp"
 #include "core/OutputWriter.hpp"
 #include "core/Parameters.hpp"
-#include <Eigen/Dense>
 #include <iostream>
 #include <nlohmann/json.hpp>
+
 using json = nlohmann::json;
+typedef float varType;
+
 int main(int argc, char *argv[]) {
   // man page ?
   Parameters params;
@@ -23,15 +25,19 @@ int main(int argc, char *argv[]) {
   // params.print();
   // using operator overload
   std::cout << params << std::endl;
+
   // example of grid to vtk
   //
   const size_t nx = 50;
   const size_t ny = 40;
-  Grid2D grid(nx, ny);
+  // Grid2D grid(nx, ny);
+  Grid2D grid = Grid2D::InitRandomGrid(nx,ny);
+
+
   // generate in the folder result and the simulation.pvd file
   OutputWriter writer("results", "simulation");
   // do 10 step to check if everythings works
-  const int num_steps = 10;
+  const int num_steps = 100;
   const double dx = 1.0 / (nx - 1);
   const double dy = 1.0 / (ny - 1);
   // generating random grid data noise
@@ -40,13 +46,13 @@ int main(int argc, char *argv[]) {
       for (size_t ix = 0; ix < nx; ++ix) {
         double x = ix * dx;
         double y = iy * dy;
-
-        grid.A(iy, ix) =
-            std::sin(2.0 * M_PI * (x - 0.1 * t)) * std::cos(2.0 * M_PI * y);
+        
+        // varType val = std::sin(2.0 * M_PI * (x - 0.1 * t)) * std::cos(2.0 * M_PI * y);
+        // grid.SET(ix, iy, val);
       }
     }
     // write the grid in the
-    if (!writer.writeGrid2D(grid, "wave")) {
+    if (!writer.writeGrid2D(grid, "random")) {
       std::cerr << "Failed to write step " << t << std::endl;
       return 1;
     }
