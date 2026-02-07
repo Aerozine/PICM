@@ -71,6 +71,9 @@ Testing/
 .cache/
 
 
+# result folder
+results/
+
 # rm paraview files
 *.pvd 
 *.vti

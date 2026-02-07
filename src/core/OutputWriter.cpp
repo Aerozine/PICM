@@ -86,8 +86,8 @@ bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
     // col
     for (size_t ix = 0; ix < nx; ++ix) {
       out << std::setprecision(10)
-          << grid.A(static_cast<Eigen::Index>(iy),
-                    static_cast<Eigen::Index>(ix));
+          << grid.Get(ix, iy),
+                    static_cast<size_t>(ix);
       if (ix + 1 < nx || iy + 1 < ny)
         out << ' ';
     }
