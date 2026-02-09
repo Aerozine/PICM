@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <string>
 
 class Grid2D {
 public:
@@ -7,6 +8,7 @@ public:
   typedef float varType;
 
   size_t nx, ny;
+  varType dx, dy;
   std::vector<varType> A;
   
   Grid2D(size_t nx, size_t ny)
@@ -18,7 +20,8 @@ public:
   void Set(size_t i, size_t j, varType val);
 
   // utility functions
-  static Grid2D InitRandomGrid(size_t nx, size_t ny); 
-  Grid2D Div();
-  varType Interpolate(size_t nx, size_t ny);
+  bool InBounds(size_t i, size_t j);
+  void FillRandom(); 
+  varType InterpolateCenter(size_t iCenter, size_t jCenter,
+                            const size_t field);
 };
