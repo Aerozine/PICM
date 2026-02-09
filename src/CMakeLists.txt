@@ -1,5 +1,6 @@
 # Optional: Set output directory
-set(SOURCES main.cpp core/Grid2D.cpp core/Parameters.cpp core/OutputWriter.cpp)
+set(SOURCES main.cpp core/Grid2D.cpp core/Parameters.cpp core/OutputWriter.cpp
+                     core/Fields.cpp core/project.cpp)
 
 add_executable(PIC ${SOURCES})
 set_target_properties(PIC PROPERTIES RUNTIME_OUTPUT_DIRECTORY
