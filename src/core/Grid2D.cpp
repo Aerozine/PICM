@@ -3,12 +3,7 @@
 #include <random>
 
 // prefer some macros ?
-Real Grid2D::Get(size_t i, size_t j) const { return A[nx * j + i]; }
 
-void Grid2D::Set(size_t i, size_t j, Real val) {
-  A[nx * j + i] = val;
-  return;
-}
 
 // utility functions
 bool Grid2D::InBounds(size_t i, size_t j) { return (i < nx) && (j < ny); }
