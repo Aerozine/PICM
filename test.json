@@ -5,8 +5,9 @@
     "nx": 50, 
     "ny": 40, 
     "nt": 100, 
+    "density": 1000,
     "sampling_rate": 5,
-    "write_ez" : true,
-    "write_hx" : false,
-    "write_hy" : false
+    "write_u" : true,
+    "write_v" : true,
+    "write_p" : true 
 }

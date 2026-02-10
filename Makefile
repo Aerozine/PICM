@@ -1,12 +1,12 @@
-build_dbg:
+build:
 	cmake -B build-dbg -G Ninja -DCMAKE_BUILD_TYPE=Debug; cmake --build build-dbg
 build_fast:
 	cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release; cmake --build build 
 
-run:
+run2:
 	./build/bin/PIC -c test.json
 
-run_dbg:
+run:
 	./build-dbg/bin/PIC -c test.json
 
 view:

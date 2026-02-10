@@ -1,8 +1,8 @@
 #include "Grid2D.hpp"
 #include <cassert>
 #include <random>
+#include <stdio.h>
 
-// prefer some macros ?
 varType Grid2D::Get(size_t i, size_t j) const { return A[nx * j + i]; }
 
 void Grid2D::Set(size_t i, size_t j, varType val) {
@@ -10,47 +10,25 @@ void Grid2D::Set(size_t i, size_t j, varType val) {
   return;
 }
 
-// utility functions
 bool Grid2D::InBounds(size_t i, size_t j) { return (i < nx) && (j < ny); }
 
-void Grid2D::InitRectangle(varType constVel = 10) {
+void Grid2D::InitRectangle(varType constVel) {
   int midX = nx / 2;
   int midY = ny / 2;
 
-  int offsetX = 2;
-  int offsetY = 2;
+  int offsetX = 4;
+  int offsetY = 4;
 
   for (int i = midX - offsetX; i < midX + offsetX; i++) {
     for (int j = midY - offsetY; j < midY + offsetY; j++) {
+      //int xCenter = std::abs(midX - i);
       this->Set(i, j, constVel);
     }
   }
   return;
 }
 
-void Grid2D::FillRandom() {
-  std::mt19937 gen(42); // fixed seed
-  std::uniform_real_distribution<double> dist(-1.0, 1.0);
-
-  for (size_t j = 0; j < ny; j++) {
-    for (size_t i = 0; i < nx; i++) {
-      this->Set(i, j, dist(gen));
-    }
-  }
-  return;
-}
-
-/*
-Grid2D::varType Grid2D::Interpolate(varType x, varType y, varType dx, varType
-dy){ size_t i = std::floor(x / dx); size_t j = std::floor(y / dy);
-
-  varType restX = x % i;
-  varType restY = y % j;
-
-  return 0.0;
-}
-*/
-
+// needs to be redone with bilinear interpolation
 varType Grid2D::Interpolate(varType sx, varType sy, varType dx, varType dy,
                             size_t field) {
 

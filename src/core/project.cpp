@@ -20,10 +20,10 @@ varType Project::neighborPressureSum(size_t i, size_t j) {
 varType Project::neighborVelocitySum(size_t i, size_t j) {
   varType sumV = 0.0;
 
-  if (i + 1 < nx - 1)
+  if (j + 1 < ny - 1)
     sumV += fields.u.Get(i, j + 1);
   sumV -= fields.u.Get(i, j);
-  if (j + 1 < ny - 1)
+  if (i + 1 < nx - 1)
     sumV += fields.v.Get(i + 1, j);
   sumV -= fields.v.Get(i, j);
 
@@ -45,7 +45,8 @@ void Project::solveJacobi(int maxIters, double tol) {
 
         double sumP = neighborPressureSum(i, j);
         double sumV = neighborVelocitySum(i, j);
-        double newVal = 1.0 / 4.0 * (coef * sumV + sumP);
+        double newVal = 0.25 * (coef * sumV + sumP);
+        if (i == 20 && j == 20) printf("new pressure: %f", newVal);
 
         maxDiff = std::max(maxDiff, std::abs(newVal - fields.p.Get(i, j)));
         pNew.Set(i, j, newVal);
