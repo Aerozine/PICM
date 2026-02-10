@@ -2,7 +2,7 @@
 #include <cmath>
 #include <cassert>
 
-typedef float varType;
+
 
 void Project::buildRHS(){
   size_t invDx = 1 / fields.dx;

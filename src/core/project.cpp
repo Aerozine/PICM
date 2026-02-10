@@ -2,7 +2,7 @@
 #include <cmath>
 #include <cassert>
 
-typedef float varType;
+
 
 varType Project::neighborPressureSum(size_t i, size_t j){
   varType sumP = 0.0;

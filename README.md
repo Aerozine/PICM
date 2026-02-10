@@ -15,4 +15,4 @@ And to execute it
 ```
 Depedencies are handled into the CmakeList
 - Nlohmann Json lib
-- Eigen3 lib
+- Paraview VTK

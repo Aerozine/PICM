@@ -1,11 +1,10 @@
 #pragma once
+#include "Precision.hpp"
 #include <vector>
 #include <string>
 
 class Grid2D {
 public:
-
-  typedef float varType;
 
   size_t nx, ny;
   varType dx, dy;
@@ -25,3 +24,4 @@ public:
   varType Interpolate(varType sx, varType sy, varType dx, varType dy, size_t field);
   void InitRectangle(varType constVel);
 };
+

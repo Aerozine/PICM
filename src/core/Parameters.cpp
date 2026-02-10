@@ -20,6 +20,8 @@ void Parameters::setDefaults() {
   write_ez = true;
   write_hx = true;
   write_hy = true;
+  folder = "results";
+  filename = "simulation";
 }
 
 void Parameters::loadFromJson(const nlohmann::json &j) {
@@ -58,22 +60,23 @@ bool Parameters::loadFromFile(const std::string &filename) {
     nlohmann::json j;
     file >> j;
     loadFromJson(j);
+#ifndef NDEBUG
 
     std::cout << "Successfully loaded parameters from '" << filename << "'"
               << std::endl;
+#endif
     return true;
   } catch (const std::exception &e) {
     std::cerr << "Error parsing JSON file: " << e.what() << std::endl;
     return false;
   }
 }
-
+// need to add filename and folder for launch
 bool Parameters::parseCommandLine(int argc, char *argv[]) {
   // If no arguments, use defaults
   if (argc == 1) {
-    std::cout << "No configuration file specified. "
-              << std::endl;
-        printUsage(argv[0]);
+    std::cout << "No configuration file specified. " << std::endl;
+    printUsage(argv[0]);
     return false;
   }
 
@@ -101,27 +104,6 @@ bool Parameters::parseCommandLine(int argc, char *argv[]) {
   }
   return true;
 }
-// normal print
-void Parameters::print() const {
-  std::cout << "\n=== Simulation Parameters ===" << std::endl;
-  std::cout << "Grid spacing:" << std::endl;
-  std::cout << "  dx: " << dx << std::endl;
-  std::cout << "  dy: " << dy << std::endl;
-  std::cout << "\nTime step:" << std::endl;
-  std::cout << "  dt: " << dt << std::endl;
-  std::cout << "\nGrid dimensions:" << std::endl;
-  std::cout << "  nx: " << nx << std::endl;
-  std::cout << "  ny: " << ny << std::endl;
-  std::cout << "\nTime steps:" << std::endl;
-  std::cout << "  nt: " << nt << std::endl;
-  std::cout << "\nSampling:" << std::endl;
-  std::cout << "  sampling_rate: " << sampling_rate << std::endl;
-  std::cout << "\nOutput flags:" << std::endl;
-  std::cout << "  write_ez: " << (write_ez ? "true" : "false") << std::endl;
-  std::cout << "  write_hx: " << (write_hx ? "true" : "false") << std::endl;
-  std::cout << "  write_hy: " << (write_hy ? "true" : "false") << std::endl;
-  std::cout << "============================\n" << std::endl;
-}
 
 void Parameters::printUsage(const char *program_name) const {
   // WRONG USAGE ! RTFM
@@ -134,7 +116,7 @@ void Parameters::printUsage(const char *program_name) const {
 // Stream operator overload
 // allows to do stdout << params and print it like that
 std::ostream &operator<<(std::ostream &os, const Parameters &params) {
-  // maybe find another way to do it clearly
+  // may be optimized with a loop or sth relevant
   os << "\n=== Simulation Parameters ===" << std::endl;
   os << "Grid spacing:" << std::endl;
   os << "  dx: " << params.dx << std::endl;

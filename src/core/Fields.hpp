@@ -4,7 +4,7 @@
 
 class Fields2D {
 public:
-    typedef float varType;
+
 
     enum CellType : uint8_t { FLUID = 0, SOLID = 1 };
     

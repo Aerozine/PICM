@@ -1,7 +1,7 @@
 #include "Fields.hpp"
 #include <cmath>
 
-typedef float varType; 
+
 
 void Fields2D::Div(){
 

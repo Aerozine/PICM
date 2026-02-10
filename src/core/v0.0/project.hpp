@@ -1,7 +1,7 @@
 #pragma once
 #include "Fields.hpp"
 
-typedef float varType;
+
 
 class Project{
 public:

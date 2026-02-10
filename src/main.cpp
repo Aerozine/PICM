@@ -1,29 +1,27 @@
+#include "core/Grid2D.hpp"
 #include "core/Fields.hpp"
 #include "core/project.hpp"
-#include "core/OutputWriter.hpp"
+// #include "core/OutputWriter.hpp"
+#include "core/BetterOutputWriter.hpp"
 #include "core/Parameters.hpp"
 #include <iostream>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
-typedef float varType;
 
 int main(int argc, char *argv[]) {
+  /*
+   * Macro allow print debug in some build cases
+   */
+#ifndef NDEBUG
+  // maybe stream selector or sth  ?
+  std::cout << "Compiled with debug mode" << std::endl;
+#endif
   // man page ?
   Parameters params;
   if (!params.parseCommandLine(argc, argv)) {
-    return 1;
+    exit(1);
   }
-  // first test
-  // std::cout << "Hello, World!" << std::endl;
-  // second test
-  // Grid2D grid(5,5);
-  // std::cout << grid.A << std::endl;
-  // grid.A(2,3)=1.0;
-  // print matrix
-  // std::cout << grid.A << std::endl;
-
-  // params.print();
   // using operator overload
   std::cout << params << std::endl;
 
@@ -36,6 +34,11 @@ int main(int argc, char *argv[]) {
   const float dt = 0.001;
   const float density = 1000;
 
+  Grid2D grid(params.nx, params.ny);
+
+  // Create BetterOutputWriter
+  BetterOutputWriter writer(params.folder, params.filename, params.dx,
+                            params.dy, 1.0);
   // Grid2D grid(nx, ny);
   // Grid2D grid = Grid2D::InitRandomGrid(nx,ny);
   
@@ -50,10 +53,10 @@ int main(int argc, char *argv[]) {
   fields.Div();
    
   // generate in the folder result and the simulation.pvd file
-  OutputWriter uWriter("results", "u");
-  OutputWriter pWriter("results", "p");
-  OutputWriter vWriter("results", "v");
-  OutputWriter divWriter("results", "div");
+  BetterOutputWriter uWriter("results", "u",params.dx,params.dy,1.0);
+  BetterOutputWriter pWriter("results", "p",params.dx,params.dy,1.0);
+  BetterOutputWriter vWriter("results", "v",params.dx,params.dy,1.0);
+  BetterOutputWriter divWriter("results", "div",params.dx,params.dy,1.0);
   // OutputWriter uNormWriter("results", "uNorm");
 
   // do 10 step to check if everythings works
@@ -70,7 +73,7 @@ int main(int argc, char *argv[]) {
                                       * std::cos(2.0 * M_PI * y);
         grid.SET(ix, iy, val);*/
 
-        project.MakeIncompressible();
+       // project.MakeIncompressible();
       }
     }
     /*// write the grid in the
@@ -79,14 +82,23 @@ int main(int argc, char *argv[]) {
       && !divWriter.writeGrid2D(fields.div, "div")) {
       std::cerr << "Failed to write step " << t << std::endl;
       return 1;
-    }*/
-    if (!uWriter.writeGrid2D(fields.u, "u") ||
-        !vWriter.writeGrid2D(fields.v, "v") ||
-        !pWriter.writeGrid2D(fields.p, "p") ||
-        !divWriter.writeGrid2D(fields.div, "div")) {
+    }
+*/
+
+  /** if params.solverType == Semilagrangian
+   *    Semilagrangian(params)
+   *
+   *
+   */
+    double time = t * params.dt;
+    if (!uWriter.writeGrid2D(fields.u, "u",dt) ||
+        !vWriter.writeGrid2D(fields.v, "v",dt) ||
+        !pWriter.writeGrid2D(fields.p, "p",dt) ||
+        !divWriter.writeGrid2D(fields.div, "div",dt)) {
       std::cerr << "Failed to write step " << t << std::endl;
       return 1;
     }
+    // Write with actual time value
   }
   return 0;
 }

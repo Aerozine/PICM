@@ -3,7 +3,7 @@
 #include <cassert>
 
 // prefer some macros ?
-Grid2D::varType Grid2D::Get(size_t i, size_t j) const{
+varType Grid2D::Get(size_t i, size_t j) const{
   return A[nx * j + i];
 }
 
@@ -57,7 +57,7 @@ Grid2D::varType Grid2D::Interpolate(varType x, varType y, varType dx, varType dy
 }
 */
 
-Grid2D::varType Grid2D::Interpolate(varType sx , varType sy,
+varType Grid2D::Interpolate(varType sx , varType sy,
                                     varType dx, varType dy, size_t field) {
 
   if (sx >= nx && sy >= ny) assert(false); 
