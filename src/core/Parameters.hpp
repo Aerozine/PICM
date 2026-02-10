@@ -4,6 +4,8 @@
 
 class Parameters {
 public:
+  // may be not relevant here or a better alternative
+  nlohmann::json j;
   // Simulation parameters
   double dx;
   double dy;
@@ -15,6 +17,8 @@ public:
   bool write_ez;
   bool write_hx;
   bool write_hy;
+  std::string folder;
+  std::string filename;
 
   // Constructor with default values
   Parameters();

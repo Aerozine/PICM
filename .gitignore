@@ -74,3 +74,5 @@ Testing/
 # rm paraview files
 *.pvd 
 *.vti
+results
+.idea

@@ -1,12 +1,22 @@
 #pragma once
-// simple Eigen lib dense matrix
-#include <Eigen/Dense>
-// including features of cpp
-#include <array>
+#include "Precision.hpp"
+#include <string>
 #include <vector>
+
 class Grid2D {
 public:
-  Grid2D(size_t nx, size_t ny);
   size_t nx, ny;
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> A;
+  Real dx, dy;
+  std::vector<Real> A;
+
+  Grid2D(size_t nx, size_t ny) : nx(nx), ny(ny), A(nx * ny, 0.0) {}
+
+  // manipulating grid values
+  Real Get(size_t i, size_t j) const;
+  void Set(size_t i, size_t j, Real val);
+
+  // utility functions
+  bool InBounds(size_t i, size_t j);
+  void FillRandom();
+  Real InterpolateCenter(size_t iCenter, size_t jCenter, const size_t field);
 };
