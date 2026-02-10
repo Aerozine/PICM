@@ -14,12 +14,6 @@ void Fields2D::Div() {
   return;
 }
 
-void Fields2D::InitRandomVelocities() {
-  u.FillRandom();
-  v.FillRandom();
-  return;
-}
-
 void Fields2D::InitPotentialGradient(varType amplitude, int kx, int ky) {
   const size_t nxp = p.nx;
   const size_t nyp = p.ny;

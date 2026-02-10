@@ -29,7 +29,6 @@ public:
   }
 
   void Div();
-  void InitRandomVelocities();
   void InitPotentialGradient(varType amplitude, int kx, int ky);
   // Grid2D VelocityNormCenterGrid();
 

@@ -17,7 +17,6 @@ public:
 
   // utility functions
   bool InBounds(size_t i, size_t j);
-  void FillRandom();
   varType Interpolate(varType sx, varType sy, varType dx, varType dy,
                       size_t field);
   void InitRectangle(varType constVel);

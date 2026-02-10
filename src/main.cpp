@@ -26,12 +26,12 @@ int main(int argc, char *argv[]) {
 
   // example of grid to vtk
   //
-  const size_t nx = 10;
-  const size_t ny = 10;
-  const float dx = 1.0 / (nx - 1);
-  const float dy = 1.0 / (ny - 1);
+  const size_t nx = 50;
+  const size_t ny = 40;
+  const float dx = 0.02;
+  const float dy = 0.02;
   const float dt = 0.001;
-  const float density = 1000;
+  const float density = 10;
 
   Grid2D grid(params.nx, params.ny);
 
@@ -50,44 +50,17 @@ int main(int argc, char *argv[]) {
 
   fields.Div();
 
-  // generate in the folder result and the simulation.pvd file
   OutputWriter uWriter("results", "u");
   OutputWriter pWriter("results", "p");
   OutputWriter vWriter("results", "v");
   OutputWriter divWriter("results", "div");
-  // OutputWriter uNormWriter("results", "uNorm");
 
-  // do 10 step to check if everythings works
-  const int num_steps = 100;
+  const int num_steps = 10;
 
-  // generating random grid data noise
   for (int t = 0; t < num_steps; ++t) {
-    for (size_t iy = 0; iy < ny; ++iy) {
-      for (size_t ix = 0; ix < nx; ++ix) {
-        /*double x = ix * dx;
-        double y = iy * dy;
 
-        varType val = std::sin(2.0 * M_PI * (x - 0.1 * t))
-                                      * std::cos(2.0 * M_PI * y);
-        grid.SET(ix, iy, val);*/
-
-        // project.MakeIncompressible();
-      }
-    }
-    /*// write the grid in the
-    if (!uWriter.writeGrid2D(fields.u, "u")
-      && !vWriter.writeGrid2D(fields.v, "v")
-      && !divWriter.writeGrid2D(fields.div, "div")) {
-      std::cerr << "Failed to write step " << t << std::endl;
-      return 1;
-    }
-*/
-
-    /** if params.solverType == Semilagrangian
-     *    Semilagrangian(params)
-     *
-     *
-     */
+    project.MakeIncompressible();
+   
     if (!uWriter.writeGrid2D(fields.u, "u") ||
         !vWriter.writeGrid2D(fields.v, "v") ||
         !pWriter.writeGrid2D(fields.p, "p") ||
