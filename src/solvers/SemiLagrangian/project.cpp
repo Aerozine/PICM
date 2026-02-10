@@ -2,8 +2,6 @@
 #include <cassert>
 #include <cmath>
 
-
-
 void Project::buildRHS() {
   size_t invDx = 1 / fields.dx;
 

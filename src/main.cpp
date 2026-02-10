@@ -1,9 +1,8 @@
-#include "core/Grid2D.hpp"
 #include "core/Fields.hpp"
-#include "core/project.hpp"
-// #include "core/OutputWriter.hpp"
-#include "core/BetterOutputWriter.hpp"
+#include "core/Grid2D.hpp"
+#include "core/OutputWriter.hpp"
 #include "core/Parameters.hpp"
+#include "core/project.hpp"
 #include <iostream>
 #include <nlohmann/json.hpp>
 
@@ -27,8 +26,8 @@ int main(int argc, char *argv[]) {
 
   // example of grid to vtk
   //
-  const size_t nx = 50;
-  const size_t ny = 40;
+  const size_t nx = 10;
+  const size_t ny = 10;
   const float dx = 1.0 / (nx - 1);
   const float dy = 1.0 / (ny - 1);
   const float dt = 0.001;
@@ -36,48 +35,47 @@ int main(int argc, char *argv[]) {
 
   Grid2D grid(params.nx, params.ny);
 
-  // Create BetterOutputWriter
-  BetterOutputWriter writer(params.folder, params.filename, params.dx,
-                            params.dy, 1.0);
+  // Create OutputWriter
+  OutputWriter writer(params.folder, params.filename);
   // Grid2D grid(nx, ny);
   // Grid2D grid = Grid2D::InitRandomGrid(nx,ny);
-  
-  Fields2D fields(nx, ny, density, dt, dx, dy); 
-  //fields.u.FillRandom();
+
+  Fields2D fields(nx, ny, density, dt, dx, dy);
+  // fields.u.FillRandom();
   fields.u.InitRectangle(10.0);
   // fields.InitPotentialGradient(1.0, 1, 1);
   // Grid2D uNorm = fields.VelocityNormCenterGrid();
 
   Project project(fields);
-  
+
   fields.Div();
-   
+
   // generate in the folder result and the simulation.pvd file
-  BetterOutputWriter uWriter("results", "u",params.dx,params.dy,1.0);
-  BetterOutputWriter pWriter("results", "p",params.dx,params.dy,1.0);
-  BetterOutputWriter vWriter("results", "v",params.dx,params.dy,1.0);
-  BetterOutputWriter divWriter("results", "div",params.dx,params.dy,1.0);
+  OutputWriter uWriter("results", "u");
+  OutputWriter pWriter("results", "p");
+  OutputWriter vWriter("results", "v");
+  OutputWriter divWriter("results", "div");
   // OutputWriter uNormWriter("results", "uNorm");
 
   // do 10 step to check if everythings works
   const int num_steps = 100;
-  
+
   // generating random grid data noise
   for (int t = 0; t < num_steps; ++t) {
     for (size_t iy = 0; iy < ny; ++iy) {
       for (size_t ix = 0; ix < nx; ++ix) {
         /*double x = ix * dx;
         double y = iy * dy;
-        
+
         varType val = std::sin(2.0 * M_PI * (x - 0.1 * t))
                                       * std::cos(2.0 * M_PI * y);
         grid.SET(ix, iy, val);*/
 
-       // project.MakeIncompressible();
+        // project.MakeIncompressible();
       }
     }
     /*// write the grid in the
-    if (!uWriter.writeGrid2D(fields.u, "u") 
+    if (!uWriter.writeGrid2D(fields.u, "u")
       && !vWriter.writeGrid2D(fields.v, "v")
       && !divWriter.writeGrid2D(fields.div, "div")) {
       std::cerr << "Failed to write step " << t << std::endl;
@@ -85,16 +83,15 @@ int main(int argc, char *argv[]) {
     }
 */
 
-  /** if params.solverType == Semilagrangian
-   *    Semilagrangian(params)
-   *
-   *
-   */
-    double time = t * params.dt;
-    if (!uWriter.writeGrid2D(fields.u, "u",dt) ||
-        !vWriter.writeGrid2D(fields.v, "v",dt) ||
-        !pWriter.writeGrid2D(fields.p, "p",dt) ||
-        !divWriter.writeGrid2D(fields.div, "div",dt)) {
+    /** if params.solverType == Semilagrangian
+     *    Semilagrangian(params)
+     *
+     *
+     */
+    if (!uWriter.writeGrid2D(fields.u, "u") ||
+        !vWriter.writeGrid2D(fields.v, "v") ||
+        !pWriter.writeGrid2D(fields.p, "p") ||
+        !divWriter.writeGrid2D(fields.div, "div")) {
       std::cerr << "Failed to write step " << t << std::endl;
       return 1;
     }

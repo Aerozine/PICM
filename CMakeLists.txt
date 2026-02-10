@@ -19,10 +19,4 @@ if(NOT TARGET nlohmann_json::nlohmann_json)
   FetchContent_MakeAvailable(json)
 endif()
 
-message(STATUS "Checking VTK")
-find_package(VTK COMPONENTS CommonCore CommonDataModel IOXML IOXMLParser)
-if (NOT VTK_FOUND)
-  message(FATAL_ERROR "Unable to find VTK")
-endif()
-
 add_subdirectory(src)

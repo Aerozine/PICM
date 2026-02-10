@@ -9,7 +9,6 @@ set_target_properties(PIC PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DI
 
 target_link_libraries(PIC PRIVATE 
     nlohmann_json::nlohmann_json
-    ${VTK_LIBRARIES}
 )
 if(USE_FLOAT_PRECISION)
     target_compile_definitions(PIC PRIVATE USE_FLOAT)

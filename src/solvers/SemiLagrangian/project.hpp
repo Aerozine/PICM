@@ -1,8 +1,6 @@
 #pragma once
 #include "../../core/Fields.hpp"
 
-
-
 class Project {
 public:
   Project(Fields2D &fields)
