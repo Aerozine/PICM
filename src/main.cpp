@@ -24,28 +24,13 @@ int main(int argc, char *argv[]) {
   // using operator overload
   std::cout << params << std::endl;
 
-  // example of grid to vtk
-  //
-  const size_t nx = 10;
-  const size_t ny = 10;
-  const float dx = 1.0 / (nx - 1);
-  const float dy = 1.0 / (ny - 1);
-  const float dt = 0.001;
-  const float density = 1000;
-
   Grid2D grid(params.nx, params.ny);
 
-  // Create OutputWriter
-  OutputWriter writer(params.folder, params.filename);
-  // Grid2D grid(nx, ny);
-  // Grid2D grid = Grid2D::InitRandomGrid(nx,ny);
-
-  Fields2D fields(nx, ny, density, dt, dx, dy);
+  Fields2D fields(params.nx, params.ny, params.density, params.dt, params.dx, params.dy);
   // fields.u.FillRandom();
   fields.u.InitRectangle(10.0);
   // fields.InitPotentialGradient(1.0, 1, 1);
   // Grid2D uNorm = fields.VelocityNormCenterGrid();
-
   Project project(fields);
 
   fields.Div();
@@ -62,8 +47,8 @@ int main(int argc, char *argv[]) {
 
   // generating random grid data noise
   for (int t = 0; t < num_steps; ++t) {
-    for (size_t iy = 0; iy < ny; ++iy) {
-      for (size_t ix = 0; ix < nx; ++ix) {
+    for (int iy = 0; iy < params.ny; ++iy) {
+      for (int ix = 0; ix < params.nx; ++ix) {
         /*double x = ix * dx;
         double y = iy * dy;
 
@@ -71,23 +56,9 @@ int main(int argc, char *argv[]) {
                                       * std::cos(2.0 * M_PI * y);
         grid.SET(ix, iy, val);*/
 
-        // project.MakeIncompressible();
+         project.MakeIncompressible();
       }
     }
-    /*// write the grid in the
-    if (!uWriter.writeGrid2D(fields.u, "u")
-      && !vWriter.writeGrid2D(fields.v, "v")
-      && !divWriter.writeGrid2D(fields.div, "div")) {
-      std::cerr << "Failed to write step " << t << std::endl;
-      return 1;
-    }
-*/
-
-    /** if params.solverType == Semilagrangian
-     *    Semilagrangian(params)
-     *
-     *
-     */
     if (!uWriter.writeGrid2D(fields.u, "u") ||
         !vWriter.writeGrid2D(fields.v, "v") ||
         !pWriter.writeGrid2D(fields.p, "p") ||
@@ -95,7 +66,6 @@ int main(int argc, char *argv[]) {
       std::cerr << "Failed to write step " << t << std::endl;
       return 1;
     }
-    // Write with actual time value
   }
   return 0;
 }

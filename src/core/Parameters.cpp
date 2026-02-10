@@ -20,6 +20,7 @@ void Parameters::setDefaults() {
   write_ez = true;
   write_hx = true;
   write_hy = true;
+  density = 1000;
   folder = "results";
   filename = "simulation";
 }

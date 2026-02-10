@@ -17,6 +17,7 @@ public:
   bool write_ez;
   bool write_hx;
   bool write_hy;
+  int density;
   std::string folder;
   std::string filename;
 
