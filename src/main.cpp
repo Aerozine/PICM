@@ -40,18 +40,18 @@ int main(int argc, char *argv[]) {
   // Grid2D grid = Grid2D::InitRandomGrid(nx,ny);
   
   Fields2D fields(nx, ny, density, dt, dx, dy); 
-  fields.u.FillRandom();
-  fields.v.FillRandom();
+  //fields.u.FillRandom();
+  fields.u.InitRectangle(10.0);
   // fields.InitPotentialGradient(1.0, 1, 1);
   // Grid2D uNorm = fields.VelocityNormCenterGrid();
 
   Project project(fields);
-  project.MakeIncompressible();
   
   fields.Div();
    
   // generate in the folder result and the simulation.pvd file
   OutputWriter uWriter("results", "u");
+  OutputWriter pWriter("results", "p");
   OutputWriter vWriter("results", "v");
   OutputWriter divWriter("results", "div");
   // OutputWriter uNormWriter("results", "uNorm");
@@ -69,6 +69,8 @@ int main(int argc, char *argv[]) {
         varType val = std::sin(2.0 * M_PI * (x - 0.1 * t))
                                       * std::cos(2.0 * M_PI * y);
         grid.SET(ix, iy, val);*/
+
+        project.MakeIncompressible();
       }
     }
     /*// write the grid in the
@@ -80,18 +82,11 @@ int main(int argc, char *argv[]) {
     }*/
     if (!uWriter.writeGrid2D(fields.u, "u") ||
         !vWriter.writeGrid2D(fields.v, "v") ||
-        //!uNormWriter.writeGrid2D(uNorm, "uNorm") ||
+        !pWriter.writeGrid2D(fields.p, "p") ||
         !divWriter.writeGrid2D(fields.div, "div")) {
       std::cerr << "Failed to write step " << t << std::endl;
       return 1;
     }
   }
-
-  // Finalise the .pvd
-  // destructor would do it too, but being explicit
-  uWriter.finalisePVD();
-  vWriter.finalisePVD();
-  // uNormWriter.finalisePVD();
-  divWriter.finalisePVD();
   return 0;
 }

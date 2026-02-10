@@ -17,6 +17,22 @@ bool Grid2D::InBounds(size_t i, size_t j){
   return (i < nx) && (j < ny);
 }
 
+void Grid2D::InitRectangle(varType constVel = 10) {
+  int midX = nx/2;
+  int midY = ny/2;
+
+  int offsetX = 20;
+  int offsetY = 10;
+
+  for(int i = midX - offsetX; i < midX + offsetX; i++){
+    for(int j = midY - offsetY; j < midY + offsetY; j++){
+      this -> Set(i, j, constVel); 
+    }
+  }
+  return;
+}
+
+
 void Grid2D::FillRandom() {
   std::mt19937 gen(42); // fixed seed
   std::uniform_real_distribution<double> dist(-1.0, 1.0);

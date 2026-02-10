@@ -7,9 +7,9 @@ typedef float varType;
 varType Project::neighborPressureSum(size_t i, size_t j){
   varType sumP = 0.0;
   
-  if (i + 1 < ny - 1) sumP += fields.p.Get(i + 1, j);
+  if (i + 1 < nx - 1) sumP += fields.p.Get(i + 1, j);
   if (i > 0) sumP += fields.p.Get(i - 1, j);
-  if (j + 1 < nx - 1) sumP += fields.p.Get(i, j + 1);
+  if (j + 1 < ny - 1) sumP += fields.p.Get(i, j + 1);
   if (j > 0) sumP += fields.p.Get(i, j - 1);
   
   return sumP;
@@ -18,9 +18,9 @@ varType Project::neighborPressureSum(size_t i, size_t j){
 varType Project::neighborVelocitySum(size_t i, size_t j){
   varType sumV = 0.0;
 
-  if (i + 1 < ny - 1) sumV += fields.u.Get(i, j + 1);
+  if (i + 1 < nx - 1) sumV += fields.u.Get(i, j + 1);
   sumV -= fields.u.Get(i, j);
-  if (j + 1 < nx - 1) sumV += fields.v.Get(i + 1, j);
+  if (j + 1 < ny - 1) sumV += fields.v.Get(i + 1, j);
   sumV -= fields.v.Get(i, j);
 
   return sumV;
@@ -47,10 +47,10 @@ void Project::solveJacobi(int maxIters, float tol) {
         }
       }
 
-      for (size_t j = 0; j < ny; j++) {
-        for (size_t i = 0; i < nx; i++) {
+      for (size_t j = 0; j < ny - 1; j++) {
+        for (size_t i = 0; i < nx - 1; i++) {
           if (fields.Label(i,j) == Fields2D::FLUID){  
-            fields.p.Set(i,j, pNew.Get(i,j));
+            fields.p.Set(i, j, pNew.Get(i,j));
           }
         }
       }
