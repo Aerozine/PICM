@@ -41,24 +41,35 @@ Grid2D::varType Grid2D::Interpolate(varType x, varType y, varType dx, varType dy
 }
 */
 
-Grid2D::varType Grid2D::InterpolateCenter(size_t iCenter, size_t jCenter,
-                                          const size_t field) {
-  // iCenter/jCenter = numbering of pressure grid
-  varType interpol;
+Grid2D::varType Grid2D::Interpolate(varType sx , varType sy,
+                                    varType dx, varType dy, size_t field) {
+
+  if (sx >= nx && sy >= ny) assert(false); 
+  
+  // Determine the region [xi, xi+1]
+  size_t si = std::floor(sx / dx);
+  size_t sj = std::floor(sy / dx);
+
+  varType interpol; 
  
   switch (field) {
-    case 0: interpol = (this -> Get(iCenter, jCenter) 
-                        + this -> Get(iCenter, jCenter + 1)) / 2;   
-              break;
-
-    case 1: interpol = (this -> Get(iCenter, jCenter)   
-                        + this -> Get(iCenter + 1, jCenter)) / 2;   
-              break;
-
+    case 0: { 
+              varType alpha = (sx - si) / dx;
+              interpol = (1 - alpha) * (this -> Get(si, sj)) 
+                     + alpha * (this -> Get(si, sj + 1));
+            }
+            break;
+    
+    case 1: { 
+              varType alpha = (sy - si) / dy;
+              interpol = (1 - alpha) * (this -> Get(si, sj))
+                     + alpha * (this -> Get(si + 1, sj));
+            }
+            break;
+    
     default: assert(false); 
              break;
   }
   return interpol;
 }
-
 

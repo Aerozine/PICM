@@ -7,8 +7,8 @@ void Fields2D::Div(){
 
   for(size_t j = 0; j < ny - 1; j++){
     for(size_t i = 0; i < nx - 1; i++){
-      varType dudx = (u.Get(i, j) - u.Get(i + 1, j)) / nx;
-      varType dvdy = (v.Get(i, j) - v.Get(i, j + 1)) / ny;
+      varType dudx = (u.Get(i, j) - u.Get(i, j + 1)) / nx;
+      varType dvdy = (v.Get(i, j) - v.Get(i + 1, j)) / ny;
 
       div.Set(i, j, dudx + dvdy);
     }
@@ -62,19 +62,20 @@ void Fields2D::InitPotentialGradient(varType amplitude, int kx, int ky)
         }
     }
 }
-
+/*
 Grid2D Fields2D::VelocityNormCenterGrid() {
   Grid2D velocityNorm(nx - 1, ny - 1);
   varType uTemp, vTemp, uNorm; 
    
   for(size_t j = 0; j < ny - 1; j++) {
     for(size_t i = 0; j < nx - 1; i++) {
-      uTemp = u.InterpolateCenter(i, j, 0); 
-      vTemp = v.InterpolateCenter(i, j, 1); 
+      uTemp = u.Interpolate(i, j, 0); 
+      vTemp = v.Interpolate(i, j, 1); 
       uNorm = sqrt(uTemp*uTemp + vTemp*vTemp);
       velocityNorm.Set(i, j, uNorm);
     }
   }
   return velocityNorm;   
 }
+*/
 
