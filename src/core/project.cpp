@@ -4,113 +4,31 @@
 
 typedef float varType;
 
-void Project::buildRHS(){
-  size_t invDx = 1 / fields.dx;
-
-  for (size_t j = 0; j < ny - 1; j++) {
-    for (size_t i = 0; i < nx - 1; i++) {
-      if (fields.Label(i, j) != Fields2D::FLUID) {
-        rhs[idx(i, j)] = 0.0; continue;
-      }
-
-      rhs[idx(i, j)] = -invDx * (
-          (fields.u.Get(i, j) - fields.u.Get(i, j)) +
-          (fields.v.Get(i + 1, j) - fields.v.Get(i, j))); // eq. 5.6
-    }
-  }
+varType Project::neighborPressureSum(size_t i, size_t j){
+  varType sumP = 0.0;
   
-  // usolid = 0 for now (adapt later)  
-  for (size_t j = 0; j < ny - 1; j++) {
-    for (size_t i = 0; i < nx - 1; i++) {
-      
-      // hardcoded version (only borders are solid) 
-      /*
-      if (i = 0) {
-        rhs[idx(i, j)] += invDx * (fields.u.Get(i, j) - fields.usolid);
-      }
-      if (i = nx - 1) {
-         rhs[idx(i, j)] -= invDx * (fields.u.Get(i + 1, j) - fields.usolid);
-      }
-      if (j = 0) {
-         rhs[idx(i, j)] -= invDx * (fields.v.Get(i, j) - fields.usolid);
-      }
-      if (j = ny - 1) {
-         rhs[idx(i, j)] += invDx * (fields.v.Get(i, j + 1) - fields.usolid);
-      }
-      */
-      
-      if (fields.Label(i, j) != Fields2D::FLUID) continue;
-      
-      if (i > 0 && fields.Label(i - 1, j) == Fields2D::SOLID)
-         rhs[idx(i, j)] += invDx * (fields.u.Get(i, j) - fields.usolid);
-
-      if (i + 1 < nx && fields.Label(i + 1, j) == Fields2D::SOLID)
-         rhs[idx(i, j)] -= invDx * (fields.u.Get(i + 1, j) - fields.usolid);
-
-      if (j > 0 && fields.Label(i, j - 1) == Fields2D::SOLID)
-         rhs[idx(i, j)] -= invDx * (fields.v.Get(i, j) - fields.usolid);
-
-      if (j + 1 < ny && fields.Label(i, j + 1) == Fields2D::SOLID) 
-         rhs[idx(i, j)] += invDx * (fields.v.Get(i, j + 1) - fields.usolid);
-    }
-  }
-  return;
+  if (i + 1 < ny - 1) sumP += fields.p.Get(i + 1, j);
+  if (i > 0) sumP += fields.p.Get(i - 1, j);
+  if (j + 1 < nx - 1) sumP += fields.p.Get(i, j + 1);
+  if (j > 0) sumP += fields.p.Get(i, j - 1);
+  
+  return sumP;
 }
 
-void Project::buildMatrixA() {
-  const double scaleA = fields.dt 
-                      / (fields.density * fields.dx * fields.dx);
+varType Project::neighborVelocitySum(size_t i, size_t j){
+  varType sumV = 0.0;
 
-  for (size_t j = 0; j < ny - 1; j++) {
-    for (size_t i = 0; i < nx - 1; i++) {
-      if (fields.Label(i,j) != Fields2D::FLUID) continue;
+  if (i + 1 < ny - 1) sumV += fields.u.Get(i, j + 1);
+  sumV -= fields.u.Get(i, j);
+  if (j + 1 < nx - 1) sumV += fields.v.Get(i + 1, j);
+  sumV -= fields.v.Get(i, j);
 
-      double diag = 0.0;
-
-      // + x neighbor : (i + 1, j)
-      if (i + 1 < nx && fields.Label(i + 1,j) != Fields2D::SOLID) {
-          diag += scaleA;
-          if (fields.Label(i + 1, j) == Fields2D::FLUID) {
-            Ax[idx(i,j)] = -scaleA; // no need to do it for i - 1 (symetry)
-          } 
-      }
-      // -x neighbor : (i - 1, j)
-      if (i > 0 && fields.Label(i - 1, j) != Fields2D::SOLID) {
-          diag += scaleA;
-      }
-
-      // ---- +y neighbor : (i, j+1)
-      if (j + 1 < ny && fields.Label(i, j + 1) != Fields2D::SOLID) {
-          diag += scaleA;
-          if (fields.Label(i, j + 1) == Fields2D::FLUID) {
-            Ay[idx(i, j)] = -scaleA;
-          }
-      }
-      // ---- -y neighbor : (i, j-1)
-      if (j > 0 && fields.Label(i, j - 1) != Fields2D::SOLID) {
-          diag += scaleA;
-      }
-
-      Adiag[idx(i, j)] = diag;
-    }
-  }
-  return;
-}
-
-varType Project::neighborPressureSum(size_t i, size_t j) {
-  assert(i < nx - 1 && j < ny - 1); // from <cassert>
-  varType sum = 0.0;
-
-  if (i + 1 < nx - 1) sum += Ax[idx(i, j)] * fields.p.Get(i + 1, j);
-  if (i > 0) sum += Ax[idx(i - 1, j)] * fields.p.Get(i - 1, j);
-  if (j + 1 < ny - 1) sum += Ay[idx(i, j)] * fields.p.Get(i, j + 1);
-  if (j > 0) sum += Ay[idx(i, j - 1)] * fields.p.Get(i, j - 1);
-  return sum;
-  // Q: neighbor pij outside domaine -> 0 contriubtion to sum ? 
+  return sumV;
 }
 
 void Project::solveJacobi(int maxIters, float tol) {
   Grid2D pNew(nx - 1, ny - 1);
+  varType coef = fields.density * dx / dt;
 
   for (int it = 0; it < maxIters; it++) {
 
@@ -120,18 +38,15 @@ void Project::solveJacobi(int maxIters, float tol) {
         for (size_t i = 0; i < nx - 1; i++) {
           if (fields.Label(i,j) != Fields2D::FLUID) continue;
 
-          double diag = Adiag[idx(i,j)];
-          if (diag == 0.0) continue;
-
-          double sumN = neighborPressureSum(i, j);
-          double newVal = (rhs[idx(i,j)] - sumN) / diag;
-
+          double sumP = neighborPressureSum(i, j);
+          double sumV = neighborVelocitySum(i, j);
+          double newVal = 1 / 4 * ( coef * sumV + sumP);
+          
           maxDiff = std::max(maxDiff, std::abs(newVal - fields.p.Get(i,j)));
           pNew.Set(i,j, newVal);
         }
       }
 
-      // swap p <- pNew (!! pNew all computed based on old values)
       for (size_t j = 0; j < ny; j++) {
         for (size_t i = 0; i < nx; i++) {
           if (fields.Label(i,j) == Fields2D::FLUID){  
@@ -184,8 +99,6 @@ void Project::MakeIncompressible(){
   int maxIters = 10000;
   varType tol = 0.0001; 
 
-  this -> buildRHS();
-  this -> buildMatrixA();
   this -> solveJacobi(maxIters, tol); 
   this -> updateVelocities();  
 

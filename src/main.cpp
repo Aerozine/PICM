@@ -40,9 +40,9 @@ int main(int argc, char *argv[]) {
   // Grid2D grid = Grid2D::InitRandomGrid(nx,ny);
   
   Fields2D fields(nx, ny, density, dt, dx, dy); 
-  // fields.u.FillRandom();
-  // fields.v.FillRandom();
-  fields.InitPotentialGradient(1.0, 1, 1);
+  fields.u.FillRandom();
+  fields.v.FillRandom();
+  // fields.InitPotentialGradient(1.0, 1, 1);
   // Grid2D uNorm = fields.VelocityNormCenterGrid();
 
   Project project(fields);
