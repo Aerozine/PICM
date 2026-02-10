@@ -24,6 +24,15 @@ int main(int argc, char *argv[]) {
   // using operator overload
   std::cout << params << std::endl;
 
+  // example of grid to vtk
+  //
+  const size_t nx = 50;
+  const size_t ny = 40;
+  const float dx = 0.02;
+  const float dy = 0.02;
+  const float dt = 0.001;
+  const float density = 10;
+
   Grid2D grid(params.nx, params.ny);
 
   Fields2D fields(params.nx, params.ny, params.density, params.dt, params.dx, params.dy);
@@ -35,30 +44,17 @@ int main(int argc, char *argv[]) {
 
   fields.Div();
 
-  // generate in the folder result and the simulation.pvd file
   OutputWriter uWriter("results", "u");
   OutputWriter pWriter("results", "p");
   OutputWriter vWriter("results", "v");
   OutputWriter divWriter("results", "div");
-  // OutputWriter uNormWriter("results", "uNorm");
 
-  // do 10 step to check if everythings works
-  const int num_steps = 100;
+  const int num_steps = 10;
 
-  // generating random grid data noise
   for (int t = 0; t < num_steps; ++t) {
-    for (int iy = 0; iy < params.ny; ++iy) {
-      for (int ix = 0; ix < params.nx; ++ix) {
-        /*double x = ix * dx;
-        double y = iy * dy;
 
-        varType val = std::sin(2.0 * M_PI * (x - 0.1 * t))
-                                      * std::cos(2.0 * M_PI * y);
-        grid.SET(ix, iy, val);*/
-
-         project.MakeIncompressible();
-      }
-    }
+    project.MakeIncompressible();
+   
     if (!uWriter.writeGrid2D(fields.u, "u") ||
         !vWriter.writeGrid2D(fields.v, "v") ||
         !pWriter.writeGrid2D(fields.p, "p") ||
