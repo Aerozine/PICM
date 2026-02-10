@@ -14,8 +14,8 @@ void Project::buildRHS(){
       }
 
       rhs[idx(i, j)] = -invDx * (
-          (fields.u.Get(i + 1, j) - fields.u.Get(i, j)) +
-          (fields.v.Get(i, j + 1) - fields.v.Get(i, j))); // eq. 5.6
+          (fields.u.Get(i, j) - fields.u.Get(i, j)) +
+          (fields.v.Get(i + 1, j) - fields.v.Get(i, j))); // eq. 5.6
     }
   }
   
@@ -149,8 +149,8 @@ void Project::updateVelocities() {
   
   varType coef = fields.dt / (fields.density * fields.dx);  
  
-  for (size_t j = 0; j < ny - 1; j++) {
-    for (size_t i = 0; i < nx; i++) {
+  for (size_t j = 1; j < ny - 2; j++) {
+    for (size_t i = 1; i < nx - 1; i++) {
       
       if(j + 1 == ny || j == 0) {
         fields.u.Set(i, j, fields.usolid);
@@ -158,13 +158,13 @@ void Project::updateVelocities() {
       }
       
       varType uOld = fields.u.Get(i, j); 
-      varType uNew = uOld - coef * (fields.p.Get(i + 1, j) - fields.p.Get(i, j));
+      varType uNew = uOld - coef * (fields.p.Get(i, j + 1) - fields.p.Get(i, j));
       fields.u.Set(i, j, uNew); 
     } 
   }
 
-  for (size_t j = 0; j < ny; j++) {
-    for (size_t i = 0; i < nx - 1; i++) {
+  for (size_t j = 1; j < ny - 1; j++) {
+    for (size_t i = 1; i < nx - 2; i++) {
       
       if(i + 1 == nx || i == 0) { // boundaries
         fields.v.Set(i, j, fields.usolid);
@@ -173,7 +173,7 @@ void Project::updateVelocities() {
       
       // if not boundaries -> p(i, j + 1) exists ! 
       varType vOld = fields.v.Get(i, j); 
-      varType vNew = vOld - coef * (fields.p.Get(i, j + 1) - fields.p.Get(i, j));
+      varType vNew = vOld - coef * (fields.p.Get(i + 1, j) - fields.p.Get(i, j));
       fields.v.Set(i, j, vNew); 
     } 
   }

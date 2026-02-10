@@ -22,6 +22,5 @@ public:
   // utility functions
   bool InBounds(size_t i, size_t j);
   void FillRandom(); 
-  varType InterpolateCenter(size_t iCenter, size_t jCenter,
-                            const size_t field);
+  varType Interpolate(varType sx, varType sy, varType dx, varType dy, size_t field);
 };

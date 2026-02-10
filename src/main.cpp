@@ -43,10 +43,10 @@ int main(int argc, char *argv[]) {
   // fields.u.FillRandom();
   // fields.v.FillRandom();
   fields.InitPotentialGradient(1.0, 1, 1);
-  Grid2D uNorm = fields.VelocityNormCenterGrid();
+  // Grid2D uNorm = fields.VelocityNormCenterGrid();
 
   Project project(fields);
-  // project.MakeIncompressible();
+  project.MakeIncompressible();
   
   fields.Div();
    
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   OutputWriter uWriter("results", "u");
   OutputWriter vWriter("results", "v");
   OutputWriter divWriter("results", "div");
-  OutputWriter uNormWriter("results", "uNorm");
+  // OutputWriter uNormWriter("results", "uNorm");
 
   // do 10 step to check if everythings works
   const int num_steps = 100;
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
     }*/
     if (!uWriter.writeGrid2D(fields.u, "u") ||
         !vWriter.writeGrid2D(fields.v, "v") ||
-        !uNormWriter.writeGrid2D(uNorm, "uNorm") ||
+        //!uNormWriter.writeGrid2D(uNorm, "uNorm") ||
         !divWriter.writeGrid2D(fields.div, "div")) {
       std::cerr << "Failed to write step " << t << std::endl;
       return 1;
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
   // destructor would do it too, but being explicit
   uWriter.finalisePVD();
   vWriter.finalisePVD();
-  uNormWriter.finalisePVD();
+  // uNormWriter.finalisePVD();
   divWriter.finalisePVD();
   return 0;
 }

@@ -15,8 +15,8 @@ public:
     Fields2D(size_t nx, size_t ny, varType density,
                   varType dt, varType dx, varType dy)
     : nx(nx), ny(ny), density(density), dt(dt), dx(dx), dy(dy),
-      u(nx, ny - 1),
-      v(nx - 1, ny),
+      u(nx - 1, ny), // !
+      v(nx, ny - 1),
       p(nx - 1, ny - 1),
       div(nx - 1, ny - 1),
       rot(nx - 1, ny - 1),
@@ -36,7 +36,7 @@ public:
     void Div();
     void InitRandomVelocities();
     void InitPotentialGradient(varType amplitude, int kx, int ky);
-    Grid2D VelocityNormCenterGrid();
+    //Grid2D VelocityNormCenterGrid();
 
 private:
     std::vector<uint8_t> labels; // not a Grid2D
