@@ -17,7 +17,8 @@ public:
 
   // utility functions
   bool InBounds(size_t i, size_t j);
-  varType Interpolate(varType sx, varType sy, varType dx, varType dy,
-                      size_t field);
+
+  varType Interpolate(varType x, varType y,varType dx, varType dy);
+  
   void InitRectangle(varType constVel);
 };

@@ -46,7 +46,7 @@ void Project::solveJacobi(int maxIters, double tol) {
         double sumP = neighborPressureSum(i, j);
         double sumV = neighborVelocitySum(i, j);
         double newVal = 0.25 * (coef * sumV + sumP);
-        if (i == 20 && j == 20) printf("new pressure: %f", newVal);
+        // if (i == 20 && j == 20) printf("new pressure: %f", newVal);
 
         maxDiff = std::max(maxDiff, std::abs(newVal - fields.p.Get(i, j)));
         pNew.Set(i, j, newVal);
