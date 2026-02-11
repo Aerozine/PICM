@@ -3,21 +3,19 @@
 #include <random>
 #include <stdio.h>
 
-varType Grid2D::Get(size_t i, size_t j) const { return A[nx * j + i]; }
+varType Grid2D::Get(int i, int j) const { return A[ny * i + j]; }
 
-void Grid2D::Set(size_t i, size_t j, varType val) {
-  A[nx * j + i] = val;
+void Grid2D::Set(int i, int j, varType val) {
+  A[ny * i + j] = val;
   return;
 }
-
-bool Grid2D::InBounds(size_t i, size_t j) { return (i < nx) && (j < ny); }
 
 void Grid2D::InitRectangle(varType constVel) {
   int midX = nx / 2;
   int midY = ny / 2;
 
-  int offsetX = 4;
-  int offsetY = 4;
+  int offsetX = 10;
+  int offsetY = 10;
 
   for (int i = midX - offsetX; i < midX + offsetX; i++) {
     for (int j = midY - offsetY; j < midY + offsetY; j++) {
@@ -28,35 +26,30 @@ void Grid2D::InitRectangle(varType constVel) {
   return;
 }
 
-// needs to be redone with bilinear interpolation
-varType Grid2D::Interpolate(varType sx, varType sy, varType dx, varType dy,
-                            size_t field) {
+varType Grid2D::Interpolate(varType x, varType y,varType dx, varType dy) {
+    if (x < 0 || x > (this->nx - 1) * dx) assert(false);
+    if (y < 0 || y > (this->ny - 1) * dy) assert(false);
 
-  if (sx >= nx && sy >= ny)
-    assert(false);
+    varType k = x / dx;
+    varType l = y / dy;
 
-  // Determine the region [xi, xi+1]
-  size_t si = std::floor(sx / dx);
-  size_t sj = std::floor(sy / dx);
+    int i0 = std::floor(k);
+    int j0 = std::floor(l);
 
-  varType interpol;
+    varType a = k - (varType) i0; 
+    varType b = l - (varType) j0;  
 
-  switch (field) {
-  case 0: {
-    varType alpha = (sx - si) / dx;
-    interpol =
-        (1 - alpha) * (this->Get(si, sj)) + alpha * (this->Get(si, sj + 1));
-  } break;
+    int i = (size_t) i0;
+    int j = (size_t) j0;
 
-  case 1: {
-    varType alpha = (sy - si) / dy;
-    interpol =
-        (1 - alpha) * (this->Get(si, sj)) + alpha * (this->Get(si + 1, sj));
-  } break;
+    varType f00 = Get(i, j);
+    varType f10 = Get(i + 1, j);
+    varType f01 = Get(i, j + 1);
+    varType f11 = Get(i + 1, j + 1);
 
-  default:
-    assert(false);
-    break;
-  }
-  return interpol;
+    return (1 - a) * (1 - b) * f00
+          + a * (1 - b) * f10
+          + (1 - a) * b * f01
+          + a * b * f11;
 }
+

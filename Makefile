@@ -7,7 +7,7 @@ run2:
 	./build/bin/PIC -c test.json
 
 run:
-	./build-dbg/bin/PIC -c test.json
+	./build-dbg/bin/PIC -c first.json
 
 view:
 	paraview --script=parashow.py 

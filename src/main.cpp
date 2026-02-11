@@ -24,27 +24,18 @@ int main(int argc, char *argv[]) {
   // using operator overload
   std::cout << params << std::endl;
 
-  // example of grid to vtk
-  //
-  const size_t nx = 50;
-  const size_t ny = 40;
-  const float dx = 0.02;
-  const float dy = 0.02;
-  const float dt = 0.001;
-  const float density = 10;
-
   Grid2D grid(params.nx, params.ny);
 
   // Create OutputWriter
   OutputWriter writer(params.folder, params.filename);
   // Grid2D grid(nx, ny);
   // Grid2D grid = Grid2D::InitRandomGrid(nx,ny);
-
-  Fields2D fields(nx, ny, density, dt, dx, dy);
+  
+  varType density = 1000;
+  Fields2D fields(params.nx, params.ny, density, params.dt, params.dx, params.dy);
   // fields.u.FillRandom();
-  fields.u.InitRectangle(10.0);
+  fields.u.InitRectangle(-1.0);
   // fields.InitPotentialGradient(1.0, 1, 1);
-  // Grid2D uNorm = fields.VelocityNormCenterGrid();
 
   Project project(fields);
 
@@ -53,21 +44,23 @@ int main(int argc, char *argv[]) {
   OutputWriter uWriter("results", "u");
   OutputWriter pWriter("results", "p");
   OutputWriter vWriter("results", "v");
+  OutputWriter uNormWriter("results", "uNorm");
   OutputWriter divWriter("results", "div");
 
-  const int num_steps = 10;
+  const int num_steps = 20;
 
   for (int t = 0; t < num_steps; ++t) {
-
-    project.MakeIncompressible();
-   
+    Grid2D uNorm = fields.VelocityNormCenterGrid(); // faire mieux 
     if (!uWriter.writeGrid2D(fields.u, "u") ||
         !vWriter.writeGrid2D(fields.v, "v") ||
+        !uNormWriter.writeGrid2D(uNorm, "uNorm") ||
         !pWriter.writeGrid2D(fields.p, "p") ||
         !divWriter.writeGrid2D(fields.div, "div")) {
       std::cerr << "Failed to write step " << t << std::endl;
       return 1;
     }
+    project.MakeIncompressible();
+
     // Write with actual time value
   }
   return 0;

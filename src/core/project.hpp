@@ -4,17 +4,17 @@
 class Project {
 public:
   Project(Fields2D &fields)
-      : fields(fields), nx(fields.p.nx + 1), ny(fields.p.ny + 1), dx(fields.dx),
-        dy(fields.dy), dt(fields.dt) {}
+      : fields(fields), nx(fields.nx), ny(fields.ny),
+         dx(fields.dx), dy(fields.dy), dt(fields.dt) {}
 
   void MakeIncompressible();
-  varType neighborPressureSum(size_t i, size_t j);
-  varType neighborVelocitySum(size_t i, size_t j);
+  varType neighborPressureSum(int i, int j);
+  varType neighborVelocitySum(int i, int j);
   void solveJacobi(int maxIters, double tol);
   void updateVelocities();
 
 private:
   Fields2D &fields;
-  size_t nx, ny;
+  int nx, ny;
   varType dx, dy, dt;
 };

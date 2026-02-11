@@ -1,8 +1,9 @@
 #include "project.hpp"
 #include <cassert>
 #include <cmath>
+#include <stdio.h>
 
-varType Project::neighborPressureSum(size_t i, size_t j) {
+varType Project::neighborPressureSum(int i, int j) {
   varType sumP = 0.0;
 
   if (i + 1 < nx - 1)
@@ -17,44 +18,46 @@ varType Project::neighborPressureSum(size_t i, size_t j) {
   return sumP;
 }
 
-varType Project::neighborVelocitySum(size_t i, size_t j) {
+varType Project::neighborVelocitySum(int i, int j) {
   varType sumV = 0.0;
 
-  if (j + 1 < ny - 1)
-    sumV += fields.u.Get(i, j + 1);
   sumV -= fields.u.Get(i, j);
-  if (i + 1 < nx - 1)
-    sumV += fields.v.Get(i + 1, j);
   sumV -= fields.v.Get(i, j);
+
+  if (i + 1 < nx - 1)
+    sumV += fields.u.Get(i + 1, j);
+  if (j + 1 < ny - 1)
+    sumV += fields.v.Get(i, j + 1);
 
   return sumV;
 }
 
 void Project::solveJacobi(int maxIters, double tol) {
-  Grid2D pNew(nx - 1, ny - 1);
+  Grid2D pNew(nx, ny);
   varType coef = fields.density * dx / dt;
 
   for (int it = 0; it < maxIters; it++) {
 
     double maxDiff = 0.0;
-
-    for (size_t j = 0; j < ny - 1; j++) {
-      for (size_t i = 0; i < nx - 1; i++) {
-        if (fields.Label(i, j) != Fields2D::FLUID)
-          continue;
+    
+    // update even on borders ?
+    for (int i = 0; i < nx; i++) {
+      for (int j = 0; j < ny; j++) {
+        if (fields.Label(i, j) != Fields2D::FLUID) continue;
 
         double sumP = neighborPressureSum(i, j);
         double sumV = neighborVelocitySum(i, j);
-        double newVal = 0.25 * (coef * sumV + sumP);
-        if (i == 20 && j == 20) printf("new pressure: %f", newVal);
+        double newVal = 0.25 * (- coef * sumV + sumP);
+
+        if (i == nx / 2 && j == ny / 2) printf("new pressure: %f\n", newVal);
 
         maxDiff = std::max(maxDiff, std::abs(newVal - fields.p.Get(i, j)));
         pNew.Set(i, j, newVal);
       }
     }
 
-    for (size_t j = 0; j < ny - 1; j++) {
-      for (size_t i = 0; i < nx - 1; i++) {
+    for (int i = 0; i < nx; i++) {
+      for (int j = 0; j < ny; j++) {
         if (fields.Label(i, j) == Fields2D::FLUID) {
           fields.p.Set(i, j, pNew.Get(i, j));
         }
@@ -68,36 +71,25 @@ void Project::solveJacobi(int maxIters, double tol) {
 }
 
 void Project::updateVelocities() {
-
+  // to do : update velocities at borders 
   varType coef = fields.dt / (fields.density * fields.dx);
 
-  for (size_t j = 1; j < ny - 2; j++) {
-    for (size_t i = 1; i < nx - 1; i++) {
-
-      if (j + 1 == ny || j == 0) {
-        fields.u.Set(i, j, fields.usolid);
-        continue;
-      }
+  for (int i = 1; i < nx; i++) {
+    for (int j = 1; j < nx - 1; j++) {
 
       varType uOld = fields.u.Get(i, j);
       varType uNew =
-          uOld - coef * (fields.p.Get(i, j + 1) - fields.p.Get(i, j));
+          uOld - coef * (fields.p.Get(i, j) - fields.p.Get(i - 1, j));
       fields.u.Set(i, j, uNew);
     }
   }
 
-  for (size_t j = 1; j < ny - 1; j++) {
-    for (size_t i = 1; i < nx - 2; i++) {
+  for (int i = 1; i < nx - 1; i++) {
+    for (int j = 1; j < ny; j++) {
 
-      if (i + 1 == nx || i == 0) { // boundaries
-        fields.v.Set(i, j, fields.usolid);
-        continue;
-      }
-
-      // if not boundaries -> p(i, j + 1) exists !
       varType vOld = fields.v.Get(i, j);
       varType vNew =
-          vOld - coef * (fields.p.Get(i + 1, j) - fields.p.Get(i, j));
+          vOld - coef * (fields.p.Get(i, j) - fields.p.Get(i, j - 1));
       fields.v.Set(i, j, vNew);
     }
   }

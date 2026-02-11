@@ -3,10 +3,10 @@
 
 void Fields2D::Div() {
 
-  for (size_t j = 0; j < ny - 1; j++) {
-    for (size_t i = 0; i < nx - 1; i++) {
-      varType dudx = (u.Get(i, j) - u.Get(i, j + 1)) / nx;
-      varType dvdy = (v.Get(i, j) - v.Get(i + 1, j)) / ny;
+  for (int i = 0; i < nx; i++) {
+    for (int j = 0; j < ny; j++) {
+      varType dudx = (u.Get(i + 1, j) - u.Get(i, j)) / nx;
+      varType dvdy = (v.Get(i, j + 1) - v.Get(i, j)) / ny;
 
       div.Set(i, j, dudx + dvdy);
     }
@@ -14,6 +14,26 @@ void Fields2D::Div() {
   return;
 }
 
+Grid2D Fields2D::VelocityNormCenterGrid() {
+  Grid2D velocityNorm(nx, ny);
+
+  for(int i = 0; i < nx; i++) {
+    for(int j = 0; j < nx; j++) {
+
+      varType x = i * this -> dx;
+      varType y = j * this -> dy;
+
+      varType uCenter = u.Interpolate(x, y, this -> dx, this -> dy);
+      varType vCenter = v.Interpolate(x, y, this -> dx, this -> dy);
+      
+      varType Norm = sqrt(uCenter*uCenter + vCenter*vCenter);
+      velocityNorm.Set(i, j, Norm);
+    }
+  }
+  return velocityNorm;
+}
+
+/*
 void Fields2D::InitPotentialGradient(varType amplitude, int kx, int ky) {
   const size_t nxp = p.nx;
   const size_t nyp = p.ny;
@@ -51,19 +71,6 @@ void Fields2D::InitPotentialGradient(varType amplitude, int kx, int ky) {
     }
   }
 }
-/*
-Grid2D Fields2D::VelocityNormCenterGrid() {
-  Grid2D velocityNorm(nx - 1, ny - 1);
-  varType uTemp, vTemp, uNorm;
-
-  for(size_t j = 0; j < ny - 1; j++) {
-    for(size_t i = 0; j < nx - 1; i++) {
-      uTemp = u.Interpolate(i, j, 0);
-      vTemp = v.Interpolate(i, j, 1);
-      uNorm = sqrt(uTemp*uTemp + vTemp*vTemp);
-      velocityNorm.Set(i, j, uNorm);
-    }
-  }
-  return velocityNorm;
-}
 */
+
+
