@@ -18,10 +18,10 @@ Grid2D Fields2D::VelocityNormCenterGrid() {
   Grid2D velocityNorm(nx, ny);
 
   for(int i = 0; i < nx; i++) {
-    for(int j = 0; j < nx; j++) {
+    for(int j = 0; j < ny; j++) {
 
-      varType x = i * this -> dx;
-      varType y = j * this -> dy;
+      varType x = (i * this -> dx) + dx / 2;
+      varType y = (j * this -> dy) + dy / 2;
 
       varType uCenter = u.Interpolate(x, y, this -> dx, this -> dy);
       varType vCenter = v.Interpolate(x, y, this -> dx, this -> dy);

@@ -27,8 +27,8 @@ void Grid2D::InitRectangle(varType constVel) {
 }
 
 varType Grid2D::Interpolate(varType x, varType y,varType dx, varType dy) {
-    if (x < 0 || x > (this->nx - 1) * dx) assert(false);
-    if (y < 0 || y > (this->ny - 1) * dy) assert(false);
+    if (x <= 0 || x >= this->nx * dx) assert(false);
+    if (y <= 0 || y >= this->ny * dy) assert(false);
 
     varType k = x / dx;
     varType l = y / dy;
@@ -39,13 +39,10 @@ varType Grid2D::Interpolate(varType x, varType y,varType dx, varType dy) {
     varType a = k - (varType) i0; 
     varType b = l - (varType) j0;  
 
-    int i = (size_t) i0;
-    int j = (size_t) j0;
-
-    varType f00 = Get(i, j);
-    varType f10 = Get(i + 1, j);
-    varType f01 = Get(i, j + 1);
-    varType f11 = Get(i + 1, j + 1);
+    varType f00 = Get(i0, j0);
+    varType f10 = Get(i0 + 1, j0);
+    varType f01 = Get(i0, j0 + 1);
+    varType f11 = Get(i0 + 1, j0 + 1);
 
     return (1 - a) * (1 - b) * f00
           + a * (1 - b) * f10
