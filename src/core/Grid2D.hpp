@@ -18,5 +18,5 @@ public:
   // utility functions
   bool InBounds(int i, int j) { return (i < nx) && (j < ny); }
   void InitRectangle(varType constVel);
-  varType Interpolate(varType x, varType y, varType dx, varType dy);
+  varType Interpolate(varType x, varType y, varType dx, varType dy, int field);
 };

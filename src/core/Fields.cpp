@@ -23,8 +23,8 @@ Grid2D Fields2D::VelocityNormCenterGrid() {
       varType x = (i * this -> dx) + dx / 2;
       varType y = (j * this -> dy) + dy / 2;
 
-      varType uCenter = u.Interpolate(x, y, this -> dx, this -> dy);
-      varType vCenter = v.Interpolate(x, y, this -> dx, this -> dy);
+      varType uCenter = u.Interpolate(x, y, this -> dx, this -> dy, 0);
+      varType vCenter = v.Interpolate(x, y, this -> dx, this -> dy, 1);
       
       varType Norm = sqrt(uCenter*uCenter + vCenter*vCenter);
       velocityNorm.Set(i, j, Norm);
