@@ -4,10 +4,10 @@ build_fast:
 	cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release; cmake --build build 
 
 run2:
-	./build/bin/PIC -c test.json
+	./build/bin/PIC -c taylorgreen.json
 
 run:
-	./build-dbg/bin/PIC -c test.json
+	./build-dbg/bin/PIC -c taylorgreen.json
 
 view:
 	paraview --script=parashow.py 

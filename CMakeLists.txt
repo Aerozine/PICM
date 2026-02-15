@@ -3,6 +3,7 @@ project(PIC)
 
 option(USE_FLOAT_PRECISION "Use float instead of double" ON)
 
+include(FetchContent)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -18,5 +19,7 @@ if(NOT TARGET nlohmann_json::nlohmann_json)
   FetchContent_Declare(json GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG v3.12.0)
   FetchContent_MakeAvailable(json)
 endif()
+# Find OpenMP
+find_package(OpenMP REQUIRED)
 
 add_subdirectory(src)

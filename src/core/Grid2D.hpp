@@ -5,20 +5,25 @@
 
 class Grid2D {
 public:
-  size_t nx, ny;
-  varType dx, dy;
+  int nx, ny;
+  //varType dx, dy;
   std::vector<varType> A;
 
-  Grid2D(size_t nx, size_t ny) : nx(nx), ny(ny), A(nx * ny, 0.0) {}
+  Grid2D(const int nx, const int ny) : nx(nx), ny(ny), A(nx * ny, 0.0) {}
 
-  // manipulating grid values
-  varType Get(size_t i, size_t j) const;
-  void Set(size_t i, size_t j, varType val);
+  // Inline functions defined directly in the class
+  [[nodiscard]] varType Get(int i, int j) const {
+    return A[nx * j + i]; 
+  }
+
+  void Set(int i, int j, const varType val) {
+    A[nx * j + i] = val;
+  }
 
   // utility functions
-  bool InBounds(size_t i, size_t j);
+  [[nodiscard]] bool InBounds(int i, int j) const;
 
-  varType Interpolate(varType x, varType y,varType dx, varType dy);
+  [[nodiscard]] varType Interpolate(varType x, varType y,varType dx, varType dy) const;
   
   void InitRectangle(varType constVel);
 };

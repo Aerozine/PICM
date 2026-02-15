@@ -4,8 +4,8 @@
 
 class Parameters {
 public:
-  // may be not relevant here or a better alternative
   nlohmann::json j;
+  
   // Simulation parameters
   double dx;
   double dy;
@@ -14,10 +14,14 @@ public:
   int ny;
   int nt;
   int sampling_rate;
-  bool write_ez;
-  bool write_hx;
-  bool write_hy;
   int density;
+  
+  // Output flags
+  bool write_u;
+  bool write_v;
+  bool write_p;
+  bool write_div;
+  
   std::string folder;
   std::string filename;
 
@@ -30,8 +34,6 @@ public:
   // Parse command line arguments
   bool parseCommandLine(int argc, char *argv[]);
 
-  // Display current parameters
-  void print() const;
 
   // Stream operator support
   friend std::ostream &operator<<(std::ostream &os, const Parameters &params);
@@ -39,5 +41,5 @@ public:
 private:
   void setDefaults();
   void loadFromJson(const nlohmann::json &j);
-  void printUsage(const char *program_name) const;
+  static void printUsage(const char *program_name);
 };

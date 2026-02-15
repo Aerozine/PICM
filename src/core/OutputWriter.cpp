@@ -44,8 +44,8 @@ bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
     return false;
   }
 
-  const size_t nx = grid.nx; // number of points in x
-  const size_t ny = grid.ny; // number of points in y
+  const int nx = grid.nx; // number of points in x
+  const int ny = grid.ny; // number of points in y
   std::string vti_name = formatFilename(id, current_step_);
   std::string vti_path = output_dir_ + "/" + vti_name;
 
@@ -82,10 +82,10 @@ bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
    * CF VTK userguide book
    */
   // for row
-  for (size_t iy = 0; iy < ny; ++iy) {
+  for (int iy = 0; iy < ny; ++iy) {
     // col
-    for (size_t ix = 0; ix < nx; ++ix) {
-      out << std::setprecision(10) << grid.Get(ix, iy), static_cast<size_t>(ix);
+    for (int ix = 0; ix < nx; ++ix) {
+      out << std::setprecision(10) << grid.Get(ix, iy);
       if (ix + 1 < nx || iy + 1 < ny)
         out << ' ';
     }

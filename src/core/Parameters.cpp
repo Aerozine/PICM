@@ -6,10 +6,6 @@
 Parameters::Parameters() { setDefaults(); }
 
 void Parameters::setDefaults() {
-  // default value
-  // may be more usefull for new parameters
-  // like float type or specific flags
-  // setting up log in file or in stdout
   dx = 0.01;
   dy = 0.01;
   dt = 1e-12;
@@ -17,54 +13,52 @@ void Parameters::setDefaults() {
   ny = 100;
   nt = 100;
   sampling_rate = 1;
-  write_ez = true;
-  write_hx = true;
-  write_hy = true;
   density = 1000;
+  
+  // Output flags
+  write_u = true;
+  write_v = true;
+  write_p = true;
+  write_div = false;
+  
   folder = "results";
   filename = "simulation";
 }
 
 void Parameters::loadFromJson(const nlohmann::json &j) {
-  // Load parameters from JSON object
-  if (j.contains("dx"))
-    dx = j["dx"];
-  if (j.contains("dy"))
-    dy = j["dy"];
-  if (j.contains("dt"))
-    dt = j["dt"];
-  if (j.contains("nx"))
-    nx = j["nx"];
-  if (j.contains("ny"))
-    ny = j["ny"];
-  if (j.contains("nt"))
-    nt = j["nt"];
-  if (j.contains("sampling_rate"))
-    sampling_rate = j["sampling_rate"];
-  if (j.contains("write_ez"))
-    write_ez = j["write_ez"];
-  if (j.contains("write_hx"))
-    write_hx = j["write_hx"];
-  if (j.contains("write_hy"))
-    write_hy = j["write_hy"];
+  if (j.contains("dx")) dx = j["dx"];
+  if (j.contains("dy")) dy = j["dy"];
+  if (j.contains("dt")) dt = j["dt"];
+  if (j.contains("nx")) nx = j["nx"];
+  if (j.contains("ny")) ny = j["ny"];
+  if (j.contains("nt")) nt = j["nt"];
+  if (j.contains("sampling_rate")) sampling_rate = j["sampling_rate"];
+  if (j.contains("density")) density = j["density"];
+  
+  // Load output flags
+  if (j.contains("write_u")) write_u = j["write_u"];
+  if (j.contains("write_v")) write_v = j["write_v"];
+  if (j.contains("write_p")) write_p = j["write_p"];
+  if (j.contains("write_div")) write_div = j["write_div"];
+  
+  if (j.contains("folder")) folder = j["folder"];
+  if (j.contains("filename")) filename = j["filename"];
 }
 
 bool Parameters::loadFromFile(const std::string &filename) {
   try {
     std::ifstream file(filename);
     if (!file.is_open()) {
-      std::cerr << "Error: Could not open file '" << filename << "'"
-                << std::endl;
+      std::cerr << "Error: Could not open file '" << filename << "'" << std::endl;
       return false;
     }
 
     nlohmann::json j;
     file >> j;
     loadFromJson(j);
+    
 #ifndef NDEBUG
-
-    std::cout << "Successfully loaded parameters from '" << filename << "'"
-              << std::endl;
+    std::cout << "Successfully loaded parameters from '" << filename << "'" << std::endl;
 #endif
     return true;
   } catch (const std::exception &e) {
@@ -72,33 +66,27 @@ bool Parameters::loadFromFile(const std::string &filename) {
     return false;
   }
 }
-// need to add filename and folder for launch
+
 bool Parameters::parseCommandLine(int argc, char *argv[]) {
-  // If no arguments, use defaults
   if (argc == 1) {
-    std::cout << "No configuration file specified. " << std::endl;
+    std::cout << "No configuration file specified." << std::endl;
     printUsage(argv[0]);
     return false;
   }
 
   for (int i = 1; i < argc; ++i) {
-    if (std::strcmp(argv[i], "-c") == 0 ||
-        std::strcmp(argv[i], "--config") == 0) {
+    if (std::strcmp(argv[i], "-c") == 0 || std::strcmp(argv[i], "--config") == 0) {
       if (i + 1 < argc) {
-        // Skip the filename in next iteration
         ++i;
         return loadFromFile(argv[i]);
       } else {
-        // Missing filename after -c
         printUsage(argv[0]);
         return false;
       }
-    } else if (std::strcmp(argv[i], "-h") == 0 ||
-               std::strcmp(argv[i], "--help") == 0) {
+    } else if (std::strcmp(argv[i], "-h") == 0 || std::strcmp(argv[i], "--help") == 0) {
       printUsage(argv[0]);
       return false;
     } else {
-      // Unknown argument
       printUsage(argv[0]);
       return false;
     }
@@ -106,18 +94,15 @@ bool Parameters::parseCommandLine(int argc, char *argv[]) {
   return true;
 }
 
-void Parameters::printUsage(const char *program_name) const {
-  // WRONG USAGE ! RTFM
+void Parameters::printUsage(const char *program_name)
+{
   std::cout << "Usage: " << program_name << " [options]\n"
             << "Options:\n"
             << "  -c, --config <file>  Load configuration from JSON file\n"
             << "  -h, --help           Show this help message\n";
 }
 
-// Stream operator overload
-// allows to do stdout << params and print it like that
 std::ostream &operator<<(std::ostream &os, const Parameters &params) {
-  // may be optimized with a loop or sth relevant
   os << "\n=== Simulation Parameters ===" << std::endl;
   os << "Grid spacing:" << std::endl;
   os << "  dx: " << params.dx << std::endl;
@@ -129,12 +114,18 @@ std::ostream &operator<<(std::ostream &os, const Parameters &params) {
   os << "  ny: " << params.ny << std::endl;
   os << "\nTime steps:" << std::endl;
   os << "  nt: " << params.nt << std::endl;
+  os << "\nDensity:" << std::endl;
+  os << "  density: " << params.density << std::endl;
   os << "\nSampling:" << std::endl;
   os << "  sampling_rate: " << params.sampling_rate << std::endl;
   os << "\nOutput flags:" << std::endl;
-  os << "  write_ez: " << (params.write_ez ? "true" : "false") << std::endl;
-  os << "  write_hx: " << (params.write_hx ? "true" : "false") << std::endl;
-  os << "  write_hy: " << (params.write_hy ? "true" : "false") << std::endl;
+  os << "  write_u: " << (params.write_u ? "true" : "false") << std::endl;
+  os << "  write_v: " << (params.write_v ? "true" : "false") << std::endl;
+  os << "  write_p: " << (params.write_p ? "true" : "false") << std::endl;
+  os << "  write_div: " << (params.write_div ? "true" : "false") << std::endl;
+  os << "\nOutput:" << std::endl;
+  os << "  folder: " << params.folder << std::endl;
+  os << "  filename: " << params.filename << std::endl;
   os << "============================\n" << std::endl;
   return os;
 }

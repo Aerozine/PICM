@@ -72,9 +72,13 @@ Testing/
 
 # result folder
 results/
+results*/
 
 # rm paraview files
 *.pvd 
 *.vti
 results
 .idea
+vgcore*
+.vscode*
+.idea*

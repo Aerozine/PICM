@@ -6,11 +6,11 @@ class Fields2D {
 public:
   enum CellType : uint8_t { FLUID = 0, SOLID = 1 };
 
-  size_t nx, ny;
+  int nx, ny;
   varType density, dt, dx, dy;
   Grid2D u, v, p, div, rot;
 
-  Fields2D(size_t nx, size_t ny, varType density, varType dt, varType dx,
+  Fields2D(int nx, int ny, varType density, varType dt, varType dx,
            varType dy)
       : nx(nx), ny(ny), density(density), dt(dt), dx(dx), dy(dy),
         u(nx - 1, ny), // !
@@ -19,20 +19,22 @@ public:
 
   varType usolid = 0.0; // first try (fixed borders)
                         // next step -> moving boundaries ?
-
-  CellType Label(size_t i, size_t j) const {
+// nodiscard for clang-tidy not usefull to understand
+  [[nodiscard]] CellType Label(int i, int j) const {
     return static_cast<CellType>(labels[idx(i, j)]);
   }
 
-  void SetLabel(size_t i, size_t j, CellType t) {
+  void SetLabel(int i, int j, CellType t) {
     labels[idx(i, j)] = static_cast<uint8_t>(t);
   }
 
   void Div();
   void InitPotentialGradient(varType amplitude, int kx, int ky);
+  void InitTaylorGreen(varType amplitude);
   // Grid2D VelocityNormCenterGrid();
 
 private:
   std::vector<uint8_t> labels; // not a Grid2D
-  size_t idx(size_t i, size_t j) const { return nx * j + i; }
+  // FIX: Use (nx-1) as stride since labels is (nx-1) x (ny-1)
+  [[nodiscard]] int idx(int i, int j) const { return (nx - 1) * j + i; }
 };
