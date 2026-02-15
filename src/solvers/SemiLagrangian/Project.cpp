@@ -6,7 +6,7 @@
 void SemiLagrangian::buildRHS() {
     varType invDx = REAL_LITERAL(1.0) / dx;
 
-    // Initialize RHS to zero - can be parallelized
+    // Initialize RHS to zero
     #pragma omp parallel for collapse(2)
     for (int j = 0; j < ny - 1; j++) {
         for (int i = 0; i < nx - 1; i++) {
@@ -14,7 +14,6 @@ void SemiLagrangian::buildRHS() {
         }
     }
 
-    // Compute divergence for each pressure cell - parallelizable
     #pragma omp parallel for collapse(2)
     for (int j = 0; j < ny - 1; j++) {
         for (int i = 0; i < nx - 1; i++) {
@@ -38,7 +37,6 @@ void SemiLagrangian::buildRHS() {
         }
     }
 
-    // Handle solid boundaries - parallelizable
     #pragma omp parallel for collapse(2)
     for (int j = 0; j < ny - 1; j++) {
         for (int i = 0; i < nx - 1; i++) {
@@ -75,7 +73,7 @@ void SemiLagrangian::buildRHS() {
 void SemiLagrangian::buildMatrixA() {
     const varType scaleA = dt / (density * dx * dx);
 
-    // Initialize to zero - parallelizable
+    // Initialize to zero
     #pragma omp parallel for collapse(2)
     for (int j = 0; j < ny - 1; j++) {
         for (int i = 0; i < nx - 1; i++) {
@@ -85,7 +83,7 @@ void SemiLagrangian::buildMatrixA() {
         }
     }
 
-    // Build matrix coefficients - parallelizable
+    // Build matrix coefficients 
     #pragma omp parallel for collapse(2)
     for (int j = 0; j < ny - 1; j++) {
         for (int i = 0; i < nx - 1; i++) {
@@ -149,7 +147,7 @@ void SemiLagrangian::solveJacobi(int maxIters, varType tol) {
         varType maxDiff = REAL_LITERAL(0.0);
 
         // PARALLEL Jacobi iteration
-        // Each cell can be computed independently!
+        // reduction max:maxdiff compute maxdiff per thread
         #pragma omp parallel for collapse(2) reduction(max:maxDiff)
         for (int j = 0; j < ny - 1; j++) {
             for (int i = 0; i < nx - 1; i++) {
@@ -192,6 +190,9 @@ void SemiLagrangian::solveJacobi(int maxIters, varType tol) {
         iterations = it + 1;
         // Check convergence
         if (maxDiff < tol)
+#ifndef NDEBUG
+    std::cout << "  Jacobi Max Diff " << tol << "> maxDiff" << std::endl;
+#endif
             break;
     }
 #ifndef NDEBUG
