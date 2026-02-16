@@ -37,6 +37,7 @@ private:
     std::unique_ptr<OutputWriter> vWriter;
     std::unique_ptr<OutputWriter> pWriter;
     std::unique_ptr<OutputWriter> divWriter;
+    std::unique_ptr<OutputWriter> normVelocityWriter;
     
     // Initialize output writers based on parameters
     void InitializeOutputWriters();

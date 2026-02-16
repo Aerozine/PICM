@@ -8,13 +8,13 @@ public:
 
   int nx, ny;
   varType density, dt, dx, dy;
-  Grid2D u, v, p, div, rot;
+  Grid2D u, v, p, div, rot, normVelocity;
 
   Fields2D(int nx, int ny, varType density, varType dt, varType dx,
            varType dy)
       : nx(nx), ny(ny), density(density), dt(dt), dx(dx), dy(dy),
         u(nx + 1, ny), v(nx, ny + 1), p(nx, ny), div(nx, ny),
-        rot(nx, ny), labels(nx * ny, FLUID) {}
+        rot(nx, ny), normVelocity(nx, ny),  labels(nx * ny, FLUID) {}
 
   varType usolid = 0.0; // first try (fixed borders)
                         // next step -> moving boundaries ?
@@ -28,9 +28,9 @@ public:
   }
 
   void Div();
-  // void InitPotentialGradient(varType amplitude, int kx, int ky);
+  void InitPotentialGradient();
   void InitTaylorGreen(const varType amplitude);
-  Grid2D VelocityNormCenterGrid();
+  void VelocityNormCenterGrid();
 
 private:
   std::vector<uint8_t> labels; // not a Grid2D

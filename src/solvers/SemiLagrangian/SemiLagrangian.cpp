@@ -25,7 +25,9 @@ SemiLagrangian::SemiLagrangian(const Parameters &params)
 
     // Initialize Taylor-Green vortex
     // fields->InitTaylorGreen(REAL_LITERAL(1.0));
-    fields -> u.InitRectangle(1.0);
+    fields -> u.InitRectangle(20.0);
+    fields -> v.InitRectangle(10.0);
+    // fields -> InitPotentialGradient();
 
     // Initialize output writers
     InitializeOutputWriters();
@@ -60,6 +62,10 @@ void SemiLagrangian::InitializeOutputWriters()
     {
         divWriter = std::make_unique<OutputWriter>(params.folder, "div");
     }
+    if (params.write_norm_velocity)
+    {
+        normVelocityWriter = std::make_unique<OutputWriter>(params.folder, "normVelocity");
+    }
 }
 
 void SemiLagrangian::WriteOutput(int step) const
@@ -88,7 +94,10 @@ void SemiLagrangian::WriteOutput(int step) const
     {
         success &= divWriter->writeGrid2D(fields->div, "div");
     }
-
+    if (params.write_norm_velocity && normVelocityWriter)
+    {
+        success &= normVelocityWriter->writeGrid2D(fields->normVelocity, "normVelocity");
+    }
     if (!success)
     {
         std::cerr << "Warning: Failed to write output at step " 
@@ -108,6 +117,9 @@ void SemiLagrangian::Step()
 
     // 3. Update divergence field for diagnostics
     fields->Div();
+
+    // 4. Compute norm of velocity at grid center
+    fields->VelocityNormCenterGrid();
 }
 
 void SemiLagrangian::Run()
