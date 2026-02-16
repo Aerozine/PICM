@@ -54,15 +54,6 @@ private:
     
     // Projection methods
     void MakeIncompressible();
-    void buildRHS();
-    void buildMatrixA();
-    void solveJacobi(int maxIters, varType tol);
+    void solveJacobi(int maxIters, double tol);
     void updateVelocities();
-    [[nodiscard]] varType neighborPressureSum(int i, int j);
-    
-    // Helper for indexing
-    [[nodiscard]] int idx(int i, int j) const { return (nx - 1) * j + i; }
-    
-    // Pressure solver data
-    std::vector<varType> rhs, Adiag, Ax, Ay;
 };

@@ -2,6 +2,7 @@
 #include <cmath>
 #include <cassert>
 #include <algorithm>
+#include <iostream>
 
 void SemiLagrangian::Advect() const
 {
@@ -10,8 +11,8 @@ void SemiLagrangian::Advect() const
     Grid2D vNew(fields->v.nx, fields->v.ny);
     
     // Advect U component
-    for (int j = 0; j < fields->u.ny; ++j) {
-        for (int i = 0; i < fields->u.nx; ++i) {
+    for (int i = 0; i < fields->u.nx; i++) {
+        for (int j = 0; j < fields->u.ny; j++) {
             varType x, y;
             traceParticleU(i, j, x, y);
             const varType uVal = interpolateU(x, y);
@@ -20,8 +21,8 @@ void SemiLagrangian::Advect() const
     }
     
     // Advect V component
-    for (int j = 0; j < fields->v.ny; ++j) {
-        for (int i = 0; i < fields->v.nx; ++i) {
+    for (int i = 0; i < fields->v.nx; i++) {
+        for (int j = 0; j < fields->v.ny; j++) {
             varType x, y;
             traceParticleV(i, j, x, y);
             const varType vVal = interpolateV(x, y);
@@ -34,7 +35,8 @@ void SemiLagrangian::Advect() const
     fields->v = vNew;
 }
 
-void SemiLagrangian::traceParticleU(const int i, const int j, varType& x, varType& y) const
+void SemiLagrangian::traceParticleU(const int i, const int j,
+                                    varType& x, varType& y) const
 {
     // U is stored at (i*dx, (j+0.5)*dy)
     const varType x0 = static_cast<varType>(i) * dx;
@@ -53,11 +55,13 @@ void SemiLagrangian::traceParticleU(const int i, const int j, varType& x, varTyp
     y = y0 - dt * vMid;
     
     // Clamp to domain boundaries
+    // à verifier avec domaines x,y physique et u de taille nx + 1, ny
     x = std::max(0.0f, std::min(x, static_cast<varType>(nx - 1) * dx));
     y = std::max(0.0f, std::min(y, static_cast<varType>(ny - 1) * dy));
 }
 
-void SemiLagrangian::traceParticleV(const int i, const int j, varType& x, varType& y) const
+void SemiLagrangian::traceParticleV(const int i, const int j,    
+                                    varType& x, varType& y) const
 {
     // V is stored at ((i+0.5)*dx, j*dy)
     const varType x0 = (static_cast<varType>(i) + REAL_LITERAL(0.5)) * dx;
@@ -75,8 +79,11 @@ void SemiLagrangian::traceParticleV(const int i, const int j, varType& x, varTyp
     y = y0 - dt * vMid;
     
     // Clamp to domain boundaries
-    x = std::max(REAL_LITERAL(0.0), std::min(x, static_cast<varType>(nx - 1) * dx));
-    y = std::max(REAL_LITERAL(0.0), std::min(y, static_cast<varType>(ny - 1) * dy));
+    varType xmin = std::min(x, static_cast<varType>(nx - 1) * dx);
+    varType ymin = std::min(y, static_cast<varType>(ny - 1) * dy);
+
+    x = std::max(REAL_LITERAL(0.0), xmin);
+    y = std::max(REAL_LITERAL(0.0), ymin);
 }
 
 varType SemiLagrangian::interpolateU(const varType x, const varType y) const
@@ -137,7 +144,8 @@ varType SemiLagrangian::interpolateV(varType x, varType y) const
     return (1.0f - fy) * v0 + fy * v1;
 }
 
-void SemiLagrangian::getVelocity(const varType x, const varType y, varType& u, varType& v) const
+void SemiLagrangian::getVelocity(const varType x, const varType y,
+                                 varType& u, varType& v) const
 {
     u = interpolateU(x, y);
     v = interpolateV(x, y);
