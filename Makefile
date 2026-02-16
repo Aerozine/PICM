@@ -7,9 +7,11 @@ run2:
 	./build/bin/PIC -c taylorgreen.json
 
 run:
-	./build-dbg/bin/PIC -c taylorgreen.json
+	./build-dbg/bin/PIC -c test.json
 
 view:
 	paraview --script=parashow.py 
 format:
 	find . -name "*.cpp" -o -name "*.hpp" | xargs clang-format -i --style=LLVM
+clean:
+	rm -rf build build-dbg results results_taylor_green
