@@ -9,5 +9,8 @@
     "sampling_rate": 5,
     "write_u" : true,
     "write_v" : true,
-    "write_p" : true 
+    "write_p" : true,
+    "write_div" : true,
+    "write_norm_velocity" : true
+
 }

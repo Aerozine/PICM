@@ -21,6 +21,7 @@ public:
   bool write_v;
   bool write_p;
   bool write_div;
+  bool write_norm_velocity;
   
   std::string folder;
   std::string filename;
