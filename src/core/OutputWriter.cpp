@@ -4,6 +4,8 @@
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+// TODO use B64 for binary or just binary directly
+// maybe use also compression like ZLIB ( with CMake FLags)
 
 namespace fs = std::filesystem;
 OutputWriter::OutputWriter(const std::string &output_dir,

@@ -1,56 +1,99 @@
 #pragma once
+#include "SceneObjects.hpp"
+#include <map>
+#include <memory>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <vector>
 
+struct SolverConfig {
+  // stores more efficiently solver type instead of strcmp string name(may be
+  // critical due to the check in the loop)
+  enum class Type { JACOBI, GAUSS_SEIDEL };
+  // Default values
+  Type type = Type::GAUSS_SEIDEL;
+  int maxIters = 1000;
+  double tolerance = 1e-2;
+
+  static SolverConfig fromJson(const nlohmann::json &j);
+  std::string typeName() const;
+};
+// TODO maybe not store Velocity and Solid config INSIDE
+// the params structure
+// maybe conserving the file inside params and when loading read the file ?
+struct VelocityConfig {
+  std::vector<std::unique_ptr<SceneObject>> objects;
+
+  static VelocityConfig fromJson(const nlohmann::json &j,
+                                 const std::map<std::string, int> &vars);
+  VelocityConfig() = default;
+  VelocityConfig(VelocityConfig &&) = default;
+  VelocityConfig &operator=(VelocityConfig &&) = default;
+};
+
+//  Solid block
+struct SolidConfig {
+  std::vector<std::unique_ptr<SceneObject>> objects;
+
+  static SolidConfig fromJson(const nlohmann::json &j,
+                              const std::map<std::string, int> &vars);
+  SolidConfig() = default;
+  SolidConfig(SolidConfig &&) = default;
+  SolidConfig &operator=(SolidConfig &&) = default;
+};
+
+//  Initial condition type
+//
+//  "custom"       – use velocityu / velocityv / solid JSON blocks (default)
+//  "taylor_green" – WIP  call Fields2D::InitTaylorGreen(); ignore velocity
+//  blocks
+//                   and solid blocks (periodic domain, no walls)
+enum class InitialCondition { CUSTOM, TAYLOR_GREEN };
+
+InitialCondition parseInitialCondition(const std::string &s);
+
+//  Top-level parameters
 class Parameters {
 public:
-  nlohmann::json j;
-  
-  // Simulation parameters
-  double dx;
-  double dy;
-  double dt;
-  int nx;
-  int ny;
-  int nt;
-  int sampling_rate;
-  int density;
-  
-  // Output flags
-  bool write_u;
-  bool write_v;
-  bool write_p;
-  bool write_div;
-  bool write_norm_velocity;
- 
- // Simulation conditions
-  bool velocity_u; 
-  bool velocity_v;
-  bool solid_cylinder;
-  bool solid_borders; 
+  // default values
+  double dx = 0.01, dy = 0.01, dt = 1e-12;
+  int nx = 100, ny = 100, nt = 100;
+  int sampling_rate = 1;
+  double density = 1000;
 
-  // Iterative method for pressure solve
-  bool Jacobi;
-  bool GaussSeidel;
+  // flags
+  bool write_u = true;
+  bool write_v = true;
+  bool write_p = true;
+  bool write_div = false;
+  bool write_norm_velocity = false;
 
-  std::string folder;
-  std::string filename;
+  // ── Output paths ─────────────────────────────────────────────────────────
+  std::string folder = "results";
+  std::string filename = "simulation";
 
-  // Constructor with default values
+  // ── Initial condition ─────────────────────────────────────────────────────
+  // Selects which init path the solver takes.
+  InitialCondition initialCondition = InitialCondition::CUSTOM;
+
+  // Optional amplitude for taylor_green (default 1.0)
+  double taylorGreenAmplitude = 1.0;
+
+  // ── Scene / solver config (used when initialCondition == CUSTOM) ──────────
+  VelocityConfig velocityU;
+  VelocityConfig velocityV;
+  SolidConfig solid;
+  SolverConfig solver;
+
+  // ── I/O ──────────────────────────────────────────────────────────────────
   Parameters();
-
-  // Load parameters from JSON file
-  bool loadFromFile(const std::string &filename);
-
-  // Parse command line arguments
+  bool loadFromFile(const std::string &path);
   bool parseCommandLine(int argc, char *argv[]);
 
-
-  // Stream operator support
-  friend std::ostream &operator<<(std::ostream &os, const Parameters &params);
+  friend std::ostream &operator<<(std::ostream &os, const Parameters &p);
 
 private:
   void setDefaults();
   void loadFromJson(const nlohmann::json &j);
-  static void printUsage(const char *program_name);
+  static void printUsage(const char *prog);
 };

@@ -2,10 +2,14 @@
 #include <omp.h>
 // Define in the cmake environment as option
 #ifdef USE_FLOAT
+// TODO remove real of no other use
 typedef float Real;
 typedef float varType;
+
+// ?
 #define REAL_EPSILON 1e-6f
 // for compiler
+// TODO remove also
 #define REAL_LITERAL(x) x##f
 #elif defined(USE_DOUBLE)
 typedef double Real;

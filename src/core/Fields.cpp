@@ -16,73 +16,67 @@ void Fields2D::Div() {
 }
 
 void Fields2D::VelocityNormCenterGrid() {
+ // patch , domain up to nx-1 
+  for (int i = 0; i < nx-1; i++) {
+    for (int j = 0; j < ny-1; j++) {
 
-  for(int i = 0; i < nx; i++) {
-    for(int j = 0; j < ny; j++) {
+      varType x = (i * this->dx) + dx / 2;
+      varType y = (j * this->dy) + dy / 2;
 
-      varType x = (i * this -> dx) + dx / 2;
-      varType y = (j * this -> dy) + dy / 2;
+      varType uCenter = u.Interpolate(x, y, this->dx, this->dy, 0);
+      varType vCenter = v.Interpolate(x, y, this->dx, this->dy, 1);
 
-      varType uCenter = u.Interpolate(x, y, this -> dx, this -> dy, 0);
-      varType vCenter = v.Interpolate(x, y, this -> dx, this -> dy, 1);
-      
-      varType Norm = sqrt(uCenter*uCenter + vCenter*vCenter);
+      varType Norm = sqrt(uCenter * uCenter + vCenter * vCenter);
       normVelocity.Set(i, j, Norm);
     }
   }
 }
 
-// FANCY CONFIG 
+// FANCY CONFIG
 // simply seting the value of u as in the center
 void Fields2D::InitTaylorGreen(const varType amplitude) {
-    const varType Lx = static_cast<varType>(nx - 1) * dx;
-    const varType Ly = static_cast<varType>(ny - 1) * dy;
+  const varType Lx = static_cast<varType>(nx - 1) * dx;
+  const varType Ly = static_cast<varType>(ny - 1) * dy;
 
-    #ifdef NDEBUG
-        std::cout << "Initializing Taylor-Green vortex with amplitude "
-               << amplitude << std::endl;
-        std::cout << "Domain: Lx = " << Lx 
-                  << ", Ly = " << Ly << std::endl;
-    #endif
+#ifdef NDEBUG
+  std::cout << "Initializing Taylor-Green vortex with amplitude " << amplitude
+            << std::endl;
+  std::cout << "Domain: Lx = " << Lx << ", Ly = " << Ly << std::endl;
+#endif
 
-    // Initialize u velocity (staggered at i*dx, (j+0.5)*dy)
-    for (int i = 0; i < u.nx; i++) {
-        for (int j = 0; j < u.ny; j++) {
-            varType x = static_cast<varType>(i) * dx;
-            varType y = (static_cast<varType>(j) + 0.5f) * dy;
- 
-            varType argSin = 2.0f * M_PI * x / Lx;
-            varType argCos = 2.0f * M_PI * y / Ly;
+  // Initialize u velocity (staggered at i*dx, (j+0.5)*dy)
+  for (int i = 0; i < u.nx; i++) {
+    for (int j = 0; j < u.ny; j++) {
+      varType x = static_cast<varType>(i) * dx;
+      varType y = (static_cast<varType>(j) + 0.5f) * dy;
 
-            varType u_val = amplitude 
-                          * std::sin(argSin) 
-                          * std::cos(argCos);
-            u.Set(i, j, u_val);
-        }
+      varType argSin = 2.0f * M_PI * x / Lx;
+      varType argCos = 2.0f * M_PI * y / Ly;
+
+      varType u_val = amplitude * std::sin(argSin) * std::cos(argCos);
+      u.Set(i, j, u_val);
     }
-    
-    // Initialize v velocity (staggered at (i+0.5)*dx, j*dy)
-    for (int i = 0; i < u.nx; i++) {
-        for (int j = 0; j < u.ny; j++) {
-            const varType x = (static_cast<varType>(i) + 0.5f) * dx;
-            const varType y = static_cast<varType>(j) * dy;
-            
-            varType argCos = 2.0f * M_PI * x / Lx;
-            varType argSin = 2.0f * M_PI * y / Ly;
-            const varType v_val = -amplitude 
-                                * std::cos(argCos) 
-                                * std::sin(argSin);
-            v.Set(i, j, v_val);
-        }
+  }
+
+  // Initialize v velocity (staggered at (i+0.5)*dx, j*dy)
+  for (int i = 0; i < v.nx; ++i) {
+    for (int j = 0; j < v.ny; ++j) {
+      const varType x = (static_cast<varType>(i) + 0.5f) * dx;
+      const varType y = static_cast<varType>(j) * dy;
+
+      varType argCos = 2.0f * M_PI * x / Lx;
+      varType argSin = 2.0f * M_PI * y / Ly;
+      const varType v_val = -amplitude * std::cos(argCos) * std::sin(argSin);
+      v.Set(i, j, v_val);
     }
-    
+  }
 }
 
 void Fields2D::InitPotentialGradient() {
-  
+
   varType amplitude = 1.0;
-  int kx = 1; 
-  int ky = 1; 
+  int kx = 1;
+  int ky = 1;
 
   int nxp = p.nx;
   int nyp = p.ny;
@@ -96,12 +90,10 @@ void Fields2D::InitPotentialGradient() {
     for (int i = 0; i < nxp; ++i) {
       const varType x = ((varType)i + (varType)0.5) * dx;
       const varType y = ((varType)j + (varType)0.5) * dy;
-      
+
       varType argSinX = M_PI * (varType)kx * x / Lx;
       varType argSinY = M_PI * (varType)ky * y / Ly;
-      const varType val = amplitude 
-                        * std::sin(argSinX)   
-                        * std::sin(argSinY);
+      const varType val = amplitude * std::sin(argSinX) * std::sin(argSinY);
 
       phi.Set(i, j, val);
     }
@@ -136,7 +128,7 @@ void Fields2D::SolidCylinder(int cx, int cy, int r) {
   }
 }
 
-void Fields2D::SolidBorders(){
+void Fields2D::SolidBorders() {
   for (int i = 0; i < nx; i++) {
     SetLabel(i, 0, SOLID);
     SetLabel(i, p.ny - 1, SOLID);
