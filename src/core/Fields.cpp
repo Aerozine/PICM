@@ -124,7 +124,6 @@ void Fields2D::InitPotentialGradient() {
   }
 }
 
-
 void Fields2D::SolidCylinder(int cx, int cy, int r) {
   for (int i = 0; i < nx; i++) {
     for (int j = 0; j < ny; j++) {
@@ -137,4 +136,13 @@ void Fields2D::SolidCylinder(int cx, int cy, int r) {
   }
 }
 
-
+void Fields2D::SolidBorders(){
+  for (int i = 0; i < nx; i++) {
+    SetLabel(i, 0, SOLID);
+    SetLabel(i, p.ny - 1, SOLID);
+  }
+  for (int j = 0; j < ny; j++) {
+    SetLabel(0, j, SOLID);
+    SetLabel(p.nx - 1, j, SOLID);
+  }
+}

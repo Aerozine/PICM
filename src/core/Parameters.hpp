@@ -22,7 +22,13 @@ public:
   bool write_p;
   bool write_div;
   bool write_norm_velocity;
-  
+ 
+ // Simulation conditions
+  bool velocity_u; 
+  bool velocity_v;
+  bool solid_cylinder;
+  bool solid_borders; 
+ 
   std::string folder;
   std::string filename;
 

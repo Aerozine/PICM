@@ -10,6 +10,9 @@ run-green:
 run-test:
 	./build-dbg/bin/PIC -c test.json
 
+run-fast:
+	./build/bin/PIC -c test.json
+
 run-first:
 	./build-dbg/bin/PIC -c first.json
 
