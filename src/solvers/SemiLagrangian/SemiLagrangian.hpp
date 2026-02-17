@@ -54,7 +54,11 @@ private:
     void getVelocity(varType x, varType y, varType& u, varType& v) const;
     
     // Projection methods
-    void MakeIncompressible();
-    void solveJacobi(int maxIters, double tol);
+    void MakeIncompressible(const char* method);
+    void solvePressure(int maxIters, double tol, const char* method);
     void updateVelocities();
+
+    // Iterative methods
+    void SolveJacobi(int maxIters, double tol);
+    void SolveGaussSeidel(int maxIters, double tol);
 };

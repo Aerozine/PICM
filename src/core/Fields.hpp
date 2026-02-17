@@ -31,6 +31,7 @@ public:
   void InitPotentialGradient();
   void InitTaylorGreen(const varType amplitude);
   void VelocityNormCenterGrid();
+  void SolidCylinder(int cx, int cy, int r);
 
 private:
   std::vector<uint8_t> labels; // not a Grid2D

@@ -27,6 +27,7 @@ SemiLagrangian::SemiLagrangian(const Parameters &params)
     // fields->InitTaylorGreen(REAL_LITERAL(1.0));
     fields -> u.InitRectangle(20.0);
     fields -> v.InitRectangle(10.0);
+    fields -> SolidCylinder(80, 80, 10);
     // fields -> InitPotentialGradient();
 
     // Initialize output writers
@@ -110,7 +111,9 @@ void SemiLagrangian::Step()
     // Vincent: jamais appliquer advect is pas un divergence free field
 
     // 1. Make velocity field incompressible
-    MakeIncompressible();
+    //const char* method1 = "Jacobi";
+    const char* method2 = "Gauss-Seidel";
+    MakeIncompressible(method2);
     
     // 2. Advect velocity field
     Advect();

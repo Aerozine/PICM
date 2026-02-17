@@ -1,5 +1,6 @@
 #include "Fields.hpp"
 #include <cmath>
+#include <iostream>
 
 void Fields2D::Div() {
 
@@ -119,6 +120,19 @@ void Fields2D::InitPotentialGradient() {
       // v(j=0) & v(j=ny-1) already at 0
       const varType dvdy = (phi.Get(i, j) - phi.Get(i, j - 1)) / dy;
       v.Set(i, j, dvdy);
+    }
+  }
+}
+
+
+void Fields2D::SolidCylinder(int cx, int cy, int r) {
+  for (int i = 0; i < nx; i++) {
+    for (int j = 0; j < ny; j++) {
+      int dx = i - cx;
+      int dy = j - cy;
+      if (dx * dx + dy * dy <= r * r) {
+        SetLabel(i, j, SOLID);
+      }
     }
   }
 }
