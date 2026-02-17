@@ -1,4 +1,5 @@
 #pragma once
+#include <omp.h>
 // Define in the cmake environment as option
 #ifdef USE_FLOAT
 typedef float Real;
@@ -21,3 +22,6 @@ typedef double varType;
 #else
 #define PRECISION_STRING "double (64-bit)"
 #endif
+
+// #define GET_TIME() ((double)clock() / CLOCKS_PER_SEC) // cpu time
+#define GET_TIME() (omp_get_wtime()) // wall time

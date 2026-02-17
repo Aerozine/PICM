@@ -1,5 +1,6 @@
 #include "SemiLagrangian.hpp"
 #include <iostream>
+#include <time.h>
 
 SemiLagrangian::SemiLagrangian(const Parameters &params)
     : params(params),
@@ -111,9 +112,9 @@ void SemiLagrangian::Step()
     // Vincent: jamais appliquer advect is pas un divergence free field
 
     // 1. Make velocity field incompressible
-    //const char* method1 = "Jacobi";
-    const char* method2 = "Gauss-Seidel";
-    MakeIncompressible(method2);
+    const char* method = "Jacobi";
+    //const char* method = "Gauss-Seidel";
+    MakeIncompressible(method);
     
     // 2. Advect velocity field
     Advect();
@@ -127,14 +128,9 @@ void SemiLagrangian::Step()
 
 void SemiLagrangian::Run()
 {
-
-#ifndef NDEBUG
-    std::cout << "Starting Taylor-Green vortex simulation..." << std::endl;
-#endif
     // Write initial condition
     fields->Div();
 
-    std::cout << "Writed initial cond" << std::endl;
     // Check initial divergence
     varType max_div = 0.0f;
     for (int i = 0; i < nx; i++)
@@ -146,6 +142,8 @@ void SemiLagrangian::Run()
     }
 
     WriteOutput(0);
+    
+    double start = GET_TIME();
 
     // Main time-stepping loop
     for (int t = 1; t <= params.nt; ++t)
@@ -176,4 +174,7 @@ void SemiLagrangian::Run()
         // Write output
         WriteOutput(t);
     }
+    
+    double time = GET_TIME() - start;
+    printf("\nDone: %g seconds\n", time);
 }

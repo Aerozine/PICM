@@ -2,11 +2,34 @@
 #include <iostream>
 #include <cmath>
 
+inline double SemiLagrangian::getUpdate(int i, int j, Real coef,
+                                        double sumP, int countP)
+{
+  if (fields->Label(i, j) != Fields2D::FLUID) return NAN;
+
+  sumP = 0.0;
+  countP = 0;
+
+  if (i + 1 < nx) { sumP += fields->p.Get(i + 1, j); countP++; }
+  if (i - 1 >= 0) { sumP += fields->p.Get(i - 1, j); countP++; }
+  if (j + 1 < ny) { sumP += fields->p.Get(i, j + 1); countP++; }
+  if (j - 1 >= 0) { sumP += fields->p.Get(i, j - 1); countP++; }
+
+  if (countP == 0) return NAN;
+
+  double div = fields->div.Get(i, j);
+  double newVal = (- coef * div + sumP) / countP;
+
+  return newVal;
+}
+
 void SemiLagrangian::SolveJacobi(int maxIters, double tol) {
   Grid2D pNew(nx, ny);
   Real coef = density * dx * dx / dt;
   fields->Div();
   int iterations = 0;
+  double sumP = 0.0;
+  int countP = 0;
 
   for (int it = 0; it < maxIters; it++) {
     double maxDiff = 0.0;
@@ -15,23 +38,8 @@ void SemiLagrangian::SolveJacobi(int maxIters, double tol) {
     // update even on borders ?
     for (int i = 0; i < nx; i++) {
       for (int j = 0; j < ny; j++) {
-        if (fields->Label(i, j) != Fields2D::FLUID) continue;
-
-        double sumP = 0.0;
-        int countP = 0;
-
-        if (i + 1 < nx) { sumP += fields->p.Get(i + 1, j); countP++; }
-        if (i - 1 >= 0) { sumP += fields->p.Get(i - 1, j); countP++; }
-        if (j + 1 < ny) { sumP += fields->p.Get(i, j + 1); countP++; }
-        if (j - 1 >= 0) { sumP += fields->p.Get(i, j - 1); countP++; }
-
-        if (countP == 0) continue;
-
-        double div = fields->div.Get(i, j);
-        double newVal = (- coef * div + sumP) / countP;
-
+        double newVal = getUpdate(i, j, coef, sumP, countP); 
         maxDiff = std::max(maxDiff, std::abs(newVal - fields->p.Get(i, j)));
-          
         pNew.Set(i, j, newVal);
       }
     }
@@ -63,8 +71,10 @@ void SemiLagrangian::SolveJacobi(int maxIters, double tol) {
 
 void SemiLagrangian::SolveGaussSeidel(int maxIters, double tol) {
   varType coef = density * dx * dx / dt;
-  fields->Div();
   int iterations = 0;
+  double sumP = 0.0;
+  int countP = 0;
+  fields->Div();
 
   for (int it = 0; it < maxIters; it++) {
     double maxDiff = 0.0;
@@ -75,21 +85,8 @@ void SemiLagrangian::SolveGaussSeidel(int maxIters, double tol) {
       for (int j = 0; j < ny; j++) {
         if (fields->Label(i, j) != Fields2D::FLUID) continue;
 
-        double sumP = 0.0;
-        int countP = 0;
-
-        if (i + 1 < nx) { sumP += fields->p.Get(i + 1, j); countP++; }
-        if (i - 1 >= 0) { sumP += fields->p.Get(i - 1, j); countP++; }
-        if (j + 1 < ny) { sumP += fields->p.Get(i, j + 1); countP++; }
-        if (j - 1 >= 0) { sumP += fields->p.Get(i, j - 1); countP++; }
-
-        if (countP == 0) continue;
-
-        double div = fields->div.Get(i, j);
-        double newVal = (- coef * div + sumP) / countP;
-
+        double newVal = getUpdate(i, j, coef, sumP, countP);
         maxDiff = std::max(maxDiff, std::abs(newVal - fields->p.Get(i, j)));
-          
         fields->p.Set(i, j, newVal);
       }
     }

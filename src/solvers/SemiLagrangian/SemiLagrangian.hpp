@@ -59,6 +59,7 @@ private:
     void updateVelocities();
 
     // Iterative methods
+    inline double getUpdate(int i, int j, Real coef, double sumP, int countP);
     void SolveJacobi(int maxIters, double tol);
     void SolveGaussSeidel(int maxIters, double tol);
 };
