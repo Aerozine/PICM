@@ -28,7 +28,11 @@ public:
   bool velocity_v;
   bool solid_cylinder;
   bool solid_borders; 
- 
+
+  // Iterative method for pressure solve
+  bool Jacobi;
+  bool GaussSeidel;
+
   std::string folder;
   std::string filename;
 

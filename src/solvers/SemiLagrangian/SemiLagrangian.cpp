@@ -121,9 +121,7 @@ void SemiLagrangian::Step()
     // Vincent: jamais appliquer advect is pas un divergence free field
 
     // 1. Make velocity field incompressible
-    //const char* method = "Jacobi";
-    const char* method = "Gauss-Seidel";
-    MakeIncompressible(method);
+    MakeIncompressible();
     
     // 2. Advect velocity field
     Advect();

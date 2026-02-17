@@ -54,8 +54,8 @@ private:
     void getVelocity(varType x, varType y, varType& u, varType& v) const;
     
     // Projection methods
-    void MakeIncompressible(const char* method);
-    void solvePressure(int maxIters, double tol, const char* method);
+    void MakeIncompressible();
+    void solvePressure(int maxIters, double tol);
     void updateVelocities();
 
     // Iterative methods

@@ -4,19 +4,16 @@
 #include <stdio.h>
 #include <iostream>
 
-void SemiLagrangian::solvePressure(int maxIters, double tol, const char* method) {
+void SemiLagrangian::solvePressure(int maxIters, double tol) {
 
-  const bool jacobi = strcmp(method, "Jacobi") == 0;
-  const bool GS = strcmp(method, "Gauss-Seidel") == 0;
-
-  if (jacobi) {
+  if (params.Jacobi) {
     SolveJacobi(maxIters, tol);
   } 
-  else if (GS) {
+  else if (params.GaussSeidel) {
     SolveGaussSeidel(maxIters, tol);
   } 
   else {
-    std::cerr << "Unknown pressure solver method: " << method << std::endl;
+    std::cerr << "Unknown pressure solver method: " << std::endl;
     exit(EXIT_FAILURE);
   }
 }
@@ -61,11 +58,11 @@ void SemiLagrangian::updateVelocities() {
   }
 }
 
-void SemiLagrangian::MakeIncompressible(const char* method) {
+void SemiLagrangian::MakeIncompressible() {
   int maxIters = 1000;
   varType tol = 1e2;
 
-  this->solvePressure(maxIters, tol, method);
+  this->solvePressure(maxIters, tol);
   this->updateVelocities();
 
   return;

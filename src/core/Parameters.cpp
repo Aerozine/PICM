@@ -49,6 +49,10 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   if (j.contains("velocity_v")) velocity_v = j["velocity_v"];
   if (j.contains("solid_cylinder")) solid_cylinder = j["solid_cylinder"];
   if (j.contains("solid_borders")) solid_borders = j["solid_borders"];
+
+  // Iterative method for pressure solve
+  if (j.contains("Jacobi")) Jacobi = j["Jacobi"];
+  if (j.contains("GaussSeidel")) GaussSeidel = j["GaussSeidel"];
   
 }
 
