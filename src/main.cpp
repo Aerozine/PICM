@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
   if (!params.parseCommandLine(argc, argv)) {
     return 1;
   }
-  
+
 #ifndef NDEBUG
   // Display parameters
   std::cout << params << std::endl;

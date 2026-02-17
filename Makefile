@@ -13,14 +13,8 @@ run-test:
 run-fast:
 	./build/bin/PIC -c test.json
 
-run-first:
-	./build-dbg/bin/PIC -c first.json
-
-view:
-	paraview --script=parashow.py 
-
 format:
 	find . -name "*.cpp" -o -name "*.hpp" | xargs clang-format -i --style=LLVM
 
 clean:
-	rm -rf build build-dbg results results_taylor_green
+	rm -rf build* results*

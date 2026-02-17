@@ -20,7 +20,8 @@ private:
   int current_step_;       // auto-incremented on every writeGrid2D call
 
   // Produces something like "temperature_0003.vti"
-  [[nodiscard]] std::string formatFilename(const std::string &field_name, int step) const;
+  [[nodiscard]] std::string formatFilename(const std::string &field_name,
+                                           int step) const;
 
   // Writes one <DataSet .../> line into the internal PVD entry list
   void appendPVDEntry(const std::string &vti_filename, double time_value);

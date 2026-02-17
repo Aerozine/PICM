@@ -11,8 +11,7 @@ cmake --build build --config Release
 ```
 And to execute it 
 ```
-./build/PIC
+./build/bin/PIC -c <jsonfile>
 ```
-Depedencies are handled into the CmakeList
+Depedencies are handled into the CmakeList (fetched if not present)
 - Nlohmann Json lib
-- Paraview VTK
