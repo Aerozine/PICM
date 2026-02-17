@@ -22,12 +22,13 @@ void SemiLagrangian::solvePressure(int maxIters, double tol, const char* method)
 }
 
 void SemiLagrangian::updateVelocities() {
-  // to do : update velocities at borders 
   varType coef = dt / (density * dx);
 
+  // update u (interior)
   #pragma omp parallel for collapse(2) 
   for (int i = 1; i < fields->u.nx - 1; i++) {
-    for (int j = 1; j < fields->u.ny - 1; j++) {
+    for (int j = 0; j < fields->u.ny; j++) {
+      
       if(fields->Label(i - 1, j) == Fields2D::SOLID || 
           fields->Label(i, j) == Fields2D::SOLID) {
         fields->u.Set(i, j, fields->usolid);
@@ -41,12 +42,14 @@ void SemiLagrangian::updateVelocities() {
     }
   }
 
+  // update v (interior)
   #pragma omp parallel for collapse(2) 
-  for (int i = 1; i < fields->v.nx - 1; i++) {
+  for (int i = 0; i < fields->v.nx; i++) {
     for (int j = 1; j < fields->v.ny - 1; j++) {
+      
       if(fields->Label(i - 1, j) == Fields2D::SOLID ||
          fields->Label(i, j) == Fields2D::SOLID) {
-        fields->u.Set(i, j, fields->usolid);
+        fields->v.Set(i, j, fields->usolid);
         continue;
       }
 
@@ -56,12 +59,11 @@ void SemiLagrangian::updateVelocities() {
       fields->v.Set(i, j, vNew);
     }
   }
-  return;
 }
 
 void SemiLagrangian::MakeIncompressible(const char* method) {
   int maxIters = 1000;
-  varType tol = 1e-3;
+  varType tol = 1e2;
 
   this->solvePressure(maxIters, tol, method);
   this->updateVelocities();

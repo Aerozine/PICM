@@ -43,6 +43,13 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   
   if (j.contains("folder")) folder = j["folder"];
   if (j.contains("filename")) filename = j["filename"];
+  
+  // Load Simulation conditions
+  if (j.contains("velocity_u")) velocity_u = j["velocity_u"];
+  if (j.contains("velocity_v")) velocity_v = j["velocity_v"];
+  if (j.contains("solid_cylinder")) solid_cylinder = j["solid_cylinder"];
+  if (j.contains("solid_borders")) solid_borders = j["solid_borders"];
+  
 }
 
 bool Parameters::loadFromFile(const std::string &filename) {

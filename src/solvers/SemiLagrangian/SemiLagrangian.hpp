@@ -21,7 +21,7 @@ public:
     // Access to fields for external use
     Fields2D& GetFields() { return *fields; }
     const Fields2D& GetFields() const { return *fields; }
-
+    
 private:
     // Simulation parameters
     const Parameters& params;

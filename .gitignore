@@ -82,3 +82,5 @@ results
 vgcore*
 .vscode*
 .idea*
+
+src/numLines.txt

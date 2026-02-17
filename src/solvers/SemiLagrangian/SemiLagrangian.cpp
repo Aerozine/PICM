@@ -26,10 +26,19 @@ SemiLagrangian::SemiLagrangian(const Parameters &params)
 
     // Initialize Taylor-Green vortex
     // fields->InitTaylorGreen(REAL_LITERAL(1.0));
-    fields -> u.InitRectangle(20.0);
-    fields -> v.InitRectangle(10.0);
-    fields -> SolidCylinder(80, 80, 10);
-    // fields -> InitPotentialGradient();
+    
+    if (params.velocity_u) {
+        fields -> u.InitRectangle(20.0);
+    }
+    if (params.velocity_v) {
+        fields -> v.InitRectangle(20.0);
+    }
+    if (params.solid_cylinder) {
+        fields -> SolidCylinder(nx/2 + 20, ny/2 + 20, 10);
+    }
+    if (params.solid_borders) {
+        fields -> SolidBorders();
+    }
 
     // Initialize output writers
     InitializeOutputWriters();
@@ -112,8 +121,8 @@ void SemiLagrangian::Step()
     // Vincent: jamais appliquer advect is pas un divergence free field
 
     // 1. Make velocity field incompressible
-    const char* method = "Jacobi";
-    //const char* method = "Gauss-Seidel";
+    //const char* method = "Jacobi";
+    const char* method = "Gauss-Seidel";
     MakeIncompressible(method);
     
     // 2. Advect velocity field
