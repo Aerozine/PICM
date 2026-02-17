@@ -79,7 +79,6 @@ void SemiLagrangian::SolveGaussSeidel(int maxIters, double tol) {
   for (int it = 0; it < maxIters; it++) {
     double maxDiff = 0.0;
 
-    #pragma omp parallel for collapse(2) reduction(max:maxDiff)
     // update even on borders ?
     for (int i = 0; i < nx; i++) {
       for (int j = 0; j < ny; j++) {
