@@ -85,8 +85,8 @@ void SemiLagrangian::WriteOutput(int step) const {
 
 void SemiLagrangian::Step() {
   MakeIncompressible();
-  Advect();
   fields->Div();
+  Advect();
   fields->VelocityNormCenterGrid();
 }
 
