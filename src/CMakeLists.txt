@@ -11,6 +11,12 @@ target_link_libraries(PIC PRIVATE
     nlohmann_json::nlohmann_json
     OpenMP::OpenMP_CXX
 )
+# include lib thus
+if(ZLIB_FOUND)
+  target_link_libraries(PIC PRIVATE ZLIB::ZLIB)
+  target_compile_definitions(PIC PRIVATE HAVE_ZLIB)
+endif()
+
 if(USE_FLOAT_PRECISION)
     target_compile_definitions(PIC PRIVATE USE_FLOAT)
 else()

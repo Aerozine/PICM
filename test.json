@@ -52,7 +52,7 @@
     },
 
     "solver": {
-        "type": "gauss_seidel",
+        "type": "jacobi",
         "max_iterations": 1000,
         "tolerance": 1e-2
     }

@@ -16,7 +16,7 @@ void Fields2D::Div() {
 }
 
 void Fields2D::VelocityNormCenterGrid() {
- // patch , domain up to nx-1 
+ // patch , domain up to nx-1
   for (int i = 0; i < nx-1; i++) {
     for (int j = 0; j < ny-1; j++) {
 
