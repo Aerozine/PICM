@@ -20,7 +20,6 @@ typedef double varType;
 #error "Must define either USE_FLOAT or USE_DOUBLE"
 #endif
 
-// Optional: Print which precision is being used
 #ifdef USE_FLOAT
 #define PRECISION_STRING "float (32-bit)"
 #else

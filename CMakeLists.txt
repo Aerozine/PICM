@@ -22,4 +22,10 @@ endif()
 # Find OpenMP
 find_package(OpenMP REQUIRED)
 
+find_package(ZLIB QUIET)
+if(ZLIB_FOUND)
+  message(STATUS "ZLib found (${ZLIB_VERSION_STRING}) – VTI output will be compressed")
+else()
+  message(STATUS "ZLib NOT found – VTI output will use raw binary (no compression)")
+endif()
 add_subdirectory(src)
