@@ -12,7 +12,7 @@ public:
 
   Fields2D(int nx, int ny, varType density, varType dt, varType dx, varType dy)
       : nx(nx), ny(ny), density(density), dt(dt), dx(dx), dy(dy), u(nx + 1, ny),
-        v(nx, ny + 1), p(nx, ny), div(nx, ny), rot(nx, ny),
+        v(nx, ny + 1), p(nx, ny), div(nx - 1, ny - 1), rot(nx, ny),
         normVelocity(nx, ny), labels(nx * ny, FLUID) {}
 
   varType usolid = 0.0; // first try (fixed borders)

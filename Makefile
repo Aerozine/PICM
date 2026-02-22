@@ -10,6 +10,9 @@ run-green:
 run-test:
 	./build-dbg/bin/PIC -c test.json
 
+run-uni:
+	./build-dbg/bin/PIC -c test-uniform.json
+
 run-fast:
 	./build/bin/PIC -c test.json
 

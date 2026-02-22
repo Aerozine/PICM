@@ -4,8 +4,8 @@
 
 void Fields2D::Div() {
 
-  for (int i = 0; i < nx; i++) {
-    for (int j = 0; j < ny; j++) {
+  for (int i = 0; i < div.nx; i++) {
+    for (int j = 0; j < div.ny; j++) {
       varType dudx = (u.Get(i + 1, j) - u.Get(i, j)) / dx;
       varType dvdy = (v.Get(i, j + 1) - v.Get(i, j)) / dy;
 

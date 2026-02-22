@@ -67,6 +67,10 @@ public:
   bool write_p = true;
   bool write_div = false;
   bool write_norm_velocity = false;
+  
+  // Source condition
+  bool entryFlow = false;
+  double entryFlowVelocity = 0.0;
 
   // ── Output paths ─────────────────────────────────────────────────────────
   std::string folder = "results";

@@ -105,6 +105,13 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
       taylorGreenAmplitude = ic["amplitude"].get<double>();
   }
 
+  // Source condition
+  if (j.contains("entryFlow"))
+    entryFlow = j["entryFlow"];
+
+  if (j.contains("entryFlowVelocity"))
+    entryFlowVelocity = j["entryFlowVelocity"];
+
   // build map of symbols
   // This allow us to say for example a rectangle located at nx/2
   const std::map<std::string, int> vars = {{"nx", nx}, {"ny", ny}};
