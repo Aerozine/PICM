@@ -84,3 +84,7 @@ vgcore*
 .idea*
 
 src/numLines.txt
+# doxygen
+latex/*
+html/*
+docs/*
