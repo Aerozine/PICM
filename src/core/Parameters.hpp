@@ -57,7 +57,7 @@ struct SolverConfig {
  */
 class Parameters {
 public:
-  // ── Grid & time ───────────────────────────────────────────────────────
+  //Grid & time
   double dx = 0.01; ///< Cell width  in x (m).
   double dy = 0.01; ///< Cell height in y (m).
   double dt = 1e-4; ///< Time-step size (s).

@@ -42,8 +42,8 @@ public:
   Grid2D u;   ///< x-velocity, staggered: (nx+1) × ny.
   Grid2D v;   ///< y-velocity, staggered: nx × (ny+1).
   Grid2D p;   ///< Pressure,   cell-centred: nx × ny.
-  Grid2D div; ///< Velocity divergence @f$\nabla \cdot \mathbf{u}$@f$
-              ///< (diagnostic): @f$n_x \times n_y$@f$.
+  Grid2D div; ///< Velocity divergence \f$ \nabla \cdot \mathbf{u} \f$
+              ///< (diagnostic): \f$ n_x \times n_y \f$.
   Grid2D
       normVelocity; ///< |u| interpolated to cell centres (diagnostic): nx × ny.
 
@@ -87,14 +87,14 @@ public:
 
   // Field update methods
   /**
-   * @brief Compute the discrete divergence @f$\nabla \cdot \mathbf{u}$@f$ into
+   * @brief Compute the discrete divergence \f$\nabla \cdot \mathbf{u} \f$ into
    * @c div.
    *
    * Uses first-order finite differences on the staggered grid:
-   * @f[
-   *   \text{div}(i,j) = \frac{u(i+1,j) - u(i,j)}{\Delta x}
-   *                   + \frac{v(i,j+1) - v(i,j)}{\Delta y}
-   * @f]
+ * \f$
+ *   \mathrm{div}(i,j) = \frac{u(i+1,j) - u(i,j)}{\Delta x}
+ *                     + \frac{v(i,j+1) - v(i,j)}{\Delta y}
+ * \f$
    */
   void Div();
 
