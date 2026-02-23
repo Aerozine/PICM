@@ -1,76 +1,76 @@
 #include "SceneObjects.hpp"
+#include <algorithm>
 #include <cctype>
-#include <cmath>
 #include <iostream>
 #include <stdexcept>
-// runtime error -> error during execution
 
-// basicly a small compiler of one line expression
-// TODO resolve more we can use tinyexpr as parser
+// Expression resolver
+//  you can forgot about the details
 int resolveInt(const nlohmann::json &val,
                const std::map<std::string, int> &vars) {
+  // Fast path: bare JSON integer.
   if (val.is_number())
     return val.get<int>();
+
   if (!val.is_string())
     throw std::runtime_error("[resolveInt] expected int or string expression");
 
   std::string expr = val.get<std::string>();
 
-  // substitute variable names longest-first to avoid partial matches
-  // Collect and sort by length descending
-  // defensive code ( not usefull right now )
+  // Substitute variable names longest-first to avoid partial matches
+  // (e.g. so "nxy" is not mis-matched by "nx" before "nxy" is tried).
   std::vector<std::pair<std::string, int>> sorted(vars.begin(), vars.end());
-  std::sort(sorted.begin(), sorted.end(),
+  std::sort(sorted.begin(), sorted.end(), [](const auto &a, const auto &b) {
+    return a.first.size() > b.first.size();
+  });
 
-            [](const auto &a, const auto &b) {
-              return a.first.size() > b.first.size();
-            });
-  // [](){} is an anonymous function(or lambda function ) that will be given to
-  // the sort ( function defined only for the function sort ) not really usefull
-  // to understand
-
-  for (auto &[name, v] : sorted) {
-    size_t pos;
+  for (const auto &[name, v] : sorted) {
+    std::size_t pos;
     while ((pos = expr.find(name)) != std::string::npos)
       expr.replace(pos, name.size(), std::to_string(v));
   }
 
-  // tokenizer
-  // Grammar: expr := signed_int (op signed_int)*
-  // op := '+' | '-' | '*' | '/'
-  // its written in the name
-  auto skipSpaces = [&](size_t i) {
-    while (i < expr.size() && std::isspace(expr[i]))
-      i++;
-    return i;
+  // evaluator
+  //  Grammar: expr := signed_int (op signed_int)*
+  //           op   := '+' | '-' | '*' | '/'
+  //  Operator precedence is left-to-right (no precedence climbing needed for
+  //  the simple expressions that appear in config files).
+
+  auto skipSpaces = [&](std::size_t pos) -> std::size_t {
+    while (pos < expr.size() &&
+           std::isspace(static_cast<unsigned char>(expr[pos])))
+      ++pos;
+    return pos;
   };
 
-  size_t i = skipSpaces(0);
+  // Parse one signed integer token starting at position pos.
+  // Advances pos past the token and returns the value.
+  auto parseNumber = [&](std::size_t &pos) -> int {
+    std::size_t start = pos;
+    if (pos < expr.size() && (expr[pos] == '+' || expr[pos] == '-'))
+      ++pos;
+    while (pos < expr.size() &&
+           std::isdigit(static_cast<unsigned char>(expr[pos])))
+      ++pos;
+    if (pos == start)
+      throw std::runtime_error("[resolveInt] expected integer at: " +
+                               expr.substr(start));
+    return std::stoi(expr.substr(start, pos - start));
+  };
+
+  std::size_t i = skipSpaces(0);
   if (i >= expr.size())
     throw std::runtime_error(
         "[resolveInt] empty expression after substitution");
 
-  // parse first number (may have leading sign)
-  size_t numEnd = i;
-  if (expr[numEnd] == '+' || expr[numEnd] == '-')
-    numEnd++;
-  while (numEnd < expr.size() && std::isdigit(expr[numEnd]))
-    numEnd++;
-  // stoi -> string to int
-  int result = std::stoi(expr.substr(i, numEnd - i));
-  i = skipSpaces(numEnd);
-  // lets do it for every expression now
-  while (i < expr.size()) {
-    char op = expr[i++];
-    i = skipSpaces(i);
+  int result = parseNumber(i);
+  i = skipSpaces(i);
 
-    size_t j = i;
-    if (j < expr.size() && (expr[j] == '+' || expr[j] == '-'))
-      j++;
-    while (j < expr.size() && std::isdigit(expr[j]))
-      j++;
-    int operand = std::stoi(expr.substr(i, j - i));
-    i = skipSpaces(j);
+  while (i < expr.size()) {
+    const char op = expr[i++];
+    i = skipSpaces(i);
+    const int operand = parseNumber(i);
+    i = skipSpaces(i);
 
     switch (op) {
     case '+':
@@ -96,43 +96,47 @@ int resolveInt(const nlohmann::json &val,
   return result;
 }
 
-// RECTANGLE
+// RectangleObject
+
 void RectangleObject::applySolid(Fields2D &f) const {
-  for (int i = x1; i <= x2 && i < f.nx; i++)
-    for (int j = y1; j <= y2 && j < f.ny; j++)
+  const int iMax = std::min(x2, f.nx - 1);
+  const int jMax = std::min(y2, f.ny - 1);
+  for (int i = std::max(x1, 0); i <= iMax; ++i)
+    for (int j = std::max(y1, 0); j <= jMax; ++j)
       f.SetLabel(i, j, Fields2D::SOLID);
 }
 
 void RectangleObject::applyVelocityU(Fields2D &f) const {
-  int iMax = std::min(x2, f.u.nx - 1);
-  int jMax = std::min(y2, f.u.ny - 1);
-  for (int i = std::max(x1, 0); i <= iMax; i++)
-    for (int j = std::max(y1, 0); j <= jMax; j++)
+  const int iMax = std::min(x2, f.u.nx - 1);
+  const int jMax = std::min(y2, f.u.ny - 1);
+  for (int i = std::max(x1, 0); i <= iMax; ++i)
+    for (int j = std::max(y1, 0); j <= jMax; ++j)
       f.u.Set(i, j, val);
 }
 
 void RectangleObject::applyVelocityV(Fields2D &f) const {
-  int iMax = std::min(x2, f.v.nx - 1);
-  int jMax = std::min(y2, f.v.ny - 1);
-  for (int i = std::max(x1, 0); i <= iMax; i++)
-    for (int j = std::max(y1, 0); j <= jMax; j++)
+  const int iMax = std::min(x2, f.v.nx - 1);
+  const int jMax = std::min(y2, f.v.ny - 1);
+  for (int i = std::max(x1, 0); i <= iMax; ++i)
+    for (int j = std::max(y1, 0); j <= jMax; ++j)
       f.v.Set(i, j, val);
 }
 
-// CYLINDER
+// CylinderObject
+
 void CylinderObject::applySolid(Fields2D &f) const {
-  for (int i = 0; i < f.nx; i++) {
-    for (int j = 0; j < f.ny; j++) {
-      int dx = i - cx;
-      int dy = j - cy;
-      if (dx * dx + dy * dy <= r * r)
+  const int r2 = r * r; // hoist out of the inner loop
+  for (int i = 0; i < f.nx; ++i) {
+    for (int j = 0; j < f.ny; ++j) {
+      const int ddx = i - cx;
+      const int ddy = j - cy;
+      if (ddx * ddx + ddy * ddy <= r2)
         f.SetLabel(i, j, Fields2D::SOLID);
     }
   }
 }
-// TODO we could do applyVelocityU/V for cylinder
 
-// Parsing the line
+// Parse a RectangleObject from its JSON node.
 static std::unique_ptr<RectangleObject>
 parseRectangle(const nlohmann::json &j,
                const std::map<std::string, int> &vars) {
@@ -150,11 +154,10 @@ parseRectangle(const nlohmann::json &j,
   return obj;
 }
 
+// Parse a CylinderObject from its JSON node.
 static std::unique_ptr<CylinderObject>
 parseCylinder(const nlohmann::json &j, const std::map<std::string, int> &vars) {
   auto obj = std::make_unique<CylinderObject>();
-  if (j.contains("val"))
-    obj->val = j["val"].get<double>();
   if (j.contains("x"))
     obj->cx = resolveInt(j["x"], vars);
   if (j.contains("y"))
@@ -181,20 +184,18 @@ std::vector<std::unique_ptr<SceneObject>>
 parseSceneObjects(const nlohmann::json &node,
                   const std::map<std::string, int> &vars) {
   std::vector<std::unique_ptr<SceneObject>> result;
-  // for each "object"
+
   for (auto it = node.begin(); it != node.end(); ++it) {
     const std::string &type = it.key();
-    const nlohmann::json &val = it.value();
-    // cf nlohmann doc
-    if (val.is_array()) {
-      for (const auto &entry : val) {
-        auto obj = makeSceneObject(type, entry, vars);
-        if (obj)
+    const nlohmann::json &value = it.value();
+
+    if (value.is_array()) {
+      for (const auto &entry : value) {
+        if (auto obj = makeSceneObject(type, entry, vars))
           result.push_back(std::move(obj));
       }
-    } else if (val.is_object()) {
-      auto obj = makeSceneObject(type, val, vars);
-      if (obj)
+    } else if (value.is_object()) {
+      if (auto obj = makeSceneObject(type, value, vars))
         result.push_back(std::move(obj));
     } else {
       std::cerr << "[SceneObjects] Value for key '" << type

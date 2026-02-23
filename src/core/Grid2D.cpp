@@ -1,96 +1,47 @@
 #include "Grid2D.hpp"
-#include <cassert>
-#include <random>
-#include <stdio.h>
+#include <algorithm>
+#include <cmath>
 
-varType Grid2D::Get(int i, int j) const { return A[ny * i + j]; }
-
-void Grid2D::Set(int i, int j, varType val) {
-  A[ny * i + j] = val;
-  return;
-}
-
-void Grid2D::InitRectangle(varType constVel) {
-  int midX = nx / 2;
-  int midY = ny / 2;
-
-  int offsetX = 10;
-  int offsetY = 10;
-
-  for (int i = midX - offsetX; i < midX + offsetX; i++) {
-    for (int j = midY - offsetY; j < midY + offsetY; j++) {
-      // int xCenter = std::abs(midX - i);
-      this->Set(i, j, constVel);
-    }
-  }
-  return;
-}
+// ── Bilinear interpolation
+// ────────────────────────────────────────────────────
+//
+// Staggered MAC grid offsets:
+//
+//   field 0 (u): nodes at (i·dx,       (j+0.5).dy)  →  j_real -= 0.5
+//   field 1 (v): nodes at ((i+0.5)·dx,  j.dy      )  →  i_real -= 0.5
+//   other (p, cell-centred): no offset.
+//
+// After applying the offset, (i_real, j_real) is the continuous index into
+// the node array. We split it into an integer base (i0, j0) and a fractional
+// weight (fx, fy), clamp the base so the 2×2 stencil stays in bounds, then
+// bilinearly blend the four surrounding values.
 
 varType Grid2D::Interpolate(varType x, varType y, varType dx, varType dy,
-                            int field) {
-  // if (x <= 0 || x >= this->nx * dx) assert(false);
-  // if (y <= 0 || y >= this->ny * dy) assert(false);
+                            int field) const {
+  varType i_real = x / dx;
+  varType j_real = y / dy;
 
-  // if (field == 0) y -= dy / 2; // handle field u
-  // if (field == 1) x -= dx / 2; // handle field v
+  if (field == 0)
+    j_real -= REAL_LITERAL(0.5); // u-face: staggered in y
+  else if (field == 1)
+    i_real -= REAL_LITERAL(0.5); // v-face: staggered in x
 
-  varType k = x / dx;
-  varType l = y / dy;
+  int i0 = static_cast<int>(std::floor(i_real));
+  int j0 = static_cast<int>(std::floor(j_real));
 
-  if (field == 0) { // u : décalé de +0.5 en y
-    l -= varType(0.5);
-  } else if (field == 1) { // v : décalé de +0.5 en x
-    k -= varType(0.5);
-  } else {
-  }
+  const varType fx = i_real - static_cast<varType>(i0);
+  const varType fy = j_real - static_cast<varType>(j0);
 
-  int i0 = std::floor(k);
-  int j0 = std::floor(l);
+  // Clamp so that (i0, j0), (i0+1, j0+1) are all valid indices.
+  i0 = std::clamp(i0, 0, nx - 2);
+  j0 = std::clamp(j0, 0, ny - 2);
 
-  // printf("i0 = %d\n", i0);
-  // printf("j0 = %d\n", j0);
+  const varType f00 = Get(i0, j0);
+  const varType f10 = Get(i0 + 1, j0);
+  const varType f01 = Get(i0, j0 + 1);
+  const varType f11 = Get(i0 + 1, j0 + 1);
 
-  varType a = k - (varType)i0;
-  varType b = l - (varType)j0;
-
-  // printf("a = %f\n", a);
-  // printf("b = %f\n", b);
-
-  varType f00, f10, f01, f11;
-
-  if (k < 0) { // v does not have 4 corners to interpolate from
-    // printf("entered k case \n");
-    f00 = 0.0;
-    f01 = 0.0; // impose homogeneous BC on ghost cells
-
-    varType i1 = std::ceil(k);
-    f10 = Get(i1, j0);
-    f11 = Get(i1, j0 + 1);
-  }
-
-  else if (l < 0) { // u does not have 4 corners to interpolate from
-
-    // printf("entered l case \n");
-    f00 = 0.0;
-    f10 = 0.0; // impose homogeneous BC on ghost cells
-
-    varType j1 = std::ceil(l);
-    f01 = Get(i0, j1);
-    f11 = Get(i0 + 1, j1);
-  }
-
-  else {
-    // printf("entered default case \n");
-    f00 = Get(i0, j0);
-    // printf("f00 = %f\n", f00);
-    f10 = Get(i0 + 1, j0);
-    // printf("f10 = %f\n", f10);
-    f01 = Get(i0, j0 + 1);
-    // printf("f01 = %f\n", f01);
-    f11 = Get(i0 + 1, j0 + 1);
-    // printf("f11 = %f\n", f11);
-  }
-
-  return (1 - a) * (1 - b) * f00 + a * (1 - b) * f10 + (1 - a) * b * f01 +
-         a * b * f11;
+  return (REAL_LITERAL(1.0) - fy) *
+             ((REAL_LITERAL(1.0) - fx) * f00 + fx * f10) +
+         fy * ((REAL_LITERAL(1.0) - fx) * f01 + fx * f11);
 }

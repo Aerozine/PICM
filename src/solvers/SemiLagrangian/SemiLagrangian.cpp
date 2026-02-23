@@ -1,49 +1,33 @@
 #include "SemiLagrangian.hpp"
+#include <algorithm>
 #include <iostream>
-#include <time.h>
 
 SemiLagrangian::SemiLagrangian(const Parameters &params)
-    : params(params), nx(params.nx), ny(params.ny), dx(params.dx),
-      dy(params.dy), dt(params.dt), density(params.density) {
-  fields = new Fields2D(nx, ny, density, dt, dx, dy);
+    : params(params), nx(params.nx), ny(params.ny),
+      dx(static_cast<varType>(params.dx)), dy(static_cast<varType>(params.dy)),
+      dt(static_cast<varType>(params.dt)),
+      density(static_cast<varType>(params.density)),
+      fields(new Fields2D(nx, ny, density, dt, dx, dy)) {
 
 #ifndef NDEBUG
   std::cout << "Grid dimensions:\n"
-            << "  p  (nx,ny)   : " << fields->p.nx << " x " << fields->p.ny
+            << "  p  (nx,   ny  ): " << fields->p.nx << " x " << fields->p.ny
             << '\n'
-            << "  u  (nx+1,ny) : " << fields->u.nx << " x " << fields->u.ny
+            << "  u  (nx+1, ny  ): " << fields->u.nx << " x " << fields->u.ny
             << '\n'
-            << "  v  (nx,ny+1) : " << fields->v.nx << " x " << fields->v.ny
+            << "  v  (nx,   ny+1): " << fields->v.nx << " x " << fields->v.ny
             << '\n';
 #endif
-  // switch to select IC
-  switch (params.initialCondition) {
 
-  // WIP
-  // Periodic domain: no solid walls, no cylinder.
-  // Velocity is set analytically by InitTaylorGreen.
-  case InitialCondition::TAYLOR_GREEN:
-    fields->InitTaylorGreen(static_cast<varType>(params.taylorGreenAmplitude));
-    break;
-
-  // Custom scene
-  // Apply velocity patches then solid objects from JSON.
-  case InitialCondition::CUSTOM:
-  default:
-    for (const auto &obj : params.velocityU.objects)
-      obj->applyVelocityU(*fields);
-    for (const auto &obj : params.velocityV.objects)
-      obj->applyVelocityV(*fields);
-    for (const auto &obj : params.solid.objects)
-      obj->applySolid(*fields);
-    break;
-  }
+  // Apply initial conditions from the JSON config (velocity patches, solid
+  // geometry). SceneObject instances are created and destroyed inside here.
+  params.applyToFields(*fields);
 
   InitializeOutputWriters();
 
 #ifndef NDEBUG
-  std::cout << "SemiLagrangian solver initialized: " << nx << "x" << ny
-            << " grid, " << params.nt << " timesteps\n";
+  std::cout << "SemiLagrangian initialised: " << nx << " x " << ny << " grid, "
+            << params.nt << " time steps.\n";
 #endif
 }
 
@@ -80,37 +64,42 @@ void SemiLagrangian::WriteOutput(int step) const {
     ok &= normVelocityWriter->writeGrid2D(fields->normVelocity, "normVelocity");
 
   if (!ok)
-    std::cerr << "Warning: failed to write output at step " << step << '\n';
+    std::cerr << "[SemiLagrangian] Warning: failed to write output at step "
+              << step << '\n';
 }
 
 void SemiLagrangian::Step() {
-  MakeIncompressible();
-  fields->Div();
-  Advect();
-  fields->VelocityNormCenterGrid();
+  MakeIncompressible(); // 1. Pressure projection: enforce div u = 0.
+  Advect();             // 2. Semi-Lagrangian transport of velocity.
+  fields->Div();        // } Update diagnostics used for
+  fields->VelocityNormCenterGrid(); // } output and progress reporting.
 }
 
 void SemiLagrangian::Run() {
+  // Compute initial diagnostics and write the t=0 snapshot.
   fields->Div();
+  fields->VelocityNormCenterGrid();
   WriteOutput(0);
 
-  double start = GET_TIME();
+  const double start = GET_TIME();
+  const int reportEvery = std::max(1, params.nt / 10);
 
   for (int t = 1; t <= params.nt; ++t) {
-    if (t % std::max(1, params.nt / 10) == 0) {
-      varType max_div = 0.0f;
-      for (int i = 0; i < nx; i++)
-        for (int j = 0; j < ny; j++)
-          max_div = std::max(max_div, std::abs(fields->div.Get(i, j)));
+    // Overwrite progress line in place (~every 10 %).
+    if (t % reportEvery == 0) {
+      varType maxDiv = REAL_LITERAL(0.0);
+      for (int i = 0; i < nx; ++i)
+        for (int j = 0; j < ny; ++j)
+          maxDiv = std::max(maxDiv, std::abs(fields->div.Get(i, j)));
 
       std::cout << "\rStep " << t << " / " << params.nt << " ("
                 << (100 * t / params.nt) << "%) "
-                << "max |div| = " << max_div << std::flush;
+                << "max |div| = " << maxDiv << std::flush;
     }
 
     Step();
     WriteOutput(t);
   }
 
-  printf("\nDone: %g seconds\n", GET_TIME() - start);
+  std::cout << "\nDone: " << (GET_TIME() - start) << " s\n";
 }

@@ -1,50 +1,16 @@
 #include "OutputWriter.hpp"
-#include <cstring>
 #include <filesystem>
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
 
 #ifdef HAVE_ZLIB
-#  include <zlib.h>
+#include <zlib.h>
 #endif
 
 namespace fs = std::filesystem;
 
-// return the binary payload to write
-std::vector<unsigned char>
-OutputWriter::preparePayload(const std::vector<varType> &values) {
-  // get the raw pointer and the number of byte
-  const size_t rawBytes = values.size() * sizeof(varType);
-  const auto  *rawPtr   = reinterpret_cast<const unsigned char *>(values.data());
-// senario 
-#ifdef HAVE_ZLIB
-  // compress 
-  // ulongf unsigned long f 
-  // used in this format 
-  uLongf compBound = compressBound(static_cast<uLong>(rawBytes));
-  std::vector<unsigned char> compBuf(compBound);
-  uLongf compLen = compBound;
-
-  // the real magic BEST_SPEED to not affect that much perf
-  int ret = compress2(compBuf.data(), &compLen,
-                      rawPtr, static_cast<uLong>(rawBytes),
-                      Z_BEST_SPEED);
-  if (ret != Z_OK)
-    throw std::runtime_error("OutputWriter: zlib compress2 failed");
-  // remove unused bytes 
-  compBuf.resize(compLen);
-  return compBuf;
-#else
-  // if no compression just generate a block
-  return std::vector<unsigned char>(rawPtr, rawPtr + rawBytes);
-#endif
-}
-
-//using uint32_t allow paraview to seek by offset 
-static void writeU32(std::ofstream &out, uint32_t v) {
-  out.write(reinterpret_cast<const char *>(&v), sizeof(v));
-}
+// OutputWriter
 
 OutputWriter::OutputWriter(const std::string &output_dir,
                            const std::string &pvd_name)
@@ -54,12 +20,31 @@ OutputWriter::OutputWriter(const std::string &output_dir,
 }
 
 OutputWriter::~OutputWriter() {
+  // Guarantee the PVD index is always written even if the caller forgets to
+  // call finalisePVD() explicitly.
   if (!pvd_finalised_ && !pvd_entries_.empty())
     finalisePVD();
 }
 
+// Private helpers
+
+// Internal helpers
+
+/**
+ * @brief Write a 4-byte little-endian unsigned integer to a binary stream.
+ *
+ * ParaView uses uint32_t header words to locate appended data by offset, so
+ * every length field in the VTK binary block must be exactly 4 bytes.
+ *
+ * @param out Binary output stream.
+ * @param v   Value to write.
+ */
+static void writeU32(std::ofstream &out, uint32_t v) {
+  out.write(reinterpret_cast<const char *>(&v), sizeof(v));
+}
 std::string OutputWriter::formatFilename(const std::string &field_name,
                                          int step) const {
+  // Zero-pad the step number to four digits: "u_0042.vti"
   std::ostringstream oss;
   oss << field_name << '_' << std::setw(4) << std::setfill('0') << step
       << ".vti";
@@ -74,22 +59,31 @@ void OutputWriter::appendPVDEntry(const std::string &vti_filename,
   pvd_entries_.push_back(oss.str());
 }
 
-// VTK appended raw binary layout (single DataArray, single field):
-//
-//   [header <AppendedData encoding="raw">..]
-//
-//   Without zlib:
-//     uint32_t  rawByteCount
-//     varType[] values          ← nx*ny floats or doubles
-//
-//   With zlib (VTK compressed-block format, 1 block):
-//     uint32_t  numBlocks       (= 1)
-//     uint32_t  blockSize       (= rawByteCount)
-//     uint32_t  lastBlockSize   (= rawByteCount)
-//     uint32_t  compressedSize
-//     byte[]    compressed data
-//
-//   [  </AppendedData>\n</ImageData>\n</VTKFile>\n  ]
+std::vector<unsigned char>
+OutputWriter::preparePayload(const std::vector<varType> &values) {
+  const std::size_t rawBytes = values.size() * sizeof(varType);
+  const auto *rawPtr = reinterpret_cast<const unsigned char *>(values.data());
+
+#ifdef HAVE_ZLIB
+  // zlib: compress at Z_BEST_SPEED to minimise I/O size with low CPU cost.
+  uLongf compBound = compressBound(static_cast<uLong>(rawBytes));
+  std::vector<unsigned char> buf(compBound);
+  uLongf compLen = compBound;
+
+  const int ret = compress2(buf.data(), &compLen, rawPtr,
+                            static_cast<uLong>(rawBytes), Z_BEST_SPEED);
+  if (ret != Z_OK)
+    throw std::runtime_error("OutputWriter: zlib compress2 failed");
+
+  buf.resize(compLen); // trim to actual compressed size
+  return buf;
+#else
+  // No compression: return a verbatim copy of the raw bytes.
+  return std::vector<unsigned char>(rawPtr, rawPtr + rawBytes);
+#endif
+}
+
+// Public
 
 bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
   if (pvd_finalised_)
@@ -97,32 +91,36 @@ bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
 
   const int nx = grid.nx;
   const int ny = grid.ny;
+  const uint32_t rawBytes = static_cast<uint32_t>(static_cast<std::size_t>(nx) *
+                                                  ny * sizeof(varType));
 
-  // Collect values in VTK order (x-fastest) directly as varType — no cast.
-  std::vector<varType> values;
-  values.reserve(static_cast<size_t>(nx) * ny);
-  for (int iy = 0; iy < ny; ++iy)
-    for (int ix = 0; ix < nx; ++ix)
-      values.push_back(grid.Get(ix, iy));
-  // get values
+  // Collect grid data
+  //  Grid2D stores data column-major (A[ny*i + j]), which means iterating
+  //  over grid.
+  //  We therefore bypass the old nested loop entirely and use a direct copy,
+  //  which the standard library implements as a single memcpy.
+  const std::vector<varType> values(grid.A.begin(), grid.A.end());
+
+  // Compress (or copy) payload
   const std::vector<unsigned char> payload = preparePayload(values);
-  const uint32_t rawBytes = static_cast<uint32_t>(values.size() * sizeof(varType));
 
+  // Open output file
   const std::string vti_name = formatFilename(id, current_step_);
   const std::string vti_path = output_dir_ + "/" + vti_name;
 
-  // Open in binary mode
   std::ofstream out(vti_path, std::ios::binary);
   if (!out.is_open())
     return false;
 
+  // Write VTK XML header
 #ifdef HAVE_ZLIB
   const char *compressorAttr = " compressor=\"vtkZLibDataCompressor\"";
 #else
   const char *compressorAttr = "";
 #endif
 
-  // header as txt
+  // Build the XML preamble in a string stream then flush it in one write to
+  // avoid many small system calls.
   std::ostringstream xml;
   xml << "<?xml version=\"1.0\"?>\n"
       << "<VTKFile type=\"ImageData\" version=\"0.1\""
@@ -141,39 +139,39 @@ bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
       << "      </PointData>\n"
       << "    </Piece>\n"
       << "  </ImageData>\n"
-      // The '_' is the mandatory VTK separator between XML and raw data.
       << "  <AppendedData encoding=\"raw\">\n"
-      << "  _";
+      << "  _"; // mandatory VTK separator before the raw binary block
+
   const std::string xmlStr = xml.str();
   out.write(xmlStr.data(), static_cast<std::streamsize>(xmlStr.size()));
-// BINARY DUMP
+
+  // Write binary header + payload
 #ifdef HAVE_ZLIB
-  // 4-word compressed-block header then compressed payload
-  writeU32(out, 1);                                          // numBlocks
-  writeU32(out, rawBytes);                                   // uncompressed block size
-  writeU32(out, rawBytes);                                   // last partial block size
-  writeU32(out, static_cast<uint32_t>(payload.size()));     // compressed size
+  // VTK single-block compressed header (4 × uint32_t):
+  writeU32(out, 1);        // numBlocks
+  writeU32(out, rawBytes); // uncompressed block size
+  writeU32(out, rawBytes); // last partial block size
+  writeU32(out, static_cast<uint32_t>(payload.size())); // compressed size
 #else
-  // Single uint32_t = raw byte count
-  writeU32(out, rawBytes);
+  writeU32(out, rawBytes); // single word: raw byte count
 #endif
 
   out.write(reinterpret_cast<const char *>(payload.data()),
             static_cast<std::streamsize>(payload.size()));
-  // end-header
+
   out << "\n  </AppendedData>\n"
       << "</VTKFile>\n";
 
-  out.close();
+  // Update PVD index
   appendPVDEntry(vti_name, static_cast<double>(current_step_));
   ++current_step_;
   return true;
 }
 
-
 void OutputWriter::finalisePVD() {
   if (pvd_finalised_)
     return;
+
   const std::string pvd_path = output_dir_ + "/" + base_name_ + ".pvd";
   std::ofstream out(pvd_path);
   if (!out.is_open())
@@ -187,6 +185,5 @@ void OutputWriter::finalisePVD() {
   out << "  </Collection>\n"
       << "</VTKFile>\n";
 
-  out.close();
   pvd_finalised_ = true;
 }
