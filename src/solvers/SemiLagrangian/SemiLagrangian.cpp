@@ -98,8 +98,8 @@ void SemiLagrangian::Run() {
     // Overwrite progress line in place (~every 10 %).
     if (t % reportEvery == 0) {
       varType maxDiv = REAL_LITERAL(0.0);
-      for (int i = 0; i < nx; ++i)
-        for (int j = 0; j < ny; ++j)
+      for (int j = 0; j < ny; ++j)
+        for (int i = 0; i < nx; ++i)
           maxDiv = std::max(maxDiv, std::abs(fields->div.Get(i, j)));
 
       std::cout << "\rStep " << t << " / " << params.nt << " ("

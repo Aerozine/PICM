@@ -32,11 +32,12 @@ void SemiLagrangian::updateVelocities() {
 
   const varType coef = dt / (density * dx);
 
+  // u-faces: i is the fast (inner) index — contiguous in row-major storage.
 #pragma omp parallel for collapse(2) schedule(static)
-  for (int i = 1; i < fields->u.nx; ++i) {
-    for (int j = 0; j < fields->u.ny; ++j) {
+  for (int j = 0; j < fields->u.ny; ++j) {
+    for (int i = 1; i < fields->u.nx; ++i) {
       if (fields->Label(i - 1, j) == Fields2D::SOLID ||
-          fields->Label(i, j) == Fields2D::SOLID) {
+          fields->Label(i,     j) == Fields2D::SOLID) {
         fields->u.Set(i, j, fields->usolid);
         continue;
       }
@@ -46,11 +47,12 @@ void SemiLagrangian::updateVelocities() {
     }
   }
 
+  // v-faces: i is the fast (inner) index.
 #pragma omp parallel for collapse(2) schedule(static)
-  for (int i = 0; i < fields->v.nx; ++i) {
-    for (int j = 1; j < fields->v.ny; ++j) {
+  for (int j = 1; j < fields->v.ny; ++j) {
+    for (int i = 0; i < fields->v.nx; ++i) {
       if (fields->Label(i, j - 1) == Fields2D::SOLID ||
-          fields->Label(i, j) == Fields2D::SOLID) {
+          fields->Label(i, j    ) == Fields2D::SOLID) {
         fields->v.Set(i, j, fields->usolid);
         continue;
       }

@@ -125,6 +125,6 @@ public:
 private:
   std::vector<uint8_t> labels; ///< Flat cell-type array, same layout as p.
 
-  /// @brief Flat index into @c labels (column-major, matching Grid2D).
-  [[nodiscard]] int idx(int i, int j) const { return ny * i + j; }
+  /// @brief Flat index into @c labels (row-major, matching Grid2D).
+  [[nodiscard]] int idx(int i, int j) const { return nx * j + i; }
 };
