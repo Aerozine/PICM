@@ -42,6 +42,9 @@ struct SceneObject {
 
   /// @brief Set the v-velocity of cells covered by this object.
   virtual void applyVelocityV(Fields2D &f) const { (void)f; }
+
+  /// @brief Set the smoke of cells covered by this object.
+  virtual void applySmoke(Fields2D &f) const { (void)f; }
 };
 
 /**
@@ -58,6 +61,7 @@ struct RectangleObject : public SceneObject {
   void applySolid(Fields2D &f) const override;
   void applyVelocityU(Fields2D &f) const override;
   void applyVelocityV(Fields2D &f) const override;
+  void applySmoke(Fields2D &f) const override;
 };
 
 /**

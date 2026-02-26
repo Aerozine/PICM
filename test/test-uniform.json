@@ -1,0 +1,45 @@
+{
+    "dx": 0.001,
+    "dy": 0.001,
+    "dt": 0.0001,
+    "nx": 100,
+    "ny": 50,
+    "nt": 300,
+    "density": 1000,
+    "sampling_rate": 5,
+
+    "write_u":             true,
+    "write_v":             true,
+    "write_p":             true,
+    "write_div":           true,
+    "write_norm_velocity": true,
+    "write_smoke":         true,
+
+    "folder":   "results",
+    "filename": "simulation",
+
+    "velocityu": {
+        "rectangle": {
+            "val": 1.0,
+            "x1": "0",
+            "y1": "0",
+            "x2": "1",
+            "y2": "ny"
+        }
+    },
+   "smoke": {
+        "rectangle": {
+            "val": 1.0,
+            "x1": "20",
+            "y1": "ny/2-10",
+            "x2": "51",
+            "y2": "ny/2+10"
+        }
+   },
+    
+   "solver": {
+        "type": "red_black_gauss_seidel",
+        "max_iterations": 5000,
+        "tolerance": 1e-1
+}
+}

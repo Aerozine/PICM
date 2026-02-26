@@ -84,3 +84,5 @@ vgcore*
 .idea*
 
 src/numLines.txt
+error.sh
+res.txt

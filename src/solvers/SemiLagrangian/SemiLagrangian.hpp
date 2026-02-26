@@ -60,6 +60,7 @@ private:
   std::unique_ptr<OutputWriter> pWriter;
   std::unique_ptr<OutputWriter> divWriter;
   std::unique_ptr<OutputWriter> normVelocityWriter;
+  std::unique_ptr<OutputWriter> smokeWriter;
 
   /// @brief Construct the OutputWriters requested in @c params.
   void InitializeOutputWriters();
@@ -78,6 +79,14 @@ private:
    *        bilinear interpolation) scheme.
    */
   void Advect() const;
+
+  // Smoke Advection
+
+  /**
+   * @brief Advect smokeMap using a semi-Lagrangian (RK2 backward-trace +
+   *        bilinear interpolation) scheme.
+   */
+  void AdvectSmoke() const;
 
   /**
    * @brief Trace the departure point of a u-face at grid position (i, j)
@@ -120,6 +129,15 @@ private:
    * @return  Interpolated v value.
    */
   [[nodiscard]] varType interpolateV(varType x, varType y) const;
+  
+  /**
+   * @brief Bilinearly interpolate the smoke field at physical position (x, y).
+   * @param x Physical x-coordinate (clamped to the domain).
+   * @param y Physical y-coordinate (clamped to the domain).
+   * @return  Interpolated smoke value.
+   */
+  [[nodiscard]] varType interpolateSmoke(varType x, varType y) const;
+
 
   /**
    * @brief Return both velocity components at physical position (x, y).
