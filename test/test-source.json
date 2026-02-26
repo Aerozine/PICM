@@ -1,10 +1,10 @@
 {
-    "dx": 0.01,
-    "dy": 0.01,
-    "dt": 0.001,
-    "nx": 100,
-    "ny": 100,
-    "nt": 100,
+    "dx": 0.05,
+    "dy": 0.05,
+    "dt": 0.05,
+    "nx": 200,
+    "ny": 140,
+    "nt": 1500,
     "density": 1000,
     "sampling_rate": 5,
 
@@ -13,35 +13,27 @@
     "write_p":             true,
     "write_div":           true,
     "write_norm_velocity": true,
+    "write_smoke":         true,
+
+    "source":              true,
 
     "folder":   "results",
     "filename": "simulation",
 
     "velocityu": {
         "rectangle": {
-            "val": 20.0,
-            "x1": "nx/2-10",
+            "val": 1,
+            "x1": "50",
             "y1": "ny/2-10",
-            "x2": "nx/2+10",
+            "x2": "51",
             "y2": "ny/2+10"
         }
     },
-
-    "velocityv": {
-        "rectangle": {
-            "val": 20.0,
-            "x1": "nx/2-10",
-            "y1": "ny/2-10",
-            "x2": "nx/2+10",
-            "y2": "ny/2+10"
-        }
-    },
-
     "solid": {
         "cylinder": {
-            "x": "nx/2+20",
-            "y": "ny/2+20",
-            "r": 10
+            "x": "100",
+            "y": "ny/2",
+            "r": 5
         },
         "rectangle": [
             { "x1": 0,      "y1": 0,      "x2": "nx-1", "y2": 0      },
@@ -49,10 +41,22 @@
             { "x1": 0,      "y1": 0,      "x2": 0,      "y2": "ny-1" },
             { "x1": "nx-1", "y1": 0,      "x2": "nx-1", "y2": "ny-1" }
         ]
-    },
-"solver": {
+   },
+   "smoke": {
+        "rectangle": {
+            "val": 1.0,
+            "x1": "50",
+            "y1": "ny/2",
+            "x2": "51",
+            "y2": "ny/2"
+        }
+   },
+
+
+    "solver": {
   "type": "red_black_gauss_seidel",
     "max_iterations": 5000,
-    "tolerance": 1e-2
+    "tolerance": 1e-1
 }
 }
+

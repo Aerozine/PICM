@@ -1,0 +1,43 @@
+{
+    "dx": 0.1,
+    "dy": 0.1,
+    "dt": 0.01,
+    "nx": 600,
+    "ny": 400,
+    "nt": 20,
+    "density": 1000,
+    "sampling_rate": 5,
+
+    "write_u":             true,
+    "write_v":             true,
+    "write_p":             true,
+    "write_div":           true,
+    "write_norm_velocity": true,
+
+    "folder":   "results",
+    "filename": "simulation",
+
+    "velocityu": {
+        "rectangle": {
+            "val": 20.0,
+            "x1": "100",
+            "y1": "ny/2-50",
+            "x2": "101",
+            "y2": "ny/2+50"
+        }
+    },
+    "solid": {
+        "cylinder": {
+            "x": "300",
+            "y": "ny/2",
+            "r": 50
+        }
+   },
+
+    "solver": {
+  "type": "red_black_gauss_seidel",
+    "max_iterations": 5000,
+    "tolerance": 1e-1
+}
+}
+

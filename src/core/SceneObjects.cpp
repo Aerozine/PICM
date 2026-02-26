@@ -104,6 +104,7 @@ void RectangleObject::applySolid(Fields2D &f) const {
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     for (int j = std::max(y1, 0); j <= jMax; ++j)
       f.SetLabel(i, j, Fields2D::SOLID);
+      
 }
 
 void RectangleObject::applyVelocityU(Fields2D &f) const {
@@ -120,6 +121,14 @@ void RectangleObject::applyVelocityV(Fields2D &f) const {
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     for (int j = std::max(y1, 0); j <= jMax; ++j)
       f.v.Set(i, j, val);
+}
+
+void RectangleObject::applySmoke(Fields2D &f) const {
+  const int iMax = std::min(x2, f.v.nx - 1);
+  const int jMax = std::min(y2, f.v.ny - 1);
+  for (int i = std::max(x1, 0); i <= iMax; ++i)
+    for (int j = std::max(y1, 0); j <= jMax; ++j)
+      f.smokeMap.Set(i, j, val);
 }
 
 // CylinderObject

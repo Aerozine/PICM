@@ -19,7 +19,8 @@
  * | @c v          | nx × (ny+1)    | y-face centres              |
  * | @c p          | nx × ny        | cell centres                |
  * | @c div        | nx × ny        | cell centres (diagnostic)   |
- * | @c normVelocity | nx × ny      | cell centres (diagnostic)   |
+ * | @c normVelocity | (nx-1) × (ny-1)      | cell centres (diagnostic)   |
+ * | @c smokeMap | (nx-1) × (ny-1)      | cell centres (diagnostic)   |
  *
  * Cell labels (FLUID / SOLID) are stored in a separate flat array and
  * accessed via @c Label() / @c SetLabel().
@@ -46,6 +47,7 @@ public:
               ///< (diagnostic): @f$n_x \times n_y$@f$.
   Grid2D
       normVelocity; ///< |u| interpolated to cell centres (diagnostic): nx × ny.
+  Grid2D smokeMap; ///< smoke matter in each cell centres
 
   /// Velocity imposed on SOLID cells (0 = no-slip). Reserved for moving
   /// boundaries in future work.
@@ -62,7 +64,8 @@ public:
    */
   Fields2D(int nx, int ny, varType density, varType dt, varType dx, varType dy)
       : nx(nx), ny(ny), density(density), dt(dt), dx(dx), dy(dy), u(nx + 1, ny),
-        v(nx, ny + 1), p(nx, ny), div(nx, ny), normVelocity(nx, ny),
+        v(nx, ny + 1), p(nx, ny), div(nx, ny), normVelocity(nx - 1, ny - 1),
+        smokeMap(nx - 1, ny - 1),
         labels(static_cast<std::size_t>(nx) * ny, FLUID) {}
 
   // Cell label accessors

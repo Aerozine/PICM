@@ -45,6 +45,8 @@ void SemiLagrangian::InitializeOutputWriters() {
   if (params.write_norm_velocity)
     normVelocityWriter =
         std::make_unique<OutputWriter>(params.folder, "normVelocity");
+  if (params.write_smoke)
+    smokeWriter = std::make_unique<OutputWriter>(params.folder, "smoke");
 }
 
 void SemiLagrangian::WriteOutput(int step) const {
@@ -62,15 +64,23 @@ void SemiLagrangian::WriteOutput(int step) const {
     ok &= divWriter->writeGrid2D(fields->div, "div");
   if (params.write_norm_velocity && normVelocityWriter)
     ok &= normVelocityWriter->writeGrid2D(fields->normVelocity, "normVelocity");
-
+  if (params.write_smoke && smokeWriter)
+    ok &= smokeWriter->writeGrid2D(fields->smokeMap, "smoke");
   if (!ok)
     std::cerr << "[SemiLagrangian] Warning: failed to write output at step "
               << step << '\n';
 }
 
 void SemiLagrangian::Step() {
+
+  if (params.source == true) {
+    params.applyToFields(*fields); // TODO: améliorer, fait vite fait pour 
+                                            // avoir une source
+  }
+
   MakeIncompressible(); // 1. Pressure projection: enforce div u = 0.
   Advect();             // 2. Semi-Lagrangian transport of velocity.
+  AdvectSmoke();
   fields->Div();        // } Update diagnostics used for
   fields->VelocityNormCenterGrid(); // } output and progress reporting.
 }

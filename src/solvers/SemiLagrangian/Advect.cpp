@@ -34,6 +34,38 @@ void SemiLagrangian::Advect() const {
   fields->v = std::move(vNew);
 }
 
+void SemiLagrangian::AdvectSmoke() const {
+  Grid2D smokeNew(fields->smokeMap.nx, fields->smokeMap.ny);
+
+  for (int i = 0; i < fields->smokeMap.nx; ++i)
+    for (int j = 0; j < fields->smokeMap.ny; ++j) {
+
+      // Position physique du centre de la cellule (i, j)
+      const varType x0 = (static_cast<varType>(i) + REAL_LITERAL(0.5)) * dx;
+      const varType y0 = (static_cast<varType>(j) + REAL_LITERAL(0.5)) * dy;
+
+      // RK2 backward trace (même logique que traceParticleU/V)
+      varType u0, v0;
+      getVelocity(x0, y0, u0, v0);
+      const varType xMid = x0 - REAL_LITERAL(0.5) * dt * u0;
+      const varType yMid = y0 - REAL_LITERAL(0.5) * dt * v0;
+
+      varType uMid, vMid;
+      getVelocity(xMid, yMid, uMid, vMid);
+      varType xDep = x0 - dt * uMid;
+      varType yDep = y0 - dt * vMid;
+
+      // Clamp au domaine
+      xDep = std::clamp(xDep, REAL_LITERAL(0.0), static_cast<varType>(nx - 1) * dx);
+      yDep = std::clamp(yDep, REAL_LITERAL(0.0), static_cast<varType>(ny - 1) * dy);
+
+      // Interpolation bilinéaire de la smoke au point de départ
+      smokeNew.Set(i, j, interpolateSmoke(xDep, yDep));
+    }
+
+  fields->smokeMap = std::move(smokeNew);
+}
+
 // RK2 backward particle traces
 
 void SemiLagrangian::traceParticleU(const int i, const int j, varType &x,
@@ -140,4 +172,27 @@ void SemiLagrangian::getVelocity(const varType x, const varType y, varType &u,
                                  varType &v) const {
   u = interpolateU(x, y);
   v = interpolateV(x, y);
+}
+
+varType SemiLagrangian::interpolateSmoke(const varType x, const varType y) const {
+  // smokeMap est cell-centered : (i+0.5)*dx, (j+0.5)*dy
+  const varType i_real = x / dx - REAL_LITERAL(0.5);
+  const varType j_real = y / dy - REAL_LITERAL(0.5);
+
+  int i = static_cast<int>(std::floor(i_real));
+  int j = static_cast<int>(std::floor(j_real));
+
+  const varType fx = i_real - static_cast<varType>(i);
+  const varType fy = j_real - static_cast<varType>(j);
+
+  i = std::clamp(i, 0, fields->smokeMap.nx - 2);
+  j = std::clamp(j, 0, fields->smokeMap.ny - 2);
+
+  const varType s00 = fields->smokeMap.Get(i,     j    );
+  const varType s10 = fields->smokeMap.Get(i + 1, j    );
+  const varType s01 = fields->smokeMap.Get(i,     j + 1);
+  const varType s11 = fields->smokeMap.Get(i + 1, j + 1);
+
+  return (REAL_LITERAL(1.0) - fy) * ((REAL_LITERAL(1.0) - fx) * s00 + fx * s10)
+       +                       fy  * ((REAL_LITERAL(1.0) - fx) * s01 + fx * s11);
 }

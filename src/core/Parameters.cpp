@@ -62,6 +62,9 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   load("nt", nt);
   load("sampling_rate", sampling_rate);
   load("density", density);
+ 
+  // simulation condition
+  load("source", source);
 
   // Output flags
   load("write_u", write_u);
@@ -69,6 +72,7 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   load("write_p", write_p);
   load("write_div", write_div);
   load("write_norm_velocity", write_norm_velocity);
+  load("write_smoke", write_smoke);
 
   // Output paths
   load("folder", folder);
@@ -82,6 +86,8 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
     velocityV_json = j["velocityv"];
   if (j.contains("solid"))
     solid_json = j["solid"];
+  if (j.contains("smoke"))
+    smoke_json = j["smoke"];
 
   // Solver
   if (j.contains("solver"))
@@ -102,6 +108,10 @@ void Parameters::applyToFields(Fields2D &fields) const {
   if (!solid_json.is_null()) {
     for (const auto &obj : parseSceneObjects(solid_json, vars))
       obj->applySolid(fields);
+  } 
+  if (!smoke_json.is_null()) {
+    for (const auto &obj : parseSceneObjects(smoke_json, vars))
+      obj->applySmoke(fields);
   }
 }
 
@@ -158,6 +168,8 @@ std::ostream &operator<<(std::ostream &os, const Parameters &p) {
      << "  InitVelU: " << (!p.velocityU_json.is_null() ? "defined" : "none")
      << '\n'
      << "  InitVelV: " << (!p.velocityV_json.is_null() ? "defined" : "none")
+     << '\n'
+     << "  smoke: " << (!p.smoke_json.is_null() ? "defined" : "none")
      << '\n'
      << "  Solid   : " << (!p.solid_json.is_null() ? "defined" : "none") << '\n'
      << "=============================\n";
