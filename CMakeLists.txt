@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 project(PIC)
 
-option(USE_FLOAT_PRECISION "Use float instead of double" ON)
+option(USE_FLOAT_PRECISION "Use float instead of double" OFF)
 
 include(FetchContent)
 set(CMAKE_CXX_STANDARD 17)

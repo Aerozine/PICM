@@ -5,10 +5,8 @@
 #include <stdexcept>
 
 // Expression resolver
-//  you can forgot about the details
 int resolveInt(const nlohmann::json &val,
                const std::map<std::string, int> &vars) {
-  // Fast path: bare JSON integer.
   if (val.is_number())
     return val.get<int>();
 
@@ -17,8 +15,6 @@ int resolveInt(const nlohmann::json &val,
 
   std::string expr = val.get<std::string>();
 
-  // Substitute variable names longest-first to avoid partial matches
-  // (e.g. so "nxy" is not mis-matched by "nx" before "nxy" is tried).
   std::vector<std::pair<std::string, int>> sorted(vars.begin(), vars.end());
   std::sort(sorted.begin(), sorted.end(), [](const auto &a, const auto &b) {
     return a.first.size() > b.first.size();
@@ -30,12 +26,6 @@ int resolveInt(const nlohmann::json &val,
       expr.replace(pos, name.size(), std::to_string(v));
   }
 
-  // evaluator
-  //  Grammar: expr := signed_int (op signed_int)*
-  //           op   := '+' | '-' | '*' | '/'
-  //  Operator precedence is left-to-right (no precedence climbing needed for
-  //  the simple expressions that appear in config files).
-
   auto skipSpaces = [&](std::size_t pos) -> std::size_t {
     while (pos < expr.size() &&
            std::isspace(static_cast<unsigned char>(expr[pos])))
@@ -43,8 +33,6 @@ int resolveInt(const nlohmann::json &val,
     return pos;
   };
 
-  // Parse one signed integer token starting at position pos.
-  // Advances pos past the token and returns the value.
   auto parseNumber = [&](std::size_t &pos) -> int {
     std::size_t start = pos;
     if (pos < expr.size() && (expr[pos] == '+' || expr[pos] == '-'))
@@ -73,15 +61,9 @@ int resolveInt(const nlohmann::json &val,
     i = skipSpaces(i);
 
     switch (op) {
-    case '+':
-      result += operand;
-      break;
-    case '-':
-      result -= operand;
-      break;
-    case '*':
-      result *= operand;
-      break;
+    case '+': result += operand; break;
+    case '-': result -= operand; break;
+    case '*': result *= operand; break;
     case '/':
       if (operand == 0)
         throw std::runtime_error("[resolveInt] division by zero");
@@ -101,91 +83,79 @@ int resolveInt(const nlohmann::json &val,
 void RectangleObject::applySolid(Fields2D &f) const {
   const int iMax = std::min(x2, f.nx - 1);
   const int jMax = std::min(y2, f.ny - 1);
-  for (int i = std::max(x1, 0); i <= iMax; ++i)
-    for (int j = std::max(y1, 0); j <= jMax; ++j)
+  for (int j = std::max(y1, 0); j <= jMax; ++j)
+    for (int i = std::max(x1, 0); i <= iMax; ++i)
       f.SetLabel(i, j, Fields2D::SOLID);
-      
 }
 
 void RectangleObject::applyVelocityU(Fields2D &f) const {
   const int iMax = std::min(x2, f.u.nx - 1);
   const int jMax = std::min(y2, f.u.ny - 1);
-  for (int i = std::max(x1, 0); i <= iMax; ++i)
-    for (int j = std::max(y1, 0); j <= jMax; ++j)
+  for (int j = std::max(y1, 0); j <= jMax; ++j)
+    for (int i = std::max(x1, 0); i <= iMax; ++i)
       f.u.Set(i, j, val);
 }
 
 void RectangleObject::applyVelocityV(Fields2D &f) const {
   const int iMax = std::min(x2, f.v.nx - 1);
   const int jMax = std::min(y2, f.v.ny - 1);
-  for (int i = std::max(x1, 0); i <= iMax; ++i)
-    for (int j = std::max(y1, 0); j <= jMax; ++j)
+  for (int j = std::max(y1, 0); j <= jMax; ++j)
+    for (int i = std::max(x1, 0); i <= iMax; ++i)
       f.v.Set(i, j, val);
 }
 
 void RectangleObject::applySmoke(Fields2D &f) const {
-  const int iMax = std::min(x2, f.v.nx - 1);
-  const int jMax = std::min(y2, f.v.ny - 1);
-  for (int i = std::max(x1, 0); i <= iMax; ++i)
-    for (int j = std::max(y1, 0); j <= jMax; ++j)
+  const int iMax = std::min(x2, f.smokeMap.nx - 1);
+  const int jMax = std::min(y2, f.smokeMap.ny - 1);
+  for (int j = std::max(y1, 0); j <= jMax; ++j)
+    for (int i = std::max(x1, 0); i <= iMax; ++i)
       f.smokeMap.Set(i, j, val);
 }
 
 // CylinderObject
 
 void CylinderObject::applySolid(Fields2D &f) const {
-  const int r2 = r * r; // hoist out of the inner loop
-  for (int i = 0; i < f.nx; ++i) {
-    for (int j = 0; j < f.ny; ++j) {
+  const int r2 = r * r;
+  for (int j = 0; j < f.ny; ++j) {
+    const int ddy = j - cy;
+    for (int i = 0; i < f.nx; ++i) {
       const int ddx = i - cx;
-      const int ddy = j - cy;
       if (ddx * ddx + ddy * ddy <= r2)
         f.SetLabel(i, j, Fields2D::SOLID);
     }
   }
 }
 
-// Parse a RectangleObject from its JSON node.
+// Parsers
+
 static std::unique_ptr<RectangleObject>
 parseRectangle(const nlohmann::json &j,
                const std::map<std::string, int> &vars) {
   auto obj = std::make_unique<RectangleObject>();
-  if (j.contains("val"))
-    obj->val = j["val"].get<double>();
-  if (j.contains("x1"))
-    obj->x1 = resolveInt(j["x1"], vars);
-  if (j.contains("y1"))
-    obj->y1 = resolveInt(j["y1"], vars);
-  if (j.contains("x2"))
-    obj->x2 = resolveInt(j["x2"], vars);
-  if (j.contains("y2"))
-    obj->y2 = resolveInt(j["y2"], vars);
+  if (j.contains("val")) obj->val = j["val"].get<double>();
+  if (j.contains("x1"))  obj->x1  = resolveInt(j["x1"], vars);
+  if (j.contains("y1"))  obj->y1  = resolveInt(j["y1"], vars);
+  if (j.contains("x2"))  obj->x2  = resolveInt(j["x2"], vars);
+  if (j.contains("y2"))  obj->y2  = resolveInt(j["y2"], vars);
   return obj;
 }
 
-// Parse a CylinderObject from its JSON node.
 static std::unique_ptr<CylinderObject>
 parseCylinder(const nlohmann::json &j, const std::map<std::string, int> &vars) {
   auto obj = std::make_unique<CylinderObject>();
-  if (j.contains("x"))
-    obj->cx = resolveInt(j["x"], vars);
-  if (j.contains("y"))
-    obj->cy = resolveInt(j["y"], vars);
-  if (j.contains("r"))
-    obj->r = resolveInt(j["r"], vars);
+  if (j.contains("x")) obj->cx = resolveInt(j["x"], vars);
+  if (j.contains("y")) obj->cy = resolveInt(j["y"], vars);
+  if (j.contains("r")) obj->r  = resolveInt(j["r"], vars);
   return obj;
 }
 
 std::unique_ptr<SceneObject>
 makeSceneObject(const std::string &type, const nlohmann::json &j,
                 const std::map<std::string, int> &vars) {
-  if (type == "rectangle")
-    return parseRectangle(j, vars);
-  if (type == "cylinder")
-    return parseCylinder(j, vars);
+  if (type == "rectangle") return parseRectangle(j, vars);
+  if (type == "cylinder")  return parseCylinder(j, vars);
 
-  std::cerr << "[SceneObjects] Unknown object type: '" << type
-            << "' – ignored.\n";
+  std::cerr << "[SceneObjects] Unknown object type: '" << type << "' – ignored.\n";
   return nullptr;
 }
 
@@ -195,14 +165,13 @@ parseSceneObjects(const nlohmann::json &node,
   std::vector<std::unique_ptr<SceneObject>> result;
 
   for (auto it = node.begin(); it != node.end(); ++it) {
-    const std::string &type = it.key();
+    const std::string &type   = it.key();
     const nlohmann::json &value = it.value();
 
     if (value.is_array()) {
-      for (const auto &entry : value) {
+      for (const auto &entry : value)
         if (auto obj = makeSceneObject(type, entry, vars))
           result.push_back(std::move(obj));
-      }
     } else if (value.is_object()) {
       if (auto obj = makeSceneObject(type, value, vars))
         result.push_back(std::move(obj));
