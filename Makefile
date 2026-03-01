@@ -31,3 +31,5 @@ format:
 
 clean:
 	rm -rf build* results*
+memcheck:
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose ./build-dbg/bin/PIC -c test/test-large-cylinder.json
