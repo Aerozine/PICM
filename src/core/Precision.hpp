@@ -32,18 +32,18 @@ using varType = double; ///< Simulation floating-point type (64-bit).
 
 /// @brief Wall-clock time in seconds (via OpenMP if enabled).
 #ifdef USE_OPENMP
-#  include <omp.h>
+#include <omp.h>
 // expand anything (...) as pragma
 // supress wunusedPragma if not compiled with openmp
 #define OMP_PRAGMA(...) _Pragma(#__VA_ARGS__)
-#  define GET_TIME() (omp_get_wtime())
+#define GET_TIME() (omp_get_wtime())
 #else
-#  include <chrono>
-   inline double _wall_time() {
-     using namespace std::chrono;
-     return duration<double>(steady_clock::now().time_since_epoch()).count();
-   }
-#  define GET_TIME() (_wall_time())
+#include <chrono>
+inline double _wall_time() {
+  using namespace std::chrono;
+  return duration<double>(steady_clock::now().time_since_epoch()).count();
+}
+#define GET_TIME() (_wall_time())
 // Expanded to nothing otherwise
-#define OMP_PRAGMA(...)  
+#define OMP_PRAGMA(...)
 #endif

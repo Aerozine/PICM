@@ -47,7 +47,7 @@ public:
               ///< (diagnostic): \f$ n_x \times n_y \f$.
   Grid2D
       normVelocity; ///< |u| interpolated to cell centres (diagnostic): nx × ny.
-  Grid2D smokeMap; ///< smoke matter in each cell centres
+  Grid2D smokeMap;  ///< smoke matter in each cell centres
 
   /// Velocity imposed on SOLID cells (0 = no-slip). Reserved for moving
   /// boundaries in future work.
@@ -94,10 +94,10 @@ public:
    * @c div.
    *
    * Uses first-order finite differences on the staggered grid:
- * \f$
- *   \mathrm{div}(i,j) = \frac{u(i+1,j) - u(i,j)}{\Delta x}
- *                     + \frac{v(i,j+1) - v(i,j)}{\Delta y}
- * \f$
+   * \f$
+   *   \mathrm{div}(i,j) = \frac{u(i+1,j) - u(i,j)}{\Delta x}
+   *                     + \frac{v(i,j+1) - v(i,j)}{\Delta y}
+   * \f$
    */
   void Div();
 

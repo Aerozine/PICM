@@ -43,13 +43,13 @@ void Fields2D::SolidCylinder(int cx, int cy, int r) {
 void Fields2D::SolidBorders() {
   // Bottom and top rows — i is inner (fast index)
   for (int i = 0; i < nx; i++) {
-    SetLabel(i, 0,      SOLID);
+    SetLabel(i, 0, SOLID);
     SetLabel(i, ny - 1, SOLID);
   }
   // Left and right columns — j is inner (each call touches a different row,
   // stride is already 1 element in row-major so this is fine as-is)
   for (int j = 0; j < ny; j++) {
-    SetLabel(0,      j, SOLID);
+    SetLabel(0, j, SOLID);
     SetLabel(nx - 1, j, SOLID);
   }
 }

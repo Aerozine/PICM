@@ -129,7 +129,7 @@ private:
    * @return  Interpolated v value.
    */
   [[nodiscard]] varType interpolateV(varType x, varType y) const;
-  
+
   /**
    * @brief Bilinearly interpolate the smoke field at physical position (x, y).
    * @param x Physical x-coordinate (clamped to the domain).
@@ -137,7 +137,6 @@ private:
    * @return  Interpolated smoke value.
    */
   [[nodiscard]] varType interpolateSmoke(varType x, varType y) const;
-
 
   /**
    * @brief Return both velocity components at physical position (x, y).

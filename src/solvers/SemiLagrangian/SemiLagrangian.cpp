@@ -74,14 +74,14 @@ void SemiLagrangian::WriteOutput(int step) const {
 void SemiLagrangian::Step() {
 
   if (params.source == true) {
-    params.applyToFields(*fields); // TODO: améliorer, fait vite fait pour 
-                                            // avoir une source
+    params.applyToFields(*fields); // TODO: améliorer, fait vite fait pour
+                                   // avoir une source
   }
 
   MakeIncompressible(); // 1. Pressure projection: enforce div u = 0.
   Advect();             // 2. Semi-Lagrangian transport of velocity.
   AdvectSmoke();
-  fields->Div();        // } Update diagnostics used for
+  fields->Div();                    // } Update diagnostics used for
   fields->VelocityNormCenterGrid(); // } output and progress reporting.
 }
 
