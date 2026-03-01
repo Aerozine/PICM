@@ -34,7 +34,7 @@ double SemiLagrangian::computeResidualNorm(const varType coef) const {
   double sumSq = 0.0;
   int count = 0;
 
-#pragma omp parallel for collapse(2) reduction(+ : sumSq) reduction(+ : count)
+OMP_PRAGMA( omp parallel for collapse(2) reduction(+ : sumSq) reduction(+ : count))
   for (int j = 0; j < ny; ++j) {
     for (int i = 0; i < nx; ++i) {
       if (fields->Label(i, j) != Fields2D::FLUID)
@@ -85,12 +85,12 @@ void SemiLagrangian::SolveJacobi(int maxIters, double tol) {
 
   for (int it = 0; it < maxIters; ++it) {
 
-#pragma omp parallel for collapse(2)
+OMP_PRAGMA( omp parallel for collapse(2))
     for (int j = 0; j < ny; ++j)
       for (int i = 0; i < nx; ++i)
         pNew.Set(i, j, getUpdate(i, j, coef));
 
-#pragma omp parallel for collapse(2)
+OMP_PRAGMA( omp parallel for collapse(2))
     for (int j = 0; j < ny; ++j)
       for (int i = 0; i < nx; ++i)
         if (fields->Label(i, j) == Fields2D::FLUID)
@@ -156,7 +156,7 @@ void SemiLagrangian::SolveRedBlackGaussSeidel(int maxIters, double tol) {
     // (i+j odd). Each colour's cells are independent of one another, so
     // the inner loop can be parallelised without data races.
     for (int color = 0; color < 2; ++color) {
-#pragma omp parallel for collapse(2)
+OMP_PRAGMA( omp parallel for collapse(2))
       for (int j = 0; j < ny; ++j) {
         for (int i = 0; i < nx; ++i) {
           if ((i + j) % 2 != color)

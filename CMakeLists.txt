@@ -16,16 +16,50 @@ message(STATUS "Setting nlohmannJson")
 find_package(nlohmann_json QUIET)
 if(NOT TARGET nlohmann_json::nlohmann_json)
   message(STATUS "Fetching nlohmann-json")
-  FetchContent_Declare(json GIT_REPOSITORY https://github.com/nlohmann/json.git GIT_TAG v3.12.0)
+  FetchContent_Declare(
+    json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG v3.12.0)
   FetchContent_MakeAvailable(json)
 endif()
-# Find OpenMP
-find_package(OpenMP REQUIRED)
+
+find_package(OpenMP QUIET)
+if(NOT OpenMP_CXX_FOUND AND APPLE)
+  # On macOS , libomp is available via Homebrew (both intel and Apple-silicon
+  # paths are checked automatically)
+  find_program(BREW brew)
+  if(BREW)
+    execute_process(
+      COMMAND ${BREW} --prefix libomp
+      OUTPUT_VARIABLE LIBOMP_PREFIX
+      OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+  endif()
+
+  if(EXISTS "${LIBOMP_PREFIX}/include/omp.h")
+    message(STATUS "OpenMP: using Homebrew libomp at ${LIBOMP_PREFIX}")
+    add_library(OpenMP::OpenMP_CXX INTERFACE IMPORTED)
+    target_compile_options(
+      OpenMP::OpenMP_CXX INTERFACE -Xpreprocessor -fopenmp
+                                   -I${LIBOMP_PREFIX}/include)
+    target_link_libraries(OpenMP::OpenMP_CXX INTERFACE -L${LIBOMP_PREFIX}/lib
+                                                       -lomp)
+    set(OpenMP_CXX_FOUND TRUE)
+  endif()
+endif()
+
+if(OpenMP_CXX_FOUND)
+  message(STATUS "OpenMP: enabled")
+else()
+  message(STATUS "OpenMP: NOT found - building single-threaded")
+endif()
 
 find_package(ZLIB QUIET)
 if(ZLIB_FOUND)
-  message(STATUS "ZLib found (${ZLIB_VERSION_STRING}) – VTI output will be compressed")
+  message(
+    STATUS "ZLib found (${ZLIB_VERSION_STRING}) – VTI output will be compressed"
+  )
 else()
-  message(STATUS "ZLib NOT found – VTI output will use raw binary (no compression)")
+  message(
+    STATUS "ZLib NOT found – VTI output will use raw binary (no compression)")
 endif()
 add_subdirectory(src)
