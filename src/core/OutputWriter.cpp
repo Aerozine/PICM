@@ -127,12 +127,12 @@ bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
   std::ostringstream xml;
   xml << "<?xml version=\"1.0\"?>\n"
       << "<VTKFile type=\"ImageData\" version=\"0.1\""
-      << " byte_order=\"LittleEndian\"" << compressorAttr << ">\n"
+      << " byte_order=\"LittleEndian\"" << compressorAttr
+      << ">\n"
       // WholeExtent is in *points*. A grid of nx×ny cells has nx+1 × ny+1
       // corner points, so point indices run 0..nx in x and 0..ny in y.
       // CellData array size = nx*ny, row stride = nx. Consistent with data.
-      << "  <ImageData WholeExtent=\"0 " << nx << " 0 " << ny
-      << " 0 0\""
+      << "  <ImageData WholeExtent=\"0 " << nx << " 0 " << ny << " 0 0\""
       << " Origin=\"0.0 0.0 0.0\""
       << " Spacing=\"1.0 1.0 1.0\">\n"
       << "    <Piece Extent=\"0 " << nx << " 0 " << ny

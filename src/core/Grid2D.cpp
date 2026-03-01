@@ -39,9 +39,9 @@ varType Grid2D::Interpolate(varType x, varType y, varType dx, varType dy,
   i0 = std::clamp(i0, 0, nx - 2);
   j0 = std::clamp(j0, 0, ny - 2);
 
-  const varType f00 = Get(i0,     j0    );
-  const varType f10 = Get(i0 + 1, j0    );
-  const varType f01 = Get(i0,     j0 + 1);
+  const varType f00 = Get(i0, j0);
+  const varType f10 = Get(i0 + 1, j0);
+  const varType f01 = Get(i0, j0 + 1);
   const varType f11 = Get(i0 + 1, j0 + 1);
 
   return (REAL_LITERAL(1.0) - fy) *

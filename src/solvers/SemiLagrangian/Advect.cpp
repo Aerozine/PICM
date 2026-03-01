@@ -58,8 +58,10 @@ void SemiLagrangian::AdvectSmoke() const {
       varType xDep = x0 - dt * uMid;
       varType yDep = y0 - dt * vMid;
 
-      xDep = std::clamp(xDep, REAL_LITERAL(0.0), static_cast<varType>(nx - 1) * dx);
-      yDep = std::clamp(yDep, REAL_LITERAL(0.0), static_cast<varType>(ny - 1) * dy);
+      xDep = std::clamp(xDep, REAL_LITERAL(0.0),
+                        static_cast<varType>(nx - 1) * dx);
+      yDep = std::clamp(yDep, REAL_LITERAL(0.0),
+                        static_cast<varType>(ny - 1) * dy);
 
       smokeNew.Set(i, j, interpolateSmoke(xDep, yDep));
     }
@@ -125,9 +127,9 @@ varType SemiLagrangian::interpolateU(const varType x, const varType y) const {
   i = std::clamp(i, 0, fields->u.nx - 2);
   j = std::clamp(j, 0, fields->u.ny - 2);
 
-  const varType u00 = fields->u.Get(i,     j    );
-  const varType u10 = fields->u.Get(i + 1, j    );
-  const varType u01 = fields->u.Get(i,     j + 1);
+  const varType u00 = fields->u.Get(i, j);
+  const varType u10 = fields->u.Get(i + 1, j);
+  const varType u01 = fields->u.Get(i, j + 1);
   const varType u11 = fields->u.Get(i + 1, j + 1);
 
   return (REAL_LITERAL(1.0) - fy) *
@@ -148,9 +150,9 @@ varType SemiLagrangian::interpolateV(const varType x, const varType y) const {
   i = std::clamp(i, 0, fields->v.nx - 2);
   j = std::clamp(j, 0, fields->v.ny - 2);
 
-  const varType v00 = fields->v.Get(i,     j    );
-  const varType v10 = fields->v.Get(i + 1, j    );
-  const varType v01 = fields->v.Get(i,     j + 1);
+  const varType v00 = fields->v.Get(i, j);
+  const varType v10 = fields->v.Get(i + 1, j);
+  const varType v01 = fields->v.Get(i, j + 1);
   const varType v11 = fields->v.Get(i + 1, j + 1);
 
   return (REAL_LITERAL(1.0) - fy) *
@@ -164,7 +166,8 @@ void SemiLagrangian::getVelocity(const varType x, const varType y, varType &u,
   v = interpolateV(x, y);
 }
 
-varType SemiLagrangian::interpolateSmoke(const varType x, const varType y) const {
+varType SemiLagrangian::interpolateSmoke(const varType x,
+                                         const varType y) const {
   // smokeMap is cell-centred: (i+0.5)*dx, (j+0.5)*dy
   const varType i_real = x / dx - REAL_LITERAL(0.5);
   const varType j_real = y / dy - REAL_LITERAL(0.5);
@@ -178,11 +181,12 @@ varType SemiLagrangian::interpolateSmoke(const varType x, const varType y) const
   i = std::clamp(i, 0, fields->smokeMap.nx - 2);
   j = std::clamp(j, 0, fields->smokeMap.ny - 2);
 
-  const varType s00 = fields->smokeMap.Get(i,     j    );
-  const varType s10 = fields->smokeMap.Get(i + 1, j    );
-  const varType s01 = fields->smokeMap.Get(i,     j + 1);
+  const varType s00 = fields->smokeMap.Get(i, j);
+  const varType s10 = fields->smokeMap.Get(i + 1, j);
+  const varType s01 = fields->smokeMap.Get(i, j + 1);
   const varType s11 = fields->smokeMap.Get(i + 1, j + 1);
 
-  return (REAL_LITERAL(1.0) - fy) * ((REAL_LITERAL(1.0) - fx) * s00 + fx * s10)
-       +                       fy  * ((REAL_LITERAL(1.0) - fx) * s01 + fx * s11);
+  return (REAL_LITERAL(1.0) - fy) *
+             ((REAL_LITERAL(1.0) - fx) * s00 + fx * s10) +
+         fy * ((REAL_LITERAL(1.0) - fx) * s01 + fx * s11);
 }

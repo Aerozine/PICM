@@ -32,35 +32,33 @@ void SemiLagrangian::updateVelocities() {
 
   const varType coef = dt / (density * dx);
 
-  // u-faces: i is the fast (inner) index — contiguous in row-major storage.
 OMP_PRAGMA( omp parallel for collapse(2) schedule(static))
-  for (int j = 0; j < fields->u.ny; ++j) {
-    for (int i = 1; i < fields->u.nx; ++i) {
-      if (fields->Label(i - 1, j) == Fields2D::SOLID ||
-          fields->Label(i,     j) == Fields2D::SOLID) {
-        fields->u.Set(i, j, fields->usolid);
-        continue;
-      }
-      fields->u.Set(i, j,
-                    fields->u.Get(i, j) -
-                        coef * (fields->p.Get(i, j) - fields->p.Get(i - 1, j)));
+for (int j = 0; j < fields->u.ny; ++j) {
+  for (int i = 1; i < fields->u.nx - 1; ++i) {
+    if ((fields->Label(i - 1, j) == Fields2D::SOLID) ||
+        (fields->Label(i, j) == Fields2D::SOLID)) {
+      fields->u.Set(i, j, fields->usolid);
+      continue;
     }
+    fields->u.Set(i, j,
+                  fields->u.Get(i, j) -
+                      coef * (fields->p.Get(i, j) - fields->p.Get(i - 1, j)));
   }
+}
 
-  // v-faces: i is the fast (inner) index.
 OMP_PRAGMA( omp parallel for collapse(2) schedule(static))
-  for (int j = 1; j < fields->v.ny; ++j) {
-    for (int i = 0; i < fields->v.nx; ++i) {
-      if (fields->Label(i, j - 1) == Fields2D::SOLID ||
-          fields->Label(i, j    ) == Fields2D::SOLID) {
-        fields->v.Set(i, j, fields->usolid);
-        continue;
-      }
-      fields->v.Set(i, j,
-                    fields->v.Get(i, j) -
-                        coef * (fields->p.Get(i, j) - fields->p.Get(i, j - 1)));
+for (int j = 1; j < fields->v.ny - 1; ++j) {
+  for (int i = 0; i < fields->v.nx; ++i) {
+    if ((fields->Label(i, j - 1) == Fields2D::SOLID) ||
+        (fields->Label(i, j) == Fields2D::SOLID)) {
+      fields->v.Set(i, j, fields->usolid);
+      continue;
     }
+    fields->v.Set(i, j,
+                  fields->v.Get(i, j) -
+                      coef * (fields->p.Get(i, j) - fields->p.Get(i, j - 1)));
   }
+}
 }
 
 void SemiLagrangian::MakeIncompressible() {

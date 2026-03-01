@@ -61,9 +61,15 @@ int resolveInt(const nlohmann::json &val,
     i = skipSpaces(i);
 
     switch (op) {
-    case '+': result += operand; break;
-    case '-': result -= operand; break;
-    case '*': result *= operand; break;
+    case '+':
+      result += operand;
+      break;
+    case '-':
+      result -= operand;
+      break;
+    case '*':
+      result *= operand;
+      break;
     case '/':
       if (operand == 0)
         throw std::runtime_error("[resolveInt] division by zero");
@@ -132,30 +138,41 @@ static std::unique_ptr<RectangleObject>
 parseRectangle(const nlohmann::json &j,
                const std::map<std::string, int> &vars) {
   auto obj = std::make_unique<RectangleObject>();
-  if (j.contains("val")) obj->val = j["val"].get<double>();
-  if (j.contains("x1"))  obj->x1  = resolveInt(j["x1"], vars);
-  if (j.contains("y1"))  obj->y1  = resolveInt(j["y1"], vars);
-  if (j.contains("x2"))  obj->x2  = resolveInt(j["x2"], vars);
-  if (j.contains("y2"))  obj->y2  = resolveInt(j["y2"], vars);
+  if (j.contains("val"))
+    obj->val = j["val"].get<double>();
+  if (j.contains("x1"))
+    obj->x1 = resolveInt(j["x1"], vars);
+  if (j.contains("y1"))
+    obj->y1 = resolveInt(j["y1"], vars);
+  if (j.contains("x2"))
+    obj->x2 = resolveInt(j["x2"], vars);
+  if (j.contains("y2"))
+    obj->y2 = resolveInt(j["y2"], vars);
   return obj;
 }
 
 static std::unique_ptr<CylinderObject>
 parseCylinder(const nlohmann::json &j, const std::map<std::string, int> &vars) {
   auto obj = std::make_unique<CylinderObject>();
-  if (j.contains("x")) obj->cx = resolveInt(j["x"], vars);
-  if (j.contains("y")) obj->cy = resolveInt(j["y"], vars);
-  if (j.contains("r")) obj->r  = resolveInt(j["r"], vars);
+  if (j.contains("x"))
+    obj->cx = resolveInt(j["x"], vars);
+  if (j.contains("y"))
+    obj->cy = resolveInt(j["y"], vars);
+  if (j.contains("r"))
+    obj->r = resolveInt(j["r"], vars);
   return obj;
 }
 
 std::unique_ptr<SceneObject>
 makeSceneObject(const std::string &type, const nlohmann::json &j,
                 const std::map<std::string, int> &vars) {
-  if (type == "rectangle") return parseRectangle(j, vars);
-  if (type == "cylinder")  return parseCylinder(j, vars);
+  if (type == "rectangle")
+    return parseRectangle(j, vars);
+  if (type == "cylinder")
+    return parseCylinder(j, vars);
 
-  std::cerr << "[SceneObjects] Unknown object type: '" << type << "' – ignored.\n";
+  std::cerr << "[SceneObjects] Unknown object type: '" << type
+            << "' – ignored.\n";
   return nullptr;
 }
 
@@ -165,7 +182,7 @@ parseSceneObjects(const nlohmann::json &node,
   std::vector<std::unique_ptr<SceneObject>> result;
 
   for (auto it = node.begin(); it != node.end(); ++it) {
-    const std::string &type   = it.key();
+    const std::string &type = it.key();
     const nlohmann::json &value = it.value();
 
     if (value.is_array()) {
