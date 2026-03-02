@@ -1,5 +1,4 @@
 #pragma once
-#include <omp.h>
 
 /**
  * @file Precision.hpp
