@@ -63,9 +63,6 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   load("sampling_rate", sampling_rate);
   load("density", density);
  
-  // simulation condition
-  load("source", source);
-
   // Output flags
   load("write_u", write_u);
   load("write_v", write_v);
@@ -84,6 +81,8 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
     velocityU_json = j["velocityu"];
   if (j.contains("velocityv"))
     velocityV_json = j["velocityv"];
+  if (j.contains("pressure"))
+    pressure_json = j["pressure"];
   if (j.contains("solid"))
     solid_json = j["solid"];
   if (j.contains("smoke"))
@@ -104,6 +103,10 @@ void Parameters::applyToFields(Fields2D &fields) const {
   if (!velocityV_json.is_null()) {
     for (const auto &obj : parseSceneObjects(velocityV_json, vars))
       obj->applyVelocityV(fields);
+  }
+  if (!pressure_json.is_null()) {
+    for (const auto &obj : parseSceneObjects(pressure_json, vars))
+      obj->applyPressure(fields);
   }
   if (!solid_json.is_null()) {
     for (const auto &obj : parseSceneObjects(solid_json, vars))

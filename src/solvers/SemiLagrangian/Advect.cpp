@@ -40,6 +40,11 @@ void SemiLagrangian::AdvectSmoke() const {
   for (int i = 0; i < fields->smokeMap.nx; ++i)
     for (int j = 0; j < fields->smokeMap.ny; ++j) {
 
+      if (fields->Label(i, j) == Fields2D::BC_S) {
+        smokeNew.Set(i, j, fields->smokeMap.Get(i, j));
+        continue;
+      }
+
       // Position physique du centre de la cellule (i, j)
       const varType x0 = (static_cast<varType>(i) + REAL_LITERAL(0.5)) * dx;
       const varType y0 = (static_cast<varType>(j) + REAL_LITERAL(0.5)) * dy;

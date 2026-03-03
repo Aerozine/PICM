@@ -40,6 +40,9 @@ void SemiLagrangian::updateVelocities() {
         fields->u.Set(i, j, fields->usolid);
         continue;
       }
+      else if (fields->Label(i, j) == Fields2D::BC_U) {
+         continue;
+      }
       fields->u.Set(i, j,
                     fields->u.Get(i, j) -
                         coef * (fields->p.Get(i, j) - fields->p.Get(i - 1, j)));
@@ -53,6 +56,9 @@ void SemiLagrangian::updateVelocities() {
           fields->Label(i, j) == Fields2D::SOLID) {
         fields->v.Set(i, j, fields->usolid);
         continue;
+      }
+      else if (fields->Label(i, j) == Fields2D::BC_V) {
+         continue;
       }
       fields->v.Set(i, j,
                     fields->v.Get(i, j) -

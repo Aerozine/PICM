@@ -74,8 +74,6 @@ public:
   std::string filename =
       "simulation"; ///< Base filename (unused at runtime, reserved).
 
-  bool source = false;              ///< create a source.
-
   bool write_u = true;              ///< Write u-velocity field.
   bool write_v = true;              ///< Write v-velocity field.
   bool write_p = true;              ///< Write pressure field.
@@ -123,6 +121,7 @@ private:
   // Raw JSON subtrees — SceneObjects are created lazily in applyToFields().
   nlohmann::json velocityU_json; ///< JSON node for initial u-velocity patches.
   nlohmann::json velocityV_json; ///< JSON node for initial v-velocity patches.
+  nlohmann::json pressure_json; ///< JSON node for initial pressure patches.
   nlohmann::json solid_json;     ///< JSON node for solid geometry.
   nlohmann::json smoke_json;     ///< JSON node for solid geometry.
 
