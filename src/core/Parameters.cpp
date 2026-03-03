@@ -6,29 +6,26 @@
 #include <string_view>
 
 // SolverConfig
-
 SolverConfig SolverConfig::fromJson(const nlohmann::json &j) {
-  SolverConfig cfg;
+    SolverConfig cfg{
+        .type      = Type::RED_BLACK_GAUSS_SEIDEL,
+        .maxIters  = j.value("max_iterations", 1000),
+        .tolerance = j.value("tolerance", 1e-4),
+    };
 
-  if (j.contains("max_iterations"))
-    cfg.maxIters = j["max_iterations"].get<int>();
+    if (j.contains("type")) {
 
-  if (j.contains("tolerance"))
-    cfg.tolerance = j["tolerance"].get<double>();
+        const std::string t = j["type"].get<std::string>();
 
-  if (j.contains("type")) {
-    const std::string t = j["type"].get<std::string>();
-    if (t == "jacobi")
-      cfg.type = Type::JACOBI;
-    else if (t == "gauss_seidel")
-      cfg.type = Type::GAUSS_SEIDEL;
-    else if (t == "red_black_gauss_seidel")
-      cfg.type = Type::RED_BLACK_GAUSS_SEIDEL;
-    else
-      std::cerr << "[SolverConfig] Unknown solver type '" << t
-                << "' – defaulting to gauss_seidel.\n";
-  }
-  return cfg;
+        if (t == "jacobi") cfg.type = Type::JACOBI;
+        else if (t == "gauss_seidel") cfg.type = Type::GAUSS_SEIDEL;
+        else if (t == "red_black_gauss_seidel") cfg.type = Type::RED_BLACK_GAUSS_SEIDEL;
+        else
+            std::cerr << "[SolverConfig] Unknown solver type '" << t
+                      << "' – defaulting to red_black_gauss_seidel.\n";
+    }
+
+    return cfg;
 }
 
 std::string SolverConfig::typeName() const {
@@ -43,43 +40,28 @@ std::string SolverConfig::typeName() const {
   return "unknown"; // unreachable, silences -Wreturn-type
 }
 
-// Parameters
-
 void Parameters::loadFromJson(const nlohmann::json &j) {
-  // Helper lambda: assign a field only if the key is present in the JSON.
-  // Using a lambda avoids repeating the j.contains / j[key].get<T>() pattern.
-  auto load = [&j](const char *key, auto &member) {
-    if (j.contains(key))
-      member = j[key].get<std::decay_t<decltype(member)>>();
-  };
-
-  // Grid & time
-  load("dx", dx);
-  load("dy", dy);
-  load("dt", dt);
-  load("nx", nx);
-  load("ny", ny);
-  load("nt", nt);
-  load("sampling_rate", sampling_rate);
-  load("density", density);
-
-  // simulation condition
-  load("source", source);
-
+  // dx is set with the value dx found in the json or keep its previous value
+  dx = j.value("dx", dx);
+  dy = j.value("dy", dy);
+  dt = j.value("dt", dt);
+  nx = j.value("nx", nx);
+  ny = j.value("ny", ny);
+  nt = j.value("nt", nt);
+  sampling_rate = j.value("sampling_rate", sampling_rate);
+  density = j.value("density", density);
+  source = j.value("source", source);
   // Output flags
-  load("write_u", write_u);
-  load("write_v", write_v);
-  load("write_p", write_p);
-  load("write_div", write_div);
-  load("write_norm_velocity", write_norm_velocity);
-  load("write_smoke", write_smoke);
-
+  write_u = j.value("write_u", write_u);
+  write_v = j.value("write_v", write_v);
+  write_p = j.value("write_p", write_p);
+  write_div = j.value("write_div", write_div);
+  write_norm_velocity = j.value("write_norm_velocity", write_norm_velocity);
+  write_smoke = j.value("write_smoke", write_smoke);
   // Output paths
-  load("folder", folder);
-  load("filename", filename);
-
-  // Scene geometry — store raw JSON; SceneObjects are built lazily in
-  // applyToFields() so that Parameters has no dependency on Fields2D.
+  folder = j.value("folder", folder);
+  filename = j.value("filename", filename);
+  // Boundary condition
   if (j.contains("velocityu"))
     velocityU_json = j["velocityu"];
   if (j.contains("velocityv"))
@@ -88,8 +70,6 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
     solid_json = j["solid"];
   if (j.contains("smoke"))
     smoke_json = j["smoke"];
-
-  // Solver
   if (j.contains("solver"))
     solver = SolverConfig::fromJson(j["solver"]);
 }
@@ -125,6 +105,7 @@ bool Parameters::loadFromFile(const std::string &path) {
     nlohmann::json j;
     file >> j;
     loadFromJson(j);
+DBG_PRINTF("[Parameters] Loaded from %s",path.c_str());
 #ifndef NDEBUG
     std::cout << "[Parameters] Loaded from '" << path << "'\n";
 #endif
@@ -150,7 +131,7 @@ void Parameters::printUsage(const char *prog) {
   // RTFM
   std::cout << "Usage: " << prog << " -c <config.json>\n";
 }
-
+// allow us to use the << operator to print params
 std::ostream &operator<<(std::ostream &os, const Parameters &p) {
   os << "\n=== Simulation Parameters ===\n"
      << "  Grid    : " << p.nx << " x " << p.ny << "  dx=" << p.dx

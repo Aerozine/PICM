@@ -26,9 +26,9 @@ struct SolverConfig {
                            ///< convergence).
   };
 
-  Type type = Type::GAUSS_SEIDEL; ///< Solver algorithm.
-  int maxIters = 1000;            ///< Maximum number of iterations per step.
-  double tolerance = 1e-2;        ///< Relative residual convergence threshold.
+  Type type ; ///< Solver algorithm.
+  int maxIters ;            ///< Maximum number of iterations per step.
+  double tolerance ;        ///< Relative residual convergence threshold.
 
   /**
    * @brief Construct a SolverConfig from a JSON object.
@@ -39,10 +39,10 @@ struct SolverConfig {
    * @param j JSON object node.
    * @return  Populated SolverConfig.
    */
-  [[nodiscard]] static SolverConfig fromJson(const nlohmann::json &j);
+  static SolverConfig fromJson(const nlohmann::json &j);
 
   /// @return The solver type as a lowercase string (matches JSON key values).
-  [[nodiscard]] std::string typeName() const;
+  std::string typeName() const;
 };
 
 // Parameters
