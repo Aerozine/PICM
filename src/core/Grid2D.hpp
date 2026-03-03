@@ -45,7 +45,7 @@ public:
    * @param j Row    index (y), must be in [0, ny).
    * @return  Value at (i, j).
    */
-  [[nodiscard]] varType Get(int i, int j) const { return A[nx * j + i]; }
+  varType Get(int i, int j) const { return A[nx * j + i]; }
 
   /**
    * @brief Write a scalar value into cell (i, j).
@@ -61,7 +61,7 @@ public:
    * @param j Row    index.
    * @return  @c true if both indices are in bounds.
    */
-  [[nodiscard]] bool InBounds(int i, int j) const {
+  bool InBounds(int i, int j) const {
     return i >= 0 && i < nx && j >= 0 && j < ny;
   }
 
@@ -84,6 +84,6 @@ public:
    * @param field Stagger type: 0 = u-face, 1 = v-face, other = cell-centre.
    * @return      Interpolated value.
    */
-  [[nodiscard]] varType Interpolate(varType x, varType y, varType dx,
+  varType Interpolate(varType x, varType y, varType dx,
                                     varType dy, int field) const;
 };

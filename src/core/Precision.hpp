@@ -46,3 +46,13 @@ inline double _wall_time() {
 // Expanded to nothing otherwise
 #define OMP_PRAGMA(...)
 #endif
+
+#ifdef NDEBUG
+    #define DBG_PRINTF(...)
+#else
+    #include <cstdio>
+    #define DBG_PRINTF(...) \
+        do { std::fprintf(stderr, "[DEBUG] "); \
+             std::fprintf(stderr, __VA_ARGS__); \
+             std::fprintf(stderr, "\n"); } while (0)
+#endif
