@@ -111,24 +111,40 @@ void RectangleObject::applyVelocityU(Fields2D &f) const {
   const int iMax = std::min(x2, f.u.nx - 1);
   const int jMax = std::min(y2, f.u.ny - 1);
   for (int i = std::max(x1, 0); i <= iMax; ++i)
-    for (int j = std::max(y1, 0); j <= jMax; ++j)
+    for (int j = std::max(y1, 0); j <= jMax; ++j) {
       f.u.Set(i, j, val);
+      f.SetLabel(i, j, Fields2D::BC_U); // TODO: gerer les IC
+    }
 }
 
 void RectangleObject::applyVelocityV(Fields2D &f) const {
   const int iMax = std::min(x2, f.v.nx - 1);
   const int jMax = std::min(y2, f.v.ny - 1);
   for (int i = std::max(x1, 0); i <= iMax; ++i)
-    for (int j = std::max(y1, 0); j <= jMax; ++j)
+    for (int j = std::max(y1, 0); j <= jMax; ++j) {
       f.v.Set(i, j, val);
+      f.SetLabel(i, j, Fields2D::BC_V); // TODO: gerer les IC
+    }
+}
+
+void RectangleObject::applyPressure(Fields2D &f) const {
+  const int iMax = std::min(x2, f.p.nx - 1);
+  const int jMax = std::min(y2, f.p.ny - 1);
+  for (int i = std::max(x1, 0); i <= iMax; ++i)
+    for (int j = std::max(y1, 0); j <= jMax; ++j) {
+      f.p.Set(i, j, val);
+      f.SetLabel(i, j, Fields2D::BC_P); // TODO: gerer les IC
+    }
 }
 
 void RectangleObject::applySmoke(Fields2D &f) const {
   const int iMax = std::min(x2, f.v.nx - 1);
   const int jMax = std::min(y2, f.v.ny - 1);
   for (int i = std::max(x1, 0); i <= iMax; ++i)
-    for (int j = std::max(y1, 0); j <= jMax; ++j)
+    for (int j = std::max(y1, 0); j <= jMax; ++j) {
       f.smokeMap.Set(i, j, val);
+      f.SetLabel(i, j, Fields2D::BC_S);
+    }
 }
 
 // CylinderObject

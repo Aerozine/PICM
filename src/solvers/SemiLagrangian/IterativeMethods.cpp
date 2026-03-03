@@ -5,7 +5,7 @@
 // Cell update
 double SemiLagrangian::getUpdate(const int i, const int j,
                                  const varType coef) const {
-  if (fields->Label(i, j) != Fields2D::FLUID)
+  if (fields->Label(i, j) == Fields2D::SOLID)
     return NAN;
 
   // Accumulate neighbour pressures and count valid neighbours.
@@ -49,7 +49,7 @@ double SemiLagrangian::computeResidualNorm(const varType coef) const {
 #pragma omp parallel for collapse(2) reduction(+ : sumSq) reduction(+ : count)
   for (int i = 0; i < nx; ++i) {
     for (int j = 0; j < ny; ++j) {
-      if (fields->Label(i, j) != Fields2D::FLUID)
+      if (fields->Label(i, j) == Fields2D::SOLID)
         continue;
 
       double sumP = 0.0;
@@ -117,7 +117,7 @@ void SemiLagrangian::SolveJacobi(int maxIters, double tol) {
 #pragma omp parallel for collapse(2)
     for (int i = 0; i < nx; ++i)
       for (int j = 0; j < ny; ++j)
-        if (fields->Label(i, j) == Fields2D::FLUID)
+        if (fields->Label(i, j) != Fields2D::SOLID)
           fields->p.Set(i, j, pNew.Get(i, j));
 
     const double res = computeResidualNorm(coef);

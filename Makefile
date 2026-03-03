@@ -20,7 +20,7 @@ cylinder:
 	./build/bin/PIC -c test/test-large-cylinder.json
 
 source:
-	./build/bin/PIC -c test/test-source.json
+	./build-dbg/bin/PIC -c test/test-source.json
 
 
 run-fast:

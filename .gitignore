@@ -84,12 +84,9 @@ vgcore*
 .idea*
 
 src/numLines.txt
-<<<<<<< HEAD
 error.sh
 res.txt
-=======
 # doxygen
 latex/*
 html/*
 docs/*
->>>>>>> 29df69ecc183e7fb6e1390e68f4b3f800e482543

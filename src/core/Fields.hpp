@@ -30,7 +30,11 @@ public:
   /// @brief Possible states for a grid cell.
   enum CellType : uint8_t {
     FLUID = 0, ///< Active fluid cell, participates in the pressure solve.
-    SOLID = 1  ///< Solid (obstacle / wall) cell, velocity is fixed.
+    SOLID = 1,  ///< Solid (obstacle / wall) cell, velocity is fixed.
+    BC_U = 2,  ///< Boundary condition, horizontal velocity on the left is fixed.
+    BC_V = 3,  ///< Boundary condition, vertical velocity underneath is fixed.
+    BC_P = 4,  ///< Boundary condition, pressure is fixed on cell center. 
+    BC_S = 5  ///< Boundary condition for smoke map. 
   };
 
   int nx;          ///< Number of pressure cells in x.
