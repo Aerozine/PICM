@@ -20,6 +20,7 @@
 
     "velocityu": {
         "rectangle": {
+            "condition": "boundary",
             "val": 10.0,
             "x1": "0",
             "y1": "0",
@@ -29,6 +30,7 @@
     },
    "smoke": {
         "rectangle": {
+            "condition": "initial",
             "val": 1.0,
             "x1": "20",
             "y1": "ny/2-10",

@@ -14,7 +14,7 @@ run-square:
 	./build-dbg/bin/PIC -c test/test-square.json
 
 uniform:
-	./build/bin/PIC -c test/test-uniform.json
+	./build-dbg/bin/PIC -c test/test-uniform.json
 
 cylinder:
 	./build/bin/PIC -c test/test-large-cylinder.json

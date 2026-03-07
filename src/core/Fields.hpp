@@ -28,13 +28,20 @@
 class Fields2D {
 public:
   /// @brief Possible states for a grid cell.
-  enum CellType : uint8_t {
-    FLUID = 0, ///< Active fluid cell, participates in the pressure solve.
-    SOLID = 1,  ///< Solid (obstacle / wall) cell, velocity is fixed.
-    BC_U = 2,  ///< Boundary condition, horizontal velocity on the left is fixed.
-    BC_V = 3,  ///< Boundary condition, vertical velocity underneath is fixed.
-    BC_P = 4,  ///< Boundary condition, pressure is fixed on cell center. 
-    BC_S = 5  ///< Boundary condition for smoke map. 
+    
+  enum CellType : uint16_t {
+    FLUID  = 0, ///< Active fluid cell, participates in the pressure solve.
+    SOLID = 1 << 0, ///< Solid (obstacle / wall) cell, velocity is fixed.
+
+    BC_U  = 1 << 1, ///< Boundary condition, horizontal velocity on the left is fixed.
+    BC_V  = 1 << 2, ///< Boundary condition, vertical velocity underneath is fixed. 
+    BC_P  = 1 << 3, ///< Boundary condition, pressure is fixed on cell center.   
+    BC_S  = 1 << 4,  ///< Boundary condition for smoke map. 
+
+    IC_U  = 1 << 5, ///< Initial condition, horizontal velocity on the left is fixed.
+    IC_V  = 1 << 6, ///< Initial condition, vertical velocity underneath is fixed. 
+    IC_P  = 1 << 7, ///< Initial condition, pressure is fixed on cell center.   
+    IC_S  = 1 << 8  ///< Initial condition for smoke map. 
   };
 
   int nx;          ///< Number of pressure cells in x.
@@ -89,7 +96,7 @@ public:
    * @param t New cell type.
    */
   void SetLabel(int i, int j, CellType t) {
-    labels[idx(i, j)] = static_cast<uint8_t>(t);
+    labels[idx(i, j)] |= static_cast<uint16_t>(t);
   }
 
   // Field update methods
@@ -127,7 +134,7 @@ public:
   void SolidBorders();
 
 private:
-  std::vector<uint8_t> labels; ///< Flat cell-type array, same layout as p.
+  std::vector<uint16_t> labels; ///< Flat cell-type array, same layout as p.
 
   /// @brief Flat index into @c labels (column-major, matching Grid2D).
   [[nodiscard]] int idx(int i, int j) const { return ny * i + j; }
