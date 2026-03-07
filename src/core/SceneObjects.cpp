@@ -111,7 +111,6 @@ void RectangleObject::applyVelocityU(Fields2D &f) const {
   const int iMax = std::min(x2, f.u.nx - 1);
   const int jMax = std::min(y2, f.u.ny - 1);
  
-  std::cout << "condition = [" << condition << "]\n";
   if (condition != "initial" && condition != "boundary") {
     std::cout << "Invalid condition for rectangular horizontal velocity.\n"
               << "Available options: initial or boundary.\n";
