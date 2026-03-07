@@ -20,6 +20,7 @@
 
     "velocityu": {
         "rectangle": {
+            "condition": "initial",
             "val": 5,
             "x1": "0",
             "y1": "0",
@@ -29,6 +30,7 @@
     },
     "pressure": {
         "rectangle": {
+            "condition": "boundary",
             "val": 0,
             "x1": "nx-1",
             "y1": "0",

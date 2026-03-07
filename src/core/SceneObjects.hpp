@@ -57,6 +57,7 @@ struct SceneObject {
  * (x1,y1) and (x2,y2) are inclusive cell-index corners.
  */
 struct RectangleObject : public SceneObject {
+  std::string condition{0}; ///< Initial or boundary condition.
   varType val{0};   ///< Velocity value written by applyVelocityU/V.
   int x1{0}, y1{0}; ///< Bottom-left corner (inclusive, cell indices).
   int x2{0}, y2{0}; ///< Top-right  corner (inclusive, cell indices).

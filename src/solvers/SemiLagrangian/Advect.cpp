@@ -40,8 +40,7 @@ void SemiLagrangian::AdvectSmoke() const {
   for (int i = 0; i < fields->smokeMap.nx; ++i)
     for (int j = 0; j < fields->smokeMap.ny; ++j) {
 
-      if (fields->Label(i, j) == Fields2D::BC_S) {
-        smokeNew.Set(i, j, fields->smokeMap.Get(i, j));
+      if (fields->Label(i, j) & Fields2D::BC_S) {
         continue;
       }
 
