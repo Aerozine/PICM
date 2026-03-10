@@ -3,7 +3,7 @@
     "dy": 0.01,
     "dt": 0.001,
     "nx": 10,
-    "ny": 10,
+    "ny": 11,
     "nt": 10,
     "density": 1000,
     "sampling_rate": 5,
