@@ -1,5 +1,6 @@
 #pragma once
 #include "Grid2D.hpp"
+#include "Particles.hpp"
 #include <fstream>
 #include <string>
 #include <vector>
@@ -12,6 +13,8 @@ public:
   // write the Grid2D in the structure only thing to worry in usage
   bool writeGrid2D(const Grid2D &grid, const std::string &id);
   // may be good to use , but destructor does the same job
+  bool writeParticles(const Particles& particles, const std::string& id);
+
   void finalisePVD();
 
 private:
