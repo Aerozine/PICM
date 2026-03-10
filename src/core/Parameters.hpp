@@ -64,6 +64,8 @@ public:
   int nx = 100;     ///< Number of pressure cells in x.
   int ny = 100;     ///< Number of pressure cells in y.
   int nt = 100;     ///< Total number of time steps to simulate.
+  int ppcx = 1;     ///< Total number of time steps to simulate.
+  int ppcy = 1;     ///< Total number of time steps to simulate.
 
   // Physics
   double density = 1000.0; ///< Fluid density (kg/m³).
@@ -80,6 +82,7 @@ public:
   bool write_div = false;           ///< Write divergence field (diagnostic).
   bool write_norm_velocity = false; ///< Write velocity magnitude (diagnostic).
   bool write_smoke = false;         ///< Write smoke (diagnostic).
+  bool write_particles = false;         ///< Write smoke (diagnostic).
 
   // Solver
   SolverConfig solver; ///< Pressure solver settings.
@@ -124,6 +127,7 @@ private:
   nlohmann::json pressure_json; ///< JSON node for initial pressure patches.
   nlohmann::json solid_json;     ///< JSON node for solid geometry.
   nlohmann::json smoke_json;     ///< JSON node for solid geometry.
+  nlohmann::json particles_json;     ///< JSON node for solid geometry.
 
   /**
    * @brief Populate members from a parsed JSON object.

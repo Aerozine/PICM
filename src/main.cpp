@@ -1,5 +1,7 @@
 #include "core/Parameters.hpp"
 #include "solvers/SemiLagrangian/SemiLagrangian.hpp"
+#include "solvers/PIC/PIC.hpp"
+
 #include <iostream>
 
 int main(int argc, char *argv[]) {
@@ -19,8 +21,12 @@ int main(int argc, char *argv[]) {
 #endif
 
   // Create and run solver
-  SemiLagrangian solver(params);
+  // SemiLagrangian solver(params);
+  // solver.Run();
+
+  PIC solver(params);
   solver.Run();
+
 
   std::cout << "Simulation completed successfully!" << std::endl;
   return 0;

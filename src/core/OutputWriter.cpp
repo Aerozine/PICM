@@ -109,6 +109,95 @@ bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
   return true;
 }
 
+bool OutputWriter::writeParticles(const Particles& particles,
+                                  const std::string& id) {
+  if (pvd_finalised_) {
+    return false;
+  }
+
+  const int nxp = particles.px;
+  const int nyp = particles.py;
+  const int npts = nxp * nyp;
+
+  std::ostringstream oss;
+  oss << id << '_' << std::setw(4) << std::setfill('0') << current_step_
+      << ".vtp";
+  std::string vtp_name = oss.str();
+  std::string vtp_path = output_dir_ + "/" + vtp_name;
+
+  std::ofstream out(vtp_path);
+  if (!out.is_open()) {
+    return false;
+  }
+
+  out << "<?xml version=\"1.0\"?>\n"
+      << "<VTKFile type=\"PolyData\" version=\"0.1\" byte_order=\"LittleEndian\">\n"
+      << "  <PolyData>\n"
+      << "    <Piece NumberOfPoints=\"" << npts
+      << "\" NumberOfVerts=\"" << npts
+      << "\" NumberOfLines=\"0\" NumberOfStrips=\"0\" NumberOfPolys=\"0\">\n";
+
+  // Points
+  out << "      <Points>\n"
+      << "        <DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">\n"
+      << "          ";
+
+  for (int j = 0; j < nyp; ++j) {
+    for (int i = 0; i < nxp; ++i) {
+      out << particles.GetX(i, j) << ' '
+          << particles.GetY(i, j) << ' '
+          << 0.0;
+      if (i + 1 < nxp || j + 1 < nyp) {
+        out << ' ';
+      }
+    }
+    out << "\n          ";
+  }
+
+  out << "\n"
+      << "        </DataArray>\n"
+      << "      </Points>\n";
+
+  // One vertex per particle
+  out << "      <Verts>\n"
+      << "        <DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">\n"
+      << "          ";
+
+  for (int k = 0; k < npts; ++k) {
+    out << k;
+    if (k + 1 < npts) {
+      out << ' ';
+    }
+  }
+
+  out << "\n"
+      << "        </DataArray>\n"
+      << "        <DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">\n"
+      << "          ";
+
+  for (int k = 0; k < npts; ++k) {
+    out << (k + 1);
+    if (k + 1 < npts) {
+      out << ' ';
+    }
+  }
+
+  out << "\n"
+      << "        </DataArray>\n"
+      << "      </Verts>\n";
+
+  out << "    </Piece>\n"
+      << "  </PolyData>\n"
+      << "</VTKFile>\n";
+
+  out.close();
+
+  appendPVDEntry(vtp_name, static_cast<double>(current_step_));
+  ++current_step_;
+
+  return true;
+}
+
 // write the end of the .pvd file
 void OutputWriter::finalisePVD() {
   if (pvd_finalised_)

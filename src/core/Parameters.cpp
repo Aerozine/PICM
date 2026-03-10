@@ -60,6 +60,9 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   load("nx", nx);
   load("ny", ny);
   load("nt", nt);
+  load("ppcx", ppcx);
+  load("ppcy", ppcy);
+  load("nt", nt);
   load("sampling_rate", sampling_rate);
   load("density", density);
  
@@ -70,6 +73,7 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   load("write_div", write_div);
   load("write_norm_velocity", write_norm_velocity);
   load("write_smoke", write_smoke);
+  load("write_particles", write_particles);
 
   // Output paths
   load("folder", folder);
