@@ -7,7 +7,7 @@ SemiLagrangian::SemiLagrangian(const Parameters &params)
       dx(static_cast<varType>(params.dx)), dy(static_cast<varType>(params.dy)),
       dt(static_cast<varType>(params.dt)),
       density(static_cast<varType>(params.density)),
-      fields(new Fields2D(nx, ny, density, dt, dx, dy)) {
+      fields(new Fields2D(nx, ny, density, dt, dx, dy, "SL")) {
 
 #ifndef NDEBUG
   std::cout << "Grid dimensions:\n"

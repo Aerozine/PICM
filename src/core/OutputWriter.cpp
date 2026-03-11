@@ -203,7 +203,63 @@ bool OutputWriter::writeParticles(const Particles& particles,
       << "\" NumberOfVerts=\"" << npts
       << "\" NumberOfLines=\"0\" NumberOfStrips=\"0\" NumberOfPolys=\"0\">\n";
 
+  // =========================
+  // Point data: u, v, velocity
+  // =========================
+  out << "      <PointData Scalars=\"u\" Vectors=\"velocity\">\n";
+
+  // u scalar
+  out << "        <DataArray type=\"Float64\" Name=\"u\" NumberOfComponents=\"1\" format=\"ascii\">\n"
+      << "          ";
+  for (int j = 0; j < nyp; ++j) {
+    for (int i = 0; i < nxp; ++i) {
+      out << particles.GetU(i, j);
+      if (i + 1 < nxp || j + 1 < nyp) {
+        out << ' ';
+      }
+    }
+    out << "\n          ";
+  }
+  out << "\n"
+      << "        </DataArray>\n";
+
+  // v scalar
+  out << "        <DataArray type=\"Float64\" Name=\"v\" NumberOfComponents=\"1\" format=\"ascii\">\n"
+      << "          ";
+  for (int j = 0; j < nyp; ++j) {
+    for (int i = 0; i < nxp; ++i) {
+      out << particles.GetV(i, j);
+      if (i + 1 < nxp || j + 1 < nyp) {
+        out << ' ';
+      }
+    }
+    out << "\n          ";
+  }
+  out << "\n"
+      << "        </DataArray>\n";
+
+  // velocity vector
+  out << "        <DataArray type=\"Float64\" Name=\"velocity\" NumberOfComponents=\"3\" format=\"ascii\">\n"
+      << "          ";
+  for (int j = 0; j < nyp; ++j) {
+    for (int i = 0; i < nxp; ++i) {
+      out << particles.GetU(i, j) << ' '
+          << particles.GetV(i, j) << ' '
+          << 0.0;
+      if (i + 1 < nxp || j + 1 < nyp) {
+        out << ' ';
+      }
+    }
+    out << "\n          ";
+  }
+  out << "\n"
+      << "        </DataArray>\n";
+
+  out << "      </PointData>\n";
+
+  // =========================
   // Points
+  // =========================
   out << "      <Points>\n"
       << "        <DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">\n"
       << "          ";
