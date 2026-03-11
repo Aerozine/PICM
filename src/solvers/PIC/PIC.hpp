@@ -84,6 +84,12 @@ private:
    */
   void Advect() const;
 
+  varType GetW();
+  varType hat(varType r);
+  void ProjectOneParticleOnMAC(varType x, varType y, varType up, varType vp);
+  void ProjectParticlesOnGrid(std::string kernel);
+
+
   // Smoke Advection
 
   /**

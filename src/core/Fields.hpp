@@ -2,6 +2,7 @@
 #include "Grid2D.hpp"
 #include <cstdint>
 #include <vector>
+#include <string>
 
 /**
  * @file Fields.hpp
@@ -60,6 +61,9 @@ public:
       normVelocity; ///< |u| interpolated to cell centres (diagnostic): nx × ny.
   Grid2D smokeMap;  ///< smoke matter in each cell centres
 
+  Grid2D u_sum, u_weight;
+  Grid2D v_sum, v_weight;
+
   /// Velocity imposed on SOLID cells (0 = no-slip). Reserved for moving
   /// boundaries in future work.
   varType usolid = REAL_LITERAL(0.0);
@@ -73,10 +77,15 @@ public:
    * @param dx      Cell width  in x.
    * @param dy      Cell height in y.
    */
-  Fields2D(int nx, int ny, varType density, varType dt, varType dx, varType dy)
+  Fields2D(int nx, int ny, varType density, varType dt,
+            varType dx, varType dy, std::string method)
       : nx(nx), ny(ny), density(density), dt(dt), dx(dx), dy(dy), u(nx + 1, ny),
         v(nx, ny + 1), p(nx, ny), div(nx, ny), normVelocity(nx - 1, ny - 1),
         smokeMap(nx - 1, ny - 1),
+        u_sum(method == "PIC" ? nx + 1 : 0, method == "PIC" ? ny : 0),
+        u_weight(method == "PIC" ? nx + 1 : 0, method == "PIC" ? ny : 0),
+        v_sum(method == "PIC" ? nx : 0, method == "PIC" ? ny + 1 : 0),
+        v_weight(method == "PIC" ? nx : 0, method == "PIC" ? ny + 1 : 0),
         labels(static_cast<std::size_t>(nx) * ny, FLUID) {}
 
   // Cell label accessors

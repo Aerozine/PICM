@@ -16,12 +16,14 @@ run-square:
 uniform:
 	./build-dbg/bin/PIC -c test/test-uniform.json
 
+particles:
+	./build-dbg/bin/PIC -c test/particles.json
+
 cylinder:
 	./build/bin/PIC -c test/test-large-cylinder.json
 
 source:
 	./build-dbg/bin/PIC -c test/test-source.json
-
 
 run-fast:
 	./build/bin/PIC -c test/test.json

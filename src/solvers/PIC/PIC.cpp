@@ -7,7 +7,7 @@ PIC::PIC(const Parameters &params)
       dx(static_cast<varType>(params.dx)), dy(static_cast<varType>(params.dy)),
       dt(static_cast<varType>(params.dt)),
       density(static_cast<varType>(params.density)),
-      fields(new Fields2D(nx, ny, density, dt, dx, dy)),
+      fields(new Fields2D(nx, ny, density, dt, dx, dy, "PIC")),
       particles(new Particles(nx, ny, dx, dy, params.ppcx, params.ppcy)) {
 
 #ifndef NDEBUG
@@ -23,6 +23,7 @@ PIC::PIC(const Parameters &params)
   // Apply initial conditions from the JSON config (velocity patches, solid
   // geometry). SceneObject instances are created and destroyed inside here.
   params.applyToFields(*fields);
+  particles->InitParticleGrid();
 
   InitializeOutputWriters();
 
@@ -80,7 +81,6 @@ void PIC::WriteOutput(int step) const {
 void PIC::Step() {
 
   MakeIncompressible(); // 1. Pressure projection: enforce div u = 0.
-  particles->InitParticleGrid();
   fields->Div();        // } Update diagnostics used for
   Advect();             // 2. Semi-Lagrangian transport of velocity.
   AdvectSmoke();
