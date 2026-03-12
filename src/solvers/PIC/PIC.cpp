@@ -79,18 +79,22 @@ void PIC::WriteOutput(int step) const {
 }
 
 void PIC::Step() {
+  ProjectParticlesOnGrid("hat"); 
 
-  MakeIncompressible(); // 1. Pressure projection: enforce div u = 0.
-  fields->Div();        // } Update diagnostics used for
-  Advect();             // 2. Semi-Lagrangian transport of velocity.
-  AdvectSmoke();
-  fields->VelocityNormCenterGrid(); // } output and progress reporting.
+  MakeIncompressible();
+  fields->Div();       
+  fields->VelocityNormCenterGrid(); 
+
+  ProjectGridOnParticles();
+
+  AdvectParticles();
 }
 
 void PIC::Run() {
   // Compute initial diagnostics and write the t=0 snapshot.
   fields->Div();
   fields->VelocityNormCenterGrid();
+  ProjectGridOnParticles();
   WriteOutput(0);
 
   const double start = GET_TIME();

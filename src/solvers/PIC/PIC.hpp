@@ -82,54 +82,14 @@ private:
    * @brief Advect u and v using a semi-Lagrangian (RK2 backward-trace +
    *        bilinear interpolation) scheme.
    */
-  void Advect() const;
+  void AdvectParticles();
 
   varType GetW();
   varType hat(varType r);
   void ProjectOneParticleOnMAC(varType x, varType y, varType up, varType vp);
   void ProjectParticlesOnGrid(std::string kernel);
+  void ProjectGridOnParticles();
 
-
-  // Smoke Advection
-
-  /**
-   * @brief Advect smokeMap using a semi-Lagrangian (RK2 backward-trace +
-   *        bilinear interpolation) scheme.
-   */
-  void AdvectSmoke() const;
-
-  /**
-   * @brief Trace the departure point of a u-face at grid position (i, j)
-   *        backward in time using RK2.
-   *
-   * The u-face is located at physical position (i.dx, (j+0.5).dy).
-   *
-   * @param[in]  i  Face x-index.
-   * @param[in]  j  Face y-index.
-   * @param[out] x  Physical x-coordinate of the departure point.
-   * @param[out] y  Physical y-coordinate of the departure point.
-   */
-  void traceParticleU(int i, int j, varType &x, varType &y) const;
-
-  /**
-   * @brief Trace the departure point of a v-face at grid position (i, j)
-   *        backward in time using RK2.
-   *
-   * The v-face is located at physical position ((i+0.5).dx, j.dy).
-   *
-   * @param[in]  i  Face x-index.
-   * @param[in]  j  Face y-index.
-   * @param[out] x  Physical x-coordinate of the departure point.
-   * @param[out] y  Physical y-coordinate of the departure point.
-   */
-  void traceParticleV(int i, int j, varType &x, varType &y) const;
-
-  /**
-   * @brief Bilinearly interpolate the u field at physical position (x, y).
-   * @param x Physical x-coordinate (clamped to the domain).
-   * @param y Physical y-coordinate (clamped to the domain).
-   * @return  Interpolated u value.
-   */
   [[nodiscard]] varType interpolateU(varType x, varType y) const;
 
   /**
@@ -139,16 +99,7 @@ private:
    * @return  Interpolated v value.
    */
   [[nodiscard]] varType interpolateV(varType x, varType y) const;
-  
-  /**
-   * @brief Bilinearly interpolate the smoke field at physical position (x, y).
-   * @param x Physical x-coordinate (clamped to the domain).
-   * @param y Physical y-coordinate (clamped to the domain).
-   * @return  Interpolated smoke value.
-   */
-  [[nodiscard]] varType interpolateSmoke(varType x, varType y) const;
-
-
+ 
   /**
    * @brief Return both velocity components at physical position (x, y).
    * @param[in]  x Physical x-coordinate.
