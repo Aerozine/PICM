@@ -141,3 +141,28 @@ void PIC::ProjectParticlesOnGrid(std::string kernel)
         }
     }
 }
+
+void PIC::ProjectGridOnParticles(){
+    
+    int ppcx = particles->ppcx;
+    int ppcy = particles->ppcy;
+
+    for (int icell = 0; icell < nx; icell++) {
+        for (int jcell = 0; jcell < ny; jcell++) {
+
+            for (int a = 0; a < ppcx; a++) {
+                for (int b = 0; b < ppcy; b++) {
+
+                    int ip = icell * ppcx + a;
+                    int jp = jcell * ppcy + b;
+
+                    varType x = particles->GetX(ip, jp);
+                    varType y = particles->GetY(ip, jp);
+                    
+                    particles->SetU(ip, jp, interpolateU(x, y));
+                    particles->SetV(ip, jp, interpolateV(x, y));
+                }
+            }
+        }
+    }
+}
