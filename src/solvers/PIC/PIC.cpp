@@ -88,6 +88,8 @@ void PIC::Step() {
   ProjectGridOnParticles();
 
   AdvectParticles();
+
+  RefillParticles();
 }
 
 void PIC::Run() {

@@ -34,9 +34,15 @@ void PIC::AdvectParticles() {
           x1 = x0 + dt * umid;
           y1 = y0 + dt * vmid;
 
-          particles->SetX(ip, jp, x1);
-          particles->SetY(ip, jp, y1);
-        }
+          if (x1 < 0.0 || x1 > dx * nx) {
+            particles->SetDead(ip, jp, true); 
+          } else if (y1 < 0.0 || y1 > dy * ny) {
+            particles->SetDead(ip, jp, true); 
+          } else {
+            particles->SetX(ip, jp, x1);
+            particles->SetY(ip, jp, y1);
+          }
+       }
       }
     }
   }
