@@ -1,7 +1,18 @@
 #include "Particles.hpp"
 
+// inline ? j'ai des problemes en le rajoutant
+void Particles::DropOneParticle(int ip, int jp, 
+                    varType x, varType y, varType u, varType v, int id) {
+    SetX(ip, jp, x);
+    SetY(ip, jp, y);
+    SetU(ip, jp, u);
+    SetV(ip, jp, v);
+    SetId(ip, jp, id);
+    SetDead(ip, jp, false);
+}
+
 void Particles::InitParticleGrid() {
-    int id = 0;
+    unsigned id = 0;
 
     for (int icell = 0; icell < nx; icell++) {
         for (int jcell = 0; jcell < ny; jcell++) {
@@ -15,11 +26,7 @@ void Particles::InitParticleGrid() {
                     varType x = (icell + (a + 0.5) / ppcx) * dx;
                     varType y = (jcell + (b + 0.5) / ppcy) * dy;
 
-                    SetX(ip, jp, x);
-                    SetY(ip, jp, y);
-                    SetU(ip, jp, 0.0);
-                    SetV(ip, jp, 0.0);
-                    SetId(ip, jp, id);
+                    DropOneParticle(ip, jp, x, y, 0.0, 0.0, id);
 
                     id++;
                 }

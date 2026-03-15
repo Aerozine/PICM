@@ -89,6 +89,7 @@ private:
   void ProjectOneParticleOnMAC(varType x, varType y, varType up, varType vp);
   void ProjectParticlesOnGrid(std::string kernel);
   void ProjectGridOnParticles();
+  void RefillParticles();
 
   [[nodiscard]] varType interpolateU(varType x, varType y) const;
 

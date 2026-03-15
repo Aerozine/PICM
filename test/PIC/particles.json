@@ -24,17 +24,23 @@
     "velocityu": {
         "rectangle": {
             "condition": "boundary",
-            "val": 0.000001,
+            "val": 0.0000001,
             "x1": "1",
             "y1": "ny/2",
             "x2": "2",
             "y2": "ny-2"
         }
     },
+    "solid": {
+       "rectangle": [
+            { "x1": 0,      "y1": 0,      "x2": "nx-1", "y2": 0      },
+            { "x1": 0,      "y1": "ny-1", "x2": "nx-1", "y2": "ny-1" }
+        ]
+    },
    "solver": {
   "type": "red_black_gauss_seidel",
     "max_iterations": 5000,
-    "tolerance": 5e-2
+    "tolerance": 1e-2
 }
 }
 
