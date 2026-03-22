@@ -56,6 +56,7 @@ private:
   Fields2D *fields; ///< @todo Replace with std::unique_ptr<Fields2D>.
   
   Particles *particles; ///< @todo Replace with std::unique_ptr<Particles>.
+  ParticleSlots *deadSlots;
 
   // Output writers — null if the corresponding write_* flag is false.
   std::unique_ptr<OutputWriter> uWriter;
@@ -90,6 +91,8 @@ private:
   void ProjectParticlesOnGrid(std::string kernel);
   void ProjectGridOnParticles();
   void RefillParticles();
+  void CountAliveParticles();
+  varType rand01();
 
   [[nodiscard]] varType interpolateU(varType x, varType y) const;
 

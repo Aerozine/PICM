@@ -19,6 +19,12 @@ void Particles::InitParticleGrid() {
 
             for (int a = 0; a < ppcx; a++) {
                 for (int b = 0; b < ppcy; b++) {
+                    
+                    // PAS REUSSI A FAIRE ça
+
+                    /*if (fields->Label(icell, jcell) == fields->SOLID) { 
+                        continue;
+                    }*/ 
 
                     int ip = icell * ppcx + a;
                     int jp = jcell * ppcy + b;
@@ -33,4 +39,20 @@ void Particles::InitParticleGrid() {
             }
         }
     }
+}
+
+bool ParticleSlots::PopParticleSlot(int& ip, int& jp)
+{
+    if (A.empty()) {
+        ip = -1;
+        jp = -1;
+        return false;
+    }
+
+    ParticleSlot s = A.back();
+    A.pop_back();
+
+    ip = s.ip;
+    jp = s.jp;
+    return true;
 }

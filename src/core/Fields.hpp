@@ -63,6 +63,8 @@ public:
 
   Grid2D u_sum, u_weight;
   Grid2D v_sum, v_weight;
+  
+  Grid2D countAliveParticles;
 
   /// Velocity imposed on SOLID cells (0 = no-slip). Reserved for moving
   /// boundaries in future work.
@@ -86,6 +88,7 @@ public:
         u_weight(method == "PIC" ? nx + 1 : 0, method == "PIC" ? ny : 0),
         v_sum(method == "PIC" ? nx : 0, method == "PIC" ? ny + 1 : 0),
         v_weight(method == "PIC" ? nx : 0, method == "PIC" ? ny + 1 : 0),
+        countAliveParticles(method == "PIC" ? nx : 0, method == "PIC" ? ny : 0),
         labels(static_cast<std::size_t>(nx) * ny, FLUID) {}
 
   // Cell label accessors

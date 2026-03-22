@@ -8,7 +8,8 @@ PIC::PIC(const Parameters &params)
       dt(static_cast<varType>(params.dt)),
       density(static_cast<varType>(params.density)),
       fields(new Fields2D(nx, ny, density, dt, dx, dy, "PIC")),
-      particles(new Particles(nx, ny, dx, dy, params.ppcx, params.ppcy)) {
+      particles(new Particles(nx, ny, dx, dy, params.ppcx, params.ppcy)),
+      deadSlots(new ParticleSlots()) {
 
 #ifndef NDEBUG
   std::cout << "Grid dimensions:\n"

@@ -11,6 +11,7 @@ void PIC::AdvectParticles() {
   varType umid, vmid;
 
   varType x1, y1;
+  int i1, j1;
 
   for (int icell = 0; icell < nx; icell++) {
     for (int jcell = 0; jcell < ny; jcell++) {
@@ -34,10 +35,18 @@ void PIC::AdvectParticles() {
           x1 = x0 + dt * umid;
           y1 = y0 + dt * vmid;
 
+          i1 = std::floor(x1 / dx);
+          j1 = std::floor(y1 / dy);
+
           if (x1 < 0.0 || x1 > dx * nx) {
             particles->SetDead(ip, jp, true); 
+            deadSlots->AddParticleSlot(ip, jp);
           } else if (y1 < 0.0 || y1 > dy * ny) {
             particles->SetDead(ip, jp, true); 
+            deadSlots->AddParticleSlot(ip, jp);
+          } else if (fields->Label(i1, j1) == fields->SOLID) {
+            particles->SetDead(ip, jp, true); 
+            deadSlots->AddParticleSlot(ip, jp);
           } else {
             particles->SetX(ip, jp, x1);
             particles->SetY(ip, jp, y1);

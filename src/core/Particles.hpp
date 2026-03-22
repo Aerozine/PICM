@@ -19,6 +19,23 @@ struct Particle {
     bool dead;
 };
 
+struct ParticleSlot{
+    int ip;
+    int jp;
+};
+
+class ParticleSlots {
+public: 
+  ParticleSlots() = default;
+
+  void AddParticleSlot(int ip, int jp){ A.push_back({ip, jp}); }
+  bool Empty() { return A.empty(); }
+  bool PopParticleSlot(int& ip, int& jp);
+
+private:
+  std::vector <ParticleSlot> A;
+};
+
 class Particles {
 public:
   int nx; 
@@ -35,8 +52,7 @@ public:
   std::vector<Particle> A;
 
   Particles(int nx, int ny, varType dx, varType dy, int ppcx, int ppcy)
-      : nx(nx), ny(ny), dx(dx), dy(dy), 
-        ppcx(ppcx), ppcy(ppcy), A(px * py) {}
+      : nx(nx), ny(ny), dx(dx), dy(dy), ppcx(ppcx), ppcy(ppcy), A(px * py) {}
 
   varType GetX(int i, int j) const {return A[Index(i, j)].x.x;}
   varType GetY(int i, int j) const {return A[Index(i, j)].x.y;}
@@ -59,8 +75,4 @@ public:
 private:
 
   int Index(int i, int j) const {return py * i + j;}
-
-
 };
-
-
