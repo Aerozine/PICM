@@ -2,9 +2,9 @@
     "dx": 2e-3,
     "dy": 2e-3,
     "dt": 0.01,
-    "nx": 20,
-    "ny": 20,
-    "nt": 50,    
+    "nx": 200,
+    "ny": 120,
+    "nt": 150,
     "ppcx": 2,
     "ppcy": 2,
     "density": 1000,
@@ -24,24 +24,40 @@
     "velocityu": {
         "rectangle": {
             "condition": "boundary",
-            "val": 0.0000001,
-            "x1": "1",
-            "y1": "ny/2",
-            "x2": "2",
-            "y2": "ny-2"
+            "val": 0.5,
+            "x1": "0",
+            "y1": 0,
+            "x2": "1",
+            "y2": "ny-1"
+        }
+    },
+    "pressure": {
+        "rectangle": {
+            "condition": "boundary",
+            "val": 0,
+            "x1": "nx-1",
+            "y1": "0",
+            "x2": "nx",
+            "y2": "ny-1"
         }
     },
     "solid": {
-       "rectangle": [
+        "cylinder": {
+            "x": "50",
+            "y": "60",
+            "r": 10
+        },
+        "rectangle": [
             { "x1": 0,      "y1": 0,      "x2": "nx-1", "y2": 0      },
             { "x1": 0,      "y1": "ny-1", "x2": "nx-1", "y2": "ny-1" }
         ]
     },
-   "solver": {
-  "type": "red_black_gauss_seidel",
-    "max_iterations": 5000,
-    "tolerance": 1e-2
-}
+
+    "solver": {
+        "type": "red_black_gauss_seidel",
+        "max_iterations": 5000,
+        "tolerance": 5e-2
+    }
 }
 
 
