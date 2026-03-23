@@ -19,6 +19,9 @@ uniform:
 particles:
 	./build-dbg/bin/PIC -c test/PIC/particles.json
 
+pic-uniform:
+	./build-dbg/bin/PIC -c test/PIC/uniform.json
+
 cylinder:
 	./build/bin/PIC -c test/SemiLagrangian/test-large-cylinder.json
 

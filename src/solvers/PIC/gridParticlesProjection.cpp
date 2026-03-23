@@ -39,8 +39,8 @@ void PIC::ProjectOneParticleOnMAC(varType x, varType y, varType up, varType vp)
 
             if (k > varType(0))
             {
-                fields->u_sum.Set(i, j, k * up);
-                fields->u_weight.Set(i, j, k);
+                fields->u_sum.Set(i, j, fields->u_sum.Get(i, j) + k * up);
+                fields->u_weight.Set(i, j, fields->u_weight.Get(i, j) + k);
             }
         }
     }
@@ -63,8 +63,8 @@ void PIC::ProjectOneParticleOnMAC(varType x, varType y, varType up, varType vp)
 
             if (k > varType(0))
             {
-                fields->v_sum.Set(i, j, k * vp);
-                fields->v_weight.Set(i, j, k);
+                fields->v_sum.Set(i, j, fields->v_sum.Get(i, j) + k * vp);
+                fields->v_weight.Set(i, j, fields->v_weight.Get(i, j) + k);
             }
         }
     }
@@ -103,6 +103,8 @@ void PIC::ProjectParticlesOnGrid(std::string kernel)
 
                     int ip = icell * ppcx + a;
                     int jp = jcell * ppcy + b;
+
+                    if (particles->IsDead(ip, jp)) { continue; }
 
                     varType x = particles->GetX(ip, jp);
                     varType y = particles->GetY(ip, jp);
@@ -155,6 +157,8 @@ void PIC::ProjectGridOnParticles(){
 
                     int ip = icell * ppcx + a;
                     int jp = jcell * ppcy + b;
+
+                    if (particles->IsDead(ip, jp)) { continue; }
 
                     varType x = particles->GetX(ip, jp);
                     varType y = particles->GetY(ip, jp);
