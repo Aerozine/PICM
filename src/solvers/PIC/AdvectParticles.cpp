@@ -21,6 +21,8 @@ void PIC::AdvectParticles() {
           int ip = icell * ppcx + a;
           int jp = jcell * ppcy + b;
 
+          if (particles->IsDead(ip, jp)) { continue; }
+
           varType x0 = particles->GetX(ip, jp); // pour ne pas refaire ça 
           varType y0 = particles->GetY(ip, jp); // plusieurs fois on peut 
           varType u0 = particles->GetU(ip, jp); // fusionner ProjectGridOnParticles
@@ -38,15 +40,46 @@ void PIC::AdvectParticles() {
           i1 = std::floor(x1 / dx);
           j1 = std::floor(y1 / dy);
 
+          // si on sort du domaine -> particule DEAD
           if (x1 < 0.0 || x1 > dx * nx) {
             particles->SetDead(ip, jp, true); 
             deadSlots->AddParticleSlot(ip, jp);
           } else if (y1 < 0.0 || y1 > dy * ny) {
             particles->SetDead(ip, jp, true); 
             deadSlots->AddParticleSlot(ip, jp);
-          } else if (fields->Label(i1, j1) == fields->SOLID) {
-            particles->SetDead(ip, jp, true); 
-            deadSlots->AddParticleSlot(ip, jp);
+          } 
+          
+          // si on advect dans un solide -> replacer particule + quelle vitesse ? ici 0
+          else if (fields->Label(i1, j1) == fields->SOLID) {
+
+            varType xa = x0, ya = y0;   // point valide
+            varType xb = x1, yb = y1;   // point dans le solide
+
+            for (int it = 0; it < 12; ++it) {
+                varType xm = 0.5 * (xa + xb);
+                varType ym = 0.5 * (ya + yb);
+
+                int im = std::floor(xm / dx);
+                int jm = std::floor(ym / dy);
+
+                if (im < 0 || im >= nx || jm < 0 || jm >= ny ||
+                    fields->Label(im, jm) == fields->SOLID) {
+                    xb = xm;
+                    yb = ym;
+                } else {
+                    xa = xm;
+                    ya = ym;
+                }
+            }
+
+            // xa, ya = dernier point fluide avant le solide
+            particles->SetX(ip, jp, xa);
+            particles->SetY(ip, jp, ya);
+
+            // version simple : annuler la vitesse
+            particles->SetU(ip, jp, 0.0);
+            particles->SetV(ip, jp, 0.0);
+
           } else {
             particles->SetX(ip, jp, x1);
             particles->SetY(ip, jp, y1);
