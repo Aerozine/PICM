@@ -1,5 +1,6 @@
 #pragma once
 #include "Fields.hpp"
+#include <functional>
 #include <map>
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -15,14 +16,15 @@
  * after @c applyToFields() returns — they carry no runtime state.
  *
  * ### JSON shape
- * | JSON key      | Class           | Supported operations    |
- * |---------------|-----------------|-------------------------|
- * | `"rectangle"` | RectangleObject | velocity u/v, solid     |
- * | `"cylinder"`  | CylinderObject  | solid only              |
+ * | JSON key      | Class           | Supported operations           |
+ * |---------------|-----------------|--------------------------------|
+ * | `"rectangle"` | RectangleObject | velocity u/v, solid, smoke, p  |
+ * | `"cylinder"`  | CylinderObject  | solid only                     |
  *
  * Coordinate values may be integer literals **or** simple arithmetic
  * expressions referencing `nx` and `ny` (e.g. `"nx/2 - 10"`).
  * See @c resolveInt() for the supported grammar.
+
  */
 
 /**
@@ -45,6 +47,9 @@ struct SceneObject {
 
   /// @brief Set the smoke of cells covered by this object.
   virtual void applySmoke(Fields2D &f) const { (void)f; }
+
+  /// @brief Set the pressure of cells covered by this object.
+  virtual void applyPressure(Fields2D &f) const { (void)f; }
 };
 
 /**
@@ -54,14 +59,16 @@ struct SceneObject {
  * (x1,y1) and (x2,y2) are inclusive cell-index corners.
  */
 struct RectangleObject : public SceneObject {
-  varType val{0};   ///< Velocity value written by applyVelocityU/V.
+  varType val{0};   ///< Velocity/smoke/pressure value written by apply methods.
   int x1{0}, y1{0}; ///< Bottom-left corner (inclusive, cell indices).
   int x2{0}, y2{0}; ///< Top-right  corner (inclusive, cell indices).
 
-  void applySolid(Fields2D &f) const override;
-  void applyVelocityU(Fields2D &f) const override;
-  void applyVelocityV(Fields2D &f) const override;
-  void applySmoke(Fields2D &f) const override;
+  // Direct apply
+  void applySolid(Fields2D &f) const;
+  void applyVelocityU(Fields2D &f) const;
+  void applyVelocityV(Fields2D &f) const;
+  void applySmoke(Fields2D &f) const;
+  void applyPressure(Fields2D &f) const;
 };
 
 /**
@@ -69,13 +76,16 @@ struct RectangleObject : public SceneObject {
  *
  * JSON keys: `"x"`, `"y"`, `"r"` (centre and radius in cell indices).
  *
- * @note Velocity initialisation for cylinder objects is not yet implemented.
+ * @note Velocity/smoke/pressure initialisation for cylinder objects is not
+ *       yet implemented (solid-only primitive).
  */
 struct CylinderObject : public SceneObject {
   int cx{0}, cy{0}; ///< Centre cell indices.
   int r{0};         ///< Radius in cells.
 
-  void applySolid(Fields2D &f) const override;
+  void applySolid(Fields2D &f) const;
+  // Cylinders do not currently support enumerate (solid boundary is applied
+  // once at init, not re-applied each step).
 };
 
 /**

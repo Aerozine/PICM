@@ -1,5 +1,6 @@
 #pragma once
 #include "../../core/Fields.hpp"
+#include "../../core/IterativeMethods.hpp"
 #include "../../core/OutputWriter.hpp"
 #include "../../core/Parameters.hpp"
 #include <memory>
@@ -165,45 +166,8 @@ private:
    * @brief Apply the pressure gradient to correct face velocities.
    *
    * Implements the explicit update:
-   * \f [ u^{n+1} = u^* - \frac{\Delta t}{\rho\,\Delta x}\,(p_i - p_{i-1}) \f]
+   * \f[ u^{n+1} = u^* - \frac{\Delta t}{\rho\,\Delta x}\,(p_i - p_{i-1}) \f]
    * Faces adjacent to SOLID cells are set to @c usolid instead.
    */
   void updateVelocities();
-
-  /**
-   * @brief Compute the RMS residual of the discrete Poisson equation.
-   *
-   * The residual at each FLUID cell is:
-   * \f$ r_{ij} = -\text{coef}\cdot\text{div}_{ij}
-   *              + \sum_{\text{nb}} p_{\text{nb}}
-   *              - N\,p_{ij} \f$
-   *
-   * @param coef  Scaling coefficient \f$\rho\,\Delta x^2 / \Delta t \f$.
-   * @return RMS residual over all FLUID cells (0 if none).
-   */
-  [[nodiscard]] double computeResidualNorm(varType coef) const;
-
-  /**
-   * @brief Compute the Gauss-Seidel update for cell (i, j).
-   *
-   * \f$ p^{\text{new}}_{ij} =
-   *     \frac{-\text{coef}\cdot\text{div}_{ij} + \sum_{\text{nb}}
-   * p_{\text{nb}}}{N} \f$
-   *
-   * @param i    Cell x-index.
-   * @param j    Cell y-index.
-   * @param coef Scaling coefficient.
-   * @return     New pressure value, or NAN if the cell is not FLUID.
-   */
-  [[nodiscard]] double getUpdate(int i, int j, varType coef) const;
-
-  /// @brief Jacobi pressure solver (fully parallel, slower convergence).
-  void SolveJacobi(int maxIters, double tol);
-
-  /// @brief Gauss-Seidel pressure solver (sequential, faster convergence).
-  void SolveGaussSeidel(int maxIters, double tol);
-
-  /// @brief Red-Black Gauss-Seidel pressure solver (parallel + fast
-  /// convergence).
-  void SolveRedBlackGaussSeidel(int maxIters, double tol);
 };

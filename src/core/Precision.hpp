@@ -8,8 +8,18 @@
  * precision for the entire simulation. All numerical fields, grids, and
  * solver variables use @c varType.
  */
-
-#ifdef USE_FLOAT
+#ifdef USE_HALF // WIP 
+#if __has_include(<stdfloat>)
+#include <stdfloat>
+using varType = std::float16_t;
+#define REAL_LITERAL(x) static_cast<varType>(x)
+#elif defined(__GNUC__) || defined(__clang__) // what about apple ?
+using varType = _Float16;
+#define REAL_LITERAL(x) static_cast<varType>(x)
+#else
+#error "No float16 support available"
+#endif
+#elif defined(USE_FLOAT)
 
 using varType = float; ///< Simulation floating-point type (32-bit).
 
@@ -48,11 +58,13 @@ inline double _wall_time() {
 #endif
 
 #ifdef NDEBUG
-    #define DBG_PRINTF(...)
+#define DBG_PRINTF(...)
 #else
-    #include <cstdio>
-    #define DBG_PRINTF(...) \
-        do { std::fprintf(stderr, "[DEBUG] "); \
-             std::fprintf(stderr, __VA_ARGS__); \
-             std::fprintf(stderr, "\n"); } while (0)
+#include <cstdio>
+#define DBG_PRINTF(...)                                                        \
+  do {                                                                         \
+    std::fprintf(stderr, "[DEBUG] ");                                          \
+    std::fprintf(stderr, __VA_ARGS__);                                         \
+    std::fprintf(stderr, "\n");                                                \
+  } while (0)
 #endif

@@ -22,13 +22,13 @@ struct SolverConfig {
   enum class Type {
     JACOBI,       ///< Jacobi iteration (parallelisable, slow convergence).
     GAUSS_SEIDEL, ///< Gauss-Seidel (faster convergence, sequential).
-    RED_BLACK_GAUSS_SEIDEL ///< Red-black GS (parallelisable + fast
-                           ///< convergence).
+    RB_GS,        ///< Red-black GS (parallelisable + fast convergence).
+    MICCG0        ///< Modified Incomplete Cholesky CG level 0 ( better )
   };
 
-  Type type ; ///< Solver algorithm.
-  int maxIters ;            ///< Maximum number of iterations per step.
-  double tolerance ;        ///< Relative residual convergence threshold.
+  Type type;        ///< Solver algorithm.
+  int maxIters;     ///< Maximum number of iterations per step.
+  double tolerance; ///< Relative residual convergence threshold.
 
   /**
    * @brief Construct a SolverConfig from a JSON object.

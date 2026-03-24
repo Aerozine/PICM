@@ -1,10 +1,14 @@
 cmake_minimum_required(VERSION 3.15)
 project(PIC)
 
-option(USE_FLOAT_PRECISION "Use float instead of double" OFF)
+option(USE_FLOAT_PRECISION "Use float instead of double" ON)
+option(USE_FP16 "Use half-precision floating point (FP16)" OFF)
 
+# WIP
+#option(ADVECT_TRILIN "Use trilinear interpolation instead of bilinear in advect" ON)
+#option(ADVECT_RK3 "use high order RK3 instead of RK2" ON)
 include(FetchContent)
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(NOT CMAKE_BUILD_TYPE)

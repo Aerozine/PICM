@@ -4,15 +4,22 @@
 // Pressure solve dispatch
 
 void SemiLagrangian::solvePressure(int maxIters, double tol) {
+  const double coef = static_cast<double>(density) * static_cast<double>(dx) *
+                      static_cast<double>(dx) / static_cast<double>(dt);
+  const double scale = 1.0 / coef; // dt / (rho * dx^2)
+
   switch (params.solver.type) {
   case SolverConfig::Type::JACOBI:
-    SolveJacobi(maxIters, tol);
+    solveJacobi(*fields, nx, ny, coef, maxIters, tol);
     break;
   case SolverConfig::Type::GAUSS_SEIDEL:
-    SolveGaussSeidel(maxIters, tol);
+    solveGaussSeidel(*fields, nx, ny, coef, maxIters, tol);
     break;
-  case SolverConfig::Type::RED_BLACK_GAUSS_SEIDEL:
-    SolveRedBlackGaussSeidel(maxIters, tol);
+  case SolverConfig::Type::RB_GS:
+    solveRedBlackGaussSeidel(*fields, nx, ny, coef, maxIters, tol);
+    break;
+  case SolverConfig::Type::MICCG0:
+    solveMICCG0(*fields, scale, maxIters, tol);
     break;
   default:
     std::cerr << "[SemiLagrangian] Unknown pressure solver type – aborting.\n";
