@@ -34,28 +34,9 @@ void PIC::AdvectParticles() {
     int j1 = std::clamp(static_cast<int>(std::floor(y1 / dy)), 0, ny - 1);
 
     if (fields->Label(i1, j1) & Fields2D::SOLID) {
-      // Bisect to find the last fluid position before the solid.
-      varType xa = x0, ya = y0;
-      varType xb = x1, yb = y1;
-
-      for (int it = 0; it < 12; ++it) {
-        varType xm = varType(0.5) * (xa + xb);
-        varType ym = varType(0.5) * (ya + yb);
-        int im = std::clamp(static_cast<int>(std::floor(xm / dx)), 0, nx - 1);
-        int jm = std::clamp(static_cast<int>(std::floor(ym / dy)), 0, ny - 1);
-        if (fields->Label(im, jm) & Fields2D::SOLID) {
-          xb = xm;
-          yb = ym;
-        } else {
-          xa = xm;
-          ya = ym;
-        }
-      }
-
-      particles->SetX(idx, xa);
-      particles->SetY(idx, ya);
-      particles->SetU(idx, fields->usolid);
-      particles->SetV(idx, fields->usolid);
+      particles->SetDead(idx, true);
+      deadSlots->push(idx);
+      continue;
     } else {
       particles->SetX(idx, x1);
       particles->SetY(idx, y1);
