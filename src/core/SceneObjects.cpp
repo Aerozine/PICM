@@ -4,28 +4,30 @@
 #include <iostream>
 #include <stdexcept>
 
-// Expression resolver
+// simply takes a key value and compute the numerical value
+// simple parser ( no need to change it)
 int resolveInt(const nlohmann::json &val,
                const std::map<std::string, int> &vars) {
+  // if it is an int everythings is good
   if (val.is_number())
     return val.get<int>();
-
-  if (!val.is_string())
+  if (!val.is_string()) // throws an error and stop if not correct
     throw std::runtime_error("[resolveInt] expected int or string expression");
 
   std::string expr = val.get<std::string>();
-
+  // parsing must be done in the string order max
   std::vector<std::pair<std::string, int>> sorted(vars.begin(), vars.end());
+  // use std:sort and define an anonymous function that takes 2 parameter and
+  // define the sort order
   std::sort(sorted.begin(), sorted.end(), [](const auto &a, const auto &b) {
     return a.first.size() > b.first.size();
   });
-
+  // replace expression
   for (const auto &[name, v] : sorted) {
     std::size_t pos;
     while ((pos = expr.find(name)) != std::string::npos)
       expr.replace(pos, name.size(), std::to_string(v));
   }
-
   auto skipSpaces = [&](std::size_t pos) -> std::size_t {
     while (pos < expr.size() &&
            std::isspace(static_cast<unsigned char>(expr[pos])))
@@ -80,12 +82,9 @@ int resolveInt(const nlohmann::json &val,
                                op);
     }
   }
-
   return result;
 }
-
-// RectangleObject
-
+// these small function applies into field the adequate flag
 void RectangleObject::applySolid(Fields2D &f) const {
   const int iMax = std::min(x2, f.nx - 1);
   const int jMax = std::min(y2, f.ny - 1);
@@ -118,7 +117,13 @@ void RectangleObject::applySmoke(Fields2D &f) const {
       f.smokeMap.Set(i, j, val);
 }
 
-// CylinderObject
+void RectangleObject::applyPressure(Fields2D &f) const {
+  const int iMax = std::min(x2, f.p.nx - 1);
+  const int jMax = std::min(y2, f.p.ny - 1);
+  for (int j = std::max(y1, 0); j <= jMax; ++j)
+    for (int i = std::max(x1, 0); i <= iMax; ++i)
+      f.p.Set(i, j, val);
+}
 
 void CylinderObject::applySolid(Fields2D &f) const {
   const int r2 = r * r;
@@ -131,8 +136,6 @@ void CylinderObject::applySolid(Fields2D &f) const {
     }
   }
 }
-
-// Parsers
 
 static std::unique_ptr<RectangleObject>
 parseRectangle(const nlohmann::json &j,
@@ -154,10 +157,17 @@ parseRectangle(const nlohmann::json &j,
 static std::unique_ptr<CylinderObject>
 parseCylinder(const nlohmann::json &j, const std::map<std::string, int> &vars) {
   auto obj = std::make_unique<CylinderObject>();
-  if (j.contains("x"))
+  // Accept both "x"/"y" and "cx"/"cy" spellings for the centre.
+  if (j.contains("cx"))
+    obj->cx = resolveInt(j["cx"], vars);
+  else if (j.contains("x"))
     obj->cx = resolveInt(j["x"], vars);
-  if (j.contains("y"))
+
+  if (j.contains("cy"))
+    obj->cy = resolveInt(j["cy"], vars);
+  else if (j.contains("y"))
     obj->cy = resolveInt(j["y"], vars);
+
   if (j.contains("r"))
     obj->r = resolveInt(j["r"], vars);
   return obj;
@@ -197,6 +207,5 @@ parseSceneObjects(const nlohmann::json &node,
                 << "' must be an object or array – ignored.\n";
     }
   }
-
   return result;
 }

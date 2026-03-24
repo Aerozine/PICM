@@ -21,10 +21,15 @@ if(OpenMP_CXX_FOUND)
   target_compile_definitions(PIC PRIVATE USE_OPENMP)
 endif()
 
-if(USE_FLOAT_PRECISION)
-  target_compile_definitions(PIC PRIVATE USE_FLOAT)
+if(USE_FP16)
+    if(USE_FLOAT_PRECISION)
+        message(FATAL_ERROR "Cannot use USE_FP16 and USE_FLOAT_PRECISION together")
+    endif()
+    target_compile_definitions(PIC PRIVATE USE_HALF)
+elseif(USE_FLOAT_PRECISION)
+    target_compile_definitions(PIC PRIVATE USE_FLOAT)
 else()
-  target_compile_definitions(PIC PRIVATE USE_DOUBLE)
+    target_compile_definitions(PIC PRIVATE USE_DOUBLE)
 endif()
 # vebose build
 target_compile_options(

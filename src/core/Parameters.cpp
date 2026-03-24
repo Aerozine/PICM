@@ -7,25 +7,30 @@
 
 // SolverConfig
 SolverConfig SolverConfig::fromJson(const nlohmann::json &j) {
-    SolverConfig cfg{
-        .type      = Type::RED_BLACK_GAUSS_SEIDEL,
-        .maxIters  = j.value("max_iterations", 1000),
-        .tolerance = j.value("tolerance", 1e-4),
-    };
+  SolverConfig cfg{
+      .type = Type::RB_GS,
+      .maxIters = j.value("max_iterations", 1000),
+      .tolerance = j.value("tolerance", 1e-4),
+  };
 
-    if (j.contains("type")) {
+  if (j.contains("type")) {
 
-        const std::string t = j["type"].get<std::string>();
+    const std::string t = j["type"].get<std::string>();
 
-        if (t == "jacobi") cfg.type = Type::JACOBI;
-        else if (t == "gauss_seidel") cfg.type = Type::GAUSS_SEIDEL;
-        else if (t == "red_black_gauss_seidel") cfg.type = Type::RED_BLACK_GAUSS_SEIDEL;
-        else
-            std::cerr << "[SolverConfig] Unknown solver type '" << t
-                      << "' – defaulting to red_black_gauss_seidel.\n";
-    }
+    if (t == "jacobi")
+      cfg.type = Type::JACOBI;
+    else if (t == "gauss_seidel")
+      cfg.type = Type::GAUSS_SEIDEL;
+    else if (t == "red_black_gauss_seidel")
+      cfg.type = Type::RB_GS;
+    else if (t == "miccg0")
+      cfg.type = Type::MICCG0;
+    else
+      std::cerr << "[SolverConfig] Unknown solver type '" << t
+                << "' – defaulting to red_black_gauss_seidel.\n";
+  }
 
-    return cfg;
+  return cfg;
 }
 
 std::string SolverConfig::typeName() const {
@@ -34,8 +39,10 @@ std::string SolverConfig::typeName() const {
     return "jacobi";
   case Type::GAUSS_SEIDEL:
     return "gauss_seidel";
-  case Type::RED_BLACK_GAUSS_SEIDEL:
+  case Type::RB_GS:
     return "red_black_gauss_seidel";
+  case Type::MICCG0:
+    return "miccg0";
   }
   return "unknown"; // unreachable, silences -Wreturn-type
 }
@@ -105,10 +112,7 @@ bool Parameters::loadFromFile(const std::string &path) {
     nlohmann::json j;
     file >> j;
     loadFromJson(j);
-DBG_PRINTF("[Parameters] Loaded from %s",path.c_str());
-#ifndef NDEBUG
-    std::cout << "[Parameters] Loaded from '" << path << "'\n";
-#endif
+    DBG_PRINTF("[Parameters] Loaded from %s", path.c_str());
     return true;
   } catch (const std::exception &e) {
     std::cerr << "[Parameters] JSON parse error: " << e.what() << '\n';
@@ -116,7 +120,7 @@ DBG_PRINTF("[Parameters] Loaded from %s",path.c_str());
   }
 }
 
-bool Parameters::parseCommandLine(int argc, char *argv[]) {
+bool Parameters::parseCommandLine(const int argc, char *argv[]) {
   // Expect exactly:  <prog> -c <path>  or  <prog> --config <path>
   if (argc == 3) {
     const std::string_view flag = argv[1];

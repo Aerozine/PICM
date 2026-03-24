@@ -10,8 +10,6 @@
 
 namespace fs = std::filesystem;
 
-// OutputWriter
-
 OutputWriter::OutputWriter(const std::string &output_dir,
                            const std::string &pvd_name)
     : output_dir_(output_dir), base_name_(pvd_name), current_step_(0),
@@ -25,10 +23,6 @@ OutputWriter::~OutputWriter() {
   if (!pvd_finalised_ && !pvd_entries_.empty())
     finalisePVD();
 }
-
-// Private helpers
-
-// Internal helpers
 
 /**
  * @brief Write a 4-byte little-endian unsigned integer to a binary stream.

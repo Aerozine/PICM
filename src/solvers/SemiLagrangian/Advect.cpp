@@ -19,6 +19,7 @@ void SemiLagrangian::Advect() const {
   Grid2D uNew(fields->u.nx, fields->u.ny);
   Grid2D vNew(fields->v.nx, fields->v.ny);
 
+  OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->u.ny; ++j)
     for (int i = 0; i < fields->u.nx; ++i) {
       varType x, y;
@@ -26,6 +27,7 @@ void SemiLagrangian::Advect() const {
       uNew.Set(i, j, interpolateU(x, y));
     }
 
+  OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->v.ny; ++j)
     for (int i = 0; i < fields->v.nx; ++i) {
       varType x, y;
@@ -40,6 +42,7 @@ void SemiLagrangian::Advect() const {
 void SemiLagrangian::AdvectSmoke() const {
   Grid2D smokeNew(fields->smokeMap.nx, fields->smokeMap.ny);
 
+  OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->smokeMap.ny; ++j) {
     for (int i = 0; i < fields->smokeMap.nx; ++i) {
 
