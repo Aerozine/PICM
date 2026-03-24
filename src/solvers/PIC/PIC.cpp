@@ -1,6 +1,7 @@
 #include "PIC.hpp"
 #include <algorithm>
 #include <iostream>
+static constexpr int CAPACITY_FACTOR = 3;
 
 PIC::PIC(const Parameters &params)
     : params(params), nx(params.nx), ny(params.ny),
@@ -8,7 +9,9 @@ PIC::PIC(const Parameters &params)
       dt(static_cast<varType>(params.dt)),
       density(static_cast<varType>(params.density)),
       fields(new Fields2D(nx, ny, density, dt, dx, dy, "PIC")),
-      particles(new Particles(nx, ny, dx, dy, params.ppcx, params.ppcy)),
+      particles(new Particles(nx, ny, dx, dy, params.ppcx, params.ppcy,
+                              CAPACITY_FACTOR * params.ppcx * params.ppcy *
+                                  params.nx * params.ny)),
       deadSlots(new ParticleSlots()) {
 
 #ifndef NDEBUG
@@ -18,24 +21,68 @@ PIC::PIC(const Parameters &params)
             << "  u  (nx+1, ny  ): " << fields->u.nx << " x " << fields->u.ny
             << '\n'
             << "  v  (nx,   ny+1): " << fields->v.nx << " x " << fields->v.ny
-            << '\n';
+            << '\n'
+            << "  particles capacity: " << particles->capacity << '\n';
 #endif
 
-  // Apply initial conditions from the JSON config (velocity patches, solid
-  // geometry). SceneObject instances are created and destroyed inside here.
   params.applyToFields(*fields);
   particles->InitParticleGrid();
+
+  // Kill particles inside solid cells and register all extra slots
+  // (solid + overflow capacity) onto the free-list.
+  InitFreeSlots();
 
   InitializeOutputWriters();
 
 #ifndef NDEBUG
-  std::cout << "SemiLagrangian initialised: " << nx << " x " << ny << " grid, "
-            << params.nt << " time steps.\n";
+  std::cout << "PIC initialised: " << nx << " x " << ny << " grid, "
+            << params.nt << " time steps.\n"
+            << "  Free slots after init: " << deadSlots->size() << '\n';
 #endif
 }
 
-PIC::~PIC() { delete fields; }
+PIC::~PIC() {
+  delete fields;
+  delete particles;
+  delete deadSlots;
+}
 
+// Build the initial free-list.
+//
+// Two sources of free slots:
+//  1. Grid slots whose home cell is solid ,these particles are killed.
+//  2. Extra capacity slots (indices >= nx*ny*ppcx*ppcy) that were never
+//     activated by InitParticleGrid , they are already dead.
+//
+// Having a large free-list from the start means the reseeder can inject
+// particles at an open inlet without waiting for particles to die elsewhere.
+void PIC::InitFreeSlots() {
+  const int ppcx = particles->ppcx;
+  const int ppcy = particles->ppcy;
+  const int gridSlots = nx * ny * ppcx * ppcy;
+
+  // 1. Kill grid slots that landed in solid cells.
+  int idx = 0;
+  for (int icell = 0; icell < nx; icell++) {
+    for (int jcell = 0; jcell < ny; jcell++) {
+      bool solid = (fields->Label(icell, jcell) & Fields2D::SOLID) != 0;
+      for (int a = 0; a < ppcx; a++) {
+        for (int b = 0; b < ppcy; b++) {
+          if (solid) {
+            particles->SetDead(idx, true);
+            deadSlots->push(idx);
+          }
+          ++idx;
+        }
+      }
+    }
+  }
+
+  // 2. All extra capacity slots are already dead; push them onto the list.
+  for (int i = gridSlots; i < particles->capacity; i++) {
+    deadSlots->push(i);
+  }
+}
 
 void PIC::InitializeOutputWriters() {
   if (params.write_u)
@@ -52,7 +99,8 @@ void PIC::InitializeOutputWriters() {
   if (params.write_smoke)
     smokeWriter = std::make_unique<OutputWriter>(params.folder, "smoke");
   if (params.write_particles)
-    particlesWriter = std::make_unique<OutputWriter>(params.folder, "particles");
+    particlesWriter =
+        std::make_unique<OutputWriter>(params.folder, "particles");
 }
 
 void PIC::WriteOutput(int step) const {
@@ -75,26 +123,21 @@ void PIC::WriteOutput(int step) const {
   if (params.write_particles && particlesWriter)
     ok &= particlesWriter->writeParticles(*particles, "particles");
   if (!ok)
-    std::cerr << "[SemiLagrangian] Warning: failed to write output at step "
-              << step << '\n';
+    std::cerr << "[PIC] Warning: failed to write output at step " << step
+              << '\n';
 }
 
 void PIC::Step() {
-  ProjectParticlesOnGrid("hat"); 
-
+  ProjectParticlesOnGrid("hat");
   MakeIncompressible();
-  fields->Div();       
-  fields->VelocityNormCenterGrid(); 
-
+  fields->Div();
+  fields->VelocityNormCenterGrid();
   ProjectGridOnParticles();
-
   AdvectParticles();
-
   RefillParticles();
 }
 
 void PIC::Run() {
-  // Compute initial diagnostics and write the t=0 snapshot.
   fields->Div();
   fields->VelocityNormCenterGrid();
   ProjectGridOnParticles();
@@ -104,7 +147,6 @@ void PIC::Run() {
   const int reportEvery = std::max(1, params.nt / 10);
 
   for (int t = 1; t <= params.nt; ++t) {
-    // Overwrite progress line in place (~every 10 %).
     if (t % reportEvery == 0) {
       varType maxDiv = REAL_LITERAL(0.0);
       for (int i = 0; i < nx; ++i)
@@ -113,7 +155,8 @@ void PIC::Run() {
 
       std::cout << "\rStep " << t << " / " << params.nt << " ("
                 << (100 * t / params.nt) << "%) "
-                << "max |div| = " << maxDiv << std::flush;
+                << "max |div| = " << maxDiv
+                << "  free slots: " << deadSlots->size() << std::flush;
     }
 
     Step();

@@ -1,6 +1,6 @@
 #include "core/Parameters.hpp"
-#include "solvers/SemiLagrangian/SemiLagrangian.hpp"
 #include "solvers/PIC/PIC.hpp"
+#include "solvers/SemiLagrangian/SemiLagrangian.hpp"
 
 #include <iostream>
 
@@ -26,7 +26,6 @@ int main(int argc, char *argv[]) {
 
   PIC solver(params);
   solver.Run();
-
 
   std::cout << "Simulation completed successfully!" << std::endl;
   return 0;

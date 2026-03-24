@@ -2,89 +2,64 @@
 #include <random>
 
 void PIC::RefillParticles() {
-    CountAliveParticles();
+  CountAliveParticles();
 
-    const int targetPPC = 4;
-    int ip, jp, id;
-    varType x, y, u, v;
+  const int targetPPC = particles->ppcx * particles->ppcy;
 
-    // refill underpopulated fluid cells
-    for (int i = 0; i < nx; i++) {
-        for (int j = 0; j < ny; j++) {
+  for (int i = 0; i < nx; i++) {
+    for (int j = 0; j < ny; j++) {
+      if (fields->Label(i, j) & Fields2D::SOLID)
+        continue;
 
-            if (fields->Label(i,j) &! Fields2D::FLUID) continue;
+      int missing =
+          targetPPC - static_cast<int>(fields->countAliveParticles.Get(i, j));
+      if (missing <= 0)
+        continue;
 
-            int missing = targetPPC - fields->countAliveParticles.Get(i,j);
-            if (missing <= 0) continue;
+      for (int m = 0; m < missing; m++) {
+        int idx = deadSlots->pop();
+        if (idx < 0)
+          break; // no free slots left this step
 
-            for (int m = 0; m < missing; m++) {
-                
-                if (deadSlots->Empty()) { // injected as many particles as dead ones
-                    return; // TODO reinject more ?
-                } else if (deadSlots->PopParticleSlot(ip, jp))
-                {
-                    x = (i + rand01()) * dx;
-                    y = (j + rand01()) * dy;
+        varType x = (i + rand01()) * dx;
+        varType y = (j + rand01()) * dy;
 
-                    if (fields->Label(i, j) & Fields2D::BC_U){
-                        u = fields->u.Get(i, j); // !! pas sur concordance indices
-                    } else {
-                        u = interpolateU(x, y);
-                    }
+        varType u = (fields->Label(i, j) & Fields2D::BC_U) ? fields->u.Get(i, j)
+                                                           : interpolateU(x, y);
 
-                    if (fields->Label(i, j) & Fields2D::BC_V){
-                        v = fields->u.Get(i, j); // !! pas sur concordance indices
-                    } else {
-                        v = interpolateV(x, y);
-                    }
+        varType v = (fields->Label(i, j) & Fields2D::BC_V) ? fields->v.Get(i, j)
+                                                           : interpolateV(x, y);
 
-                    id = particles->GetId(ip, jp);
-
-                    particles->DropOneParticle(ip, jp, x, y, u, v, id);
-                } else { return; }         
-            }
-        }
+        particles->DropOneParticle(idx, x, y, u, v, static_cast<unsigned>(idx));
+      }
     }
+  }
 }
 
 varType PIC::rand01() {
-
-    static std::mt19937 rng(std::random_device{}());
-    static std::uniform_real_distribution<varType> dist(varType(0), varType(1));
-    return dist(rng);
+  static std::mt19937 rng(std::random_device{}());
+  static std::uniform_real_distribution<varType> dist(varType(0), varType(1));
+  return dist(rng);
 }
-
 
 void PIC::CountAliveParticles() {
+  for (int i = 0; i < nx; i++)
+    for (int j = 0; j < ny; j++)
+      fields->countAliveParticles.Set(i, j, 0.0);
 
-    for (int i = 0; i < nx; i++)
-        for (int j = 0; j < ny; j++)
-            fields->countAliveParticles.Set(i,j, 0.0);
+  const int cap = particles->capacity;
+  for (int idx = 0; idx < cap; ++idx) {
+    if (particles->IsDead(idx))
+      continue;
 
-    varType counter = 0.0;
+    int ci = std::clamp(static_cast<int>(std::floor(particles->GetX(idx) / dx)),
+                        0, nx - 1);
+    int cj = std::clamp(static_cast<int>(std::floor(particles->GetY(idx) / dy)),
+                        0, ny - 1);
 
-    for (int icell = 0; icell < nx; icell++) {
-        for (int jcell = 0; jcell < ny; jcell++) {
-            for (int a = 0; a < particles->ppcx; ++a) {
-                for (int b = 0; b < particles->ppcy; ++b) {
-                    int ip = icell * particles->ppcx + a;
-                    int jp = jcell * particles->ppcy + b;
-
-                    if (particles->IsDead(ip, jp)) continue;
-
-                    varType x = particles->GetX(ip, jp);
-                    varType y = particles->GetY(ip, jp);
-
-                    int i = std::max(0, std::min(nx - 1, int(std::floor(x / dx))));
-                    int j = std::max(0, std::min(ny - 1, int(std::floor(y / dy))));
-
-                    if (fields->Label(i,j) == Fields2D::FLUID) {
-                        counter = fields->countAliveParticles.Get(i, j); 
-                        fields->countAliveParticles.Set(i, j, counter + 1.0);
-                    }
-                }
-            }
-        }
+    if (!(fields->Label(ci, cj) & Fields2D::SOLID)) {
+      varType cnt = fields->countAliveParticles.Get(ci, cj);
+      fields->countAliveParticles.Set(ci, cj, cnt + 1.0);
     }
+  }
 }
- 

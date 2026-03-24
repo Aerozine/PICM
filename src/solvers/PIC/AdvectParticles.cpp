@@ -1,139 +1,94 @@
 #include "PIC.hpp"
 
-// Advection of all particles based on RK2.
-
 void PIC::AdvectParticles() {
+  const varType xMax = dx * nx;
+  const varType yMax = dy * ny;
+  const int cap = particles->capacity;
 
-  int ppcx = particles->ppcx;
-  int ppcy = particles->ppcy;
+  for (int idx = 0; idx < cap; ++idx) {
+    if (particles->IsDead(idx))
+      continue;
 
-  varType xmid, ymid;
-  varType umid, vmid;
+    varType x0 = particles->GetX(idx);
+    varType y0 = particles->GetY(idx);
+    varType u0 = particles->GetU(idx);
+    varType v0 = particles->GetV(idx);
 
-  varType x1, y1;
-  int i1, j1;
+    // RK2 mid-point
+    varType xmid = x0 + varType(0.5) * dt * u0;
+    varType ymid = y0 + varType(0.5) * dt * v0;
+    varType umid = interpolateU(xmid, ymid);
+    varType vmid = interpolateV(xmid, ymid);
 
-  for (int icell = 0; icell < nx; icell++) {
-    for (int jcell = 0; jcell < ny; jcell++) {
+    varType x1 = x0 + dt * umid;
+    varType y1 = y0 + dt * vmid;
 
-      for (int a = 0; a < ppcx; a++) {
-        for (int b = 0; b < ppcy; b++) {
-          int ip = icell * ppcx + a;
-          int jp = jcell * ppcy + b;
+    // Kill particles that left the domain.
+    if (x1 < varType(0) || x1 >= xMax || y1 < varType(0) || y1 >= yMax) {
+      particles->SetDead(idx, true);
+      deadSlots->push(idx);
+      continue;
+    }
 
-          if (particles->IsDead(ip, jp)) { continue; }
+    int i1 = std::clamp(static_cast<int>(std::floor(x1 / dx)), 0, nx - 1);
+    int j1 = std::clamp(static_cast<int>(std::floor(y1 / dy)), 0, ny - 1);
 
-          varType x0 = particles->GetX(ip, jp); // pour ne pas refaire ça 
-          varType y0 = particles->GetY(ip, jp); // plusieurs fois on peut 
-          varType u0 = particles->GetU(ip, jp); // fusionner ProjectGridOnParticles
-          varType v0 = particles->GetV(ip, jp); // avec AdvectParticles
+    if (fields->Label(i1, j1) & Fields2D::SOLID) {
+      // Bisect to find the last fluid position before the solid.
+      varType xa = x0, ya = y0;
+      varType xb = x1, yb = y1;
 
-          xmid = x0 + 0.5 * dt * u0; 
-          ymid = y0 + 0.5 * dt * v0; 
-
-          umid = interpolateU(xmid, ymid);
-          vmid = interpolateV(xmid, ymid);
-
-          x1 = x0 + dt * umid;
-          y1 = y0 + dt * vmid;
-
-          i1 = std::floor(x1 / dx);
-          j1 = std::floor(y1 / dy);
-
-          // si on sort du domaine -> particule DEAD
-          if (x1 < 0.0 || x1 > dx * nx) {
-            particles->SetDead(ip, jp, true); 
-            deadSlots->AddParticleSlot(ip, jp);
-          } else if (y1 < 0.0 || y1 > dy * ny) {
-            particles->SetDead(ip, jp, true); 
-            deadSlots->AddParticleSlot(ip, jp);
-          } 
-          
-          // si on advect dans un solide -> replacer particule + quelle vitesse ? ici 0
-          else if (fields->Label(i1, j1) == fields->SOLID) {
-
-            varType xa = x0, ya = y0;   // point valide
-            varType xb = x1, yb = y1;   // point dans le solide
-
-            for (int it = 0; it < 12; ++it) {
-                varType xm = 0.5 * (xa + xb);
-                varType ym = 0.5 * (ya + yb);
-
-                int im = std::floor(xm / dx);
-                int jm = std::floor(ym / dy);
-
-                if (im < 0 || im >= nx || jm < 0 || jm >= ny ||
-                    fields->Label(im, jm) == fields->SOLID) {
-                    xb = xm;
-                    yb = ym;
-                } else {
-                    xa = xm;
-                    ya = ym;
-                }
-            }
-
-            // xa, ya = dernier point fluide avant le solide
-            particles->SetX(ip, jp, xa);
-            particles->SetY(ip, jp, ya);
-
-            // version simple : annuler la vitesse
-            particles->SetU(ip, jp, 0.0);
-            particles->SetV(ip, jp, 0.0);
-
-          } else {
-            particles->SetX(ip, jp, x1);
-            particles->SetY(ip, jp, y1);
-          }
-       }
+      for (int it = 0; it < 12; ++it) {
+        varType xm = varType(0.5) * (xa + xb);
+        varType ym = varType(0.5) * (ya + yb);
+        int im = std::clamp(static_cast<int>(std::floor(xm / dx)), 0, nx - 1);
+        int jm = std::clamp(static_cast<int>(std::floor(ym / dy)), 0, ny - 1);
+        if (fields->Label(im, jm) & Fields2D::SOLID) {
+          xb = xm;
+          yb = ym;
+        } else {
+          xa = xm;
+          ya = ym;
+        }
       }
+
+      particles->SetX(idx, xa);
+      particles->SetY(idx, ya);
+      particles->SetU(idx, fields->usolid);
+      particles->SetV(idx, fields->usolid);
+    } else {
+      particles->SetX(idx, x1);
+      particles->SetY(idx, y1);
     }
   }
 }
 
-// Bilinear interpolation
-
 varType PIC::interpolateU(const varType x, const varType y) const {
   const varType i_real = x / dx;
   const varType j_real = y / dy - REAL_LITERAL(0.5);
-
   int i = static_cast<int>(std::floor(i_real));
   int j = static_cast<int>(std::floor(j_real));
-
-  const varType fx = i_real - static_cast<varType>(i);
-  const varType fy = j_real - static_cast<varType>(j);
-
+  const varType fx = i_real - varType(i);
+  const varType fy = j_real - varType(j);
   i = std::clamp(i, 0, fields->u.nx - 2);
   j = std::clamp(j, 0, fields->u.ny - 2);
-
-  const varType u00 = fields->u.Get(i, j);
-  const varType u10 = fields->u.Get(i + 1, j);
-  const varType u01 = fields->u.Get(i, j + 1);
-  const varType u11 = fields->u.Get(i + 1, j + 1);
-
-  return (REAL_LITERAL(1.0) - fy) *
-             ((REAL_LITERAL(1.0) - fx) * u00 + fx * u10) +
-         fy * ((REAL_LITERAL(1.0) - fx) * u01 + fx * u11);
+  return (1 - fy) *
+             ((1 - fx) * fields->u.Get(i, j) + fx * fields->u.Get(i + 1, j)) +
+         fy * ((1 - fx) * fields->u.Get(i, j + 1) +
+               fx * fields->u.Get(i + 1, j + 1));
 }
 
 varType PIC::interpolateV(const varType x, const varType y) const {
   const varType i_real = x / dx - REAL_LITERAL(0.5);
   const varType j_real = y / dy;
-
   int i = static_cast<int>(std::floor(i_real));
   int j = static_cast<int>(std::floor(j_real));
-
-  const varType fx = i_real - static_cast<varType>(i);
-  const varType fy = j_real - static_cast<varType>(j);
-
+  const varType fx = i_real - varType(i);
+  const varType fy = j_real - varType(j);
   i = std::clamp(i, 0, fields->v.nx - 2);
   j = std::clamp(j, 0, fields->v.ny - 2);
-
-  const varType v00 = fields->v.Get(i, j);
-  const varType v10 = fields->v.Get(i + 1, j);
-  const varType v01 = fields->v.Get(i, j + 1);
-  const varType v11 = fields->v.Get(i + 1, j + 1);
-
-  return (REAL_LITERAL(1.0) - fy) *
-             ((REAL_LITERAL(1.0) - fx) * v00 + fx * v10) +
-         fy * ((REAL_LITERAL(1.0) - fx) * v01 + fx * v11);
+  return (1 - fy) *
+             ((1 - fx) * fields->v.Get(i, j) + fx * fields->v.Get(i + 1, j)) +
+         fy * ((1 - fx) * fields->v.Get(i, j + 1) +
+               fx * fields->v.Get(i + 1, j + 1));
 }

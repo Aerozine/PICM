@@ -53,34 +53,34 @@ for (int j = 0; j < ny; ++j) {
       if (fields->Label(i, j) == Fields2D::SOLID)
         continue;
 
-    double sumP = 0.0;
-    int nb = 0;
+      double sumP = 0.0;
+      int nb = 0;
 
-    if (i + 1 < nx) {
-      sumP += fields->p.Get(i + 1, j);
-      ++nb;
-    }
-    if (i - 1 >= 0) {
-      sumP += fields->p.Get(i - 1, j);
-      ++nb;
-    }
-    if (j + 1 < ny) {
-      sumP += fields->p.Get(i, j + 1);
-      ++nb;
-    }
-    if (j - 1 >= 0) {
-      sumP += fields->p.Get(i, j - 1);
-      ++nb;
-    }
+      if (i + 1 < nx) {
+        sumP += fields->p.Get(i + 1, j);
+        ++nb;
+      }
+      if (i - 1 >= 0) {
+        sumP += fields->p.Get(i - 1, j);
+        ++nb;
+      }
+      if (j + 1 < ny) {
+        sumP += fields->p.Get(i, j + 1);
+        ++nb;
+      }
+      if (j - 1 >= 0) {
+        sumP += fields->p.Get(i, j - 1);
+        ++nb;
+      }
 
-    const double r =
-        (-coef * fields->div.Get(i, j)) - (nb * fields->p.Get(i, j) - sumP);
-    sumSq += r * r;
-    ++count;
+      const double r =
+          (-coef * fields->div.Get(i, j)) - (nb * fields->p.Get(i, j) - sumP);
+      sumSq += r * r;
+      ++count;
+    }
   }
-}
 
-return (count > 0) ? std::sqrt(sumSq / count) : 0.0;
+  return (count > 0) ? std::sqrt(sumSq / count) : 0.0;
 }
 
 // Convergence check
@@ -116,10 +116,10 @@ for (int j = 0; j < ny; ++j)
     pNew.Set(i, j, getUpdate(i, j, coef));
 
 OMP_PRAGMA( omp parallel for collapse(2))
-    for (int i = 0; i < nx; ++i)
-      for (int j = 0; j < ny; ++j)
-        if (fields->Label(i, j) != Fields2D::SOLID)
-          fields->p.Set(i, j, pNew.Get(i, j));
+for (int i = 0; i < nx; ++i)
+  for (int j = 0; j < ny; ++j)
+    if (fields->Label(i, j) != Fields2D::SOLID)
+      fields->p.Set(i, j, pNew.Get(i, j));
 
 const double res = computeResidualNorm(coef);
 if (checkConvergence(res, res0, it, tol)) {

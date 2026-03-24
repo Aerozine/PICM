@@ -1,172 +1,157 @@
 #include "PIC.hpp"
 #include <iostream>
 
-varType PIC::GetW(){
-    int ppcx = particles->ppcx;
-    int ppcy = particles->ppcy;
-
-    return ppcx * ppcy; 
+varType PIC::GetW() {
+  return static_cast<varType>(particles->ppcx * particles->ppcy);
 }
 
 varType PIC::hat(varType r) {
-    if (r >= varType(0) && r <= varType(1))
-        return varType(1) - r;
-    else if (r >= varType(-1) && r <= varType(0))
-        return varType(1) + r;
-    else
-        return varType(0);
+  if (r >= varType(0) && r <= varType(1))
+    return varType(1) - r;
+  else if (r >= varType(-1) && r < varType(0))
+    return varType(1) + r;
+  else
+    return varType(0);
 }
 
+void PIC::ProjectOneParticleOnMAC(varType x, varType y, varType up,
+                                  varType vp) {
+  // u faces: staggered at (i·dx, (j+0.5)·dy)
+  varType xu = x / dx;
+  varType yu = y / dy - varType(0.5);
+  int i0 = static_cast<int>(std::floor(xu));
+  int j0 = static_cast<int>(std::floor(yu));
 
-void PIC::ProjectOneParticleOnMAC(varType x, varType y, varType up, varType vp)
-{
-    // projecting on u
-
-    varType xu = x / fields->dx;
-    varType yu = y / fields->dy - varType(0.5);
-
-    int i0 = std::floor(xu);
-    int j0 = std::floor(yu);
-
-    for (int j = j0; j <= j0 + 1; j++) {
-        for (int i = i0; i <= i0 + 1; i++) {
-            if (i < 0 || i >= nx + 1 || j < 0 || j >= ny)
-                continue;
-
-            varType kx = hat(xu - varType(i));
-            varType ky = hat(yu - varType(j));
-            varType k  = kx * ky;
-
-            if (k > varType(0))
-            {
-                fields->u_sum.Set(i, j, fields->u_sum.Get(i, j) + k * up);
-                fields->u_weight.Set(i, j, fields->u_weight.Get(i, j) + k);
-            }
-        }
+  for (int dj = 0; dj <= 1; ++dj) {
+    for (int di = 0; di <= 1; ++di) {
+      int i = i0 + di, j = j0 + dj;
+      if (i < 0 || i >= nx + 1 || j < 0 || j >= ny)
+        continue;
+      varType k = hat(xu - varType(i)) * hat(yu - varType(j));
+      if (k > varType(0)) {
+        fields->u_sum.Set(i, j, fields->u_sum.Get(i, j) + k * up);
+        fields->u_weight.Set(i, j, fields->u_weight.Get(i, j) + k);
+      }
     }
+  }
 
-    // projecting on v
-    varType xv = x / dx - varType(0.5);
-    varType yv = y / dy;
+  // v faces: staggered at ((i+0.5)·dx, j·dy)
+  varType xv = x / dx - varType(0.5);
+  varType yv = y / dy;
+  i0 = static_cast<int>(std::floor(xv));
+  j0 = static_cast<int>(std::floor(yv));
 
-    i0 = std::floor(xv);
-    j0 = std::floor(yv);
-
-    for (int j = j0; j <= j0 + 1; j++) {
-        for (int i = i0; i <= i0 + 1; i++) {
-            if (i < 0 || i >= nx || j < 0 || j >= ny + 1)
-                continue;
-
-            varType kx = hat(xv - varType(i));
-            varType ky = hat(yv - varType(j));
-            varType k  = kx * ky;
-
-            if (k > varType(0))
-            {
-                fields->v_sum.Set(i, j, fields->v_sum.Get(i, j) + k * vp);
-                fields->v_weight.Set(i, j, fields->v_weight.Get(i, j) + k);
-            }
-        }
+  for (int dj = 0; dj <= 1; ++dj) {
+    for (int di = 0; di <= 1; ++di) {
+      int i = i0 + di, j = j0 + dj;
+      if (i < 0 || i >= nx || j < 0 || j >= ny + 1)
+        continue;
+      varType k = hat(xv - varType(i)) * hat(yv - varType(j));
+      if (k > varType(0)) {
+        fields->v_sum.Set(i, j, fields->v_sum.Get(i, j) + k * vp);
+        fields->v_weight.Set(i, j, fields->v_weight.Get(i, j) + k);
+      }
     }
+  }
 }
 
-void PIC::ProjectParticlesOnGrid(std::string kernel)
-{
-    if (kernel != "hat") {
-        std::cout << "invalid kernel for the Particle on Grid projection.\n";
-        return;
+void PIC::ProjectParticlesOnGrid(std::string kernel) {
+  if (kernel != "hat") {
+    std::cerr << "[PIC] Unknown P2G kernel '" << kernel << "'.\n";
+    return;
+  }
+
+  // Zero accumulation buffers.
+  for (int j = 0; j < ny; j++)
+    for (int i = 0; i < nx + 1; i++) {
+      fields->u_sum.Set(i, j, varType(0));
+      fields->u_weight.Set(i, j, varType(0));
+    }
+  for (int j = 0; j < ny + 1; j++)
+    for (int i = 0; i < nx; i++) {
+      fields->v_sum.Set(i, j, varType(0));
+      fields->v_weight.Set(i, j, varType(0));
     }
 
-    // reset all grid values to zero
-    for (int j = 0; j < ny; j++) {
-        for (int i = 0; i < nx + 1; i++) {
-            fields->u_sum.Set(i,j, varType(0)); 
-            fields->u_weight.Set(i,j, varType(0));
-        }
+  // Accumulate — iterate flat over all allocated slots.
+  const int cap = particles->capacity;
+  for (int idx = 0; idx < cap; ++idx) {
+    if (particles->IsDead(idx))
+      continue;
+    ProjectOneParticleOnMAC(particles->GetX(idx), particles->GetY(idx),
+                            particles->GetU(idx), particles->GetV(idx));
+  }
+
+  // Normalize and write back, preserving BC and solid faces.
+  // u faces: face (i,j) is between cells (i-1,j) and (i,j).
+  for (int j = 0; j < ny; j++) {
+    for (int i = 0; i < nx + 1; i++) {
+      bool isSolid = false, isBC = false;
+      if (i > 0) {
+        auto l = fields->Label(i - 1, j);
+        if (l & Fields2D::SOLID)
+          isSolid = true;
+        if (l & Fields2D::BC_U)
+          isBC = true;
+      }
+      if (i < nx) {
+        auto l = fields->Label(i, j);
+        if (l & Fields2D::SOLID)
+          isSolid = true;
+        if (l & Fields2D::BC_U)
+          isBC = true;
+      }
+      if (isSolid)
+        fields->u.Set(i, j, fields->usolid);
+      else if (isBC)
+        ; // keep value written by applyToFields
+      else if (fields->u_weight.Get(i, j) > varType(1e-12))
+        fields->u.Set(i, j,
+                      fields->u_sum.Get(i, j) / fields->u_weight.Get(i, j));
+      else
+        fields->u.Set(i, j, varType(0));
     }
+  }
 
-    for (int j = 1; j < ny + 1; j++) {
-        for (int i = 0; i < nx; i++) {
-            fields->v_sum.Set(i,j, varType(0)); 
-            fields->v_weight.Set(i,j, varType(0));
-        }
+  // v faces: face (i,j) is between cells (i,j-1) and (i,j).
+  for (int j = 0; j < ny + 1; j++) {
+    for (int i = 0; i < nx; i++) {
+      bool isSolid = false, isBC = false;
+      if (j > 0) {
+        auto l = fields->Label(i, j - 1);
+        if (l & Fields2D::SOLID)
+          isSolid = true;
+        if (l & Fields2D::BC_V)
+          isBC = true;
+      }
+      if (j < ny) {
+        auto l = fields->Label(i, j);
+        if (l & Fields2D::SOLID)
+          isSolid = true;
+        if (l & Fields2D::BC_V)
+          isBC = true;
+      }
+      if (isSolid)
+        fields->v.Set(i, j, fields->usolid);
+      else if (isBC)
+        ;
+      else if (fields->v_weight.Get(i, j) > varType(1e-12))
+        fields->v.Set(i, j,
+                      fields->v_sum.Get(i, j) / fields->v_weight.Get(i, j));
+      else
+        fields->v.Set(i, j, varType(0));
     }
-
-    int ppcx = particles->ppcx;
-    int ppcy = particles->ppcy;
-
-    for (int icell = 0; icell < nx; icell++) {
-        for (int jcell = 0; jcell < ny; jcell++) {
-
-            for (int a = 0; a < ppcx; a++) {
-                for (int b = 0; b < ppcy; b++) {
-
-                    int ip = icell * ppcx + a;
-                    int jp = jcell * ppcy + b;
-
-                    if (particles->IsDead(ip, jp)) { continue; }
-
-                    varType x = particles->GetX(ip, jp);
-                    varType y = particles->GetY(ip, jp);
-                    varType up = particles->GetU(ip, jp);
-                    varType vp = particles->GetV(ip, jp);
-
-                    ProjectOneParticleOnMAC(x, y, up, vp);
-                }
-            }
-        }
-    }
-
-    varType newVelocity;
-
-    // update u (with normalization)
-    for (int j = 0; j < ny; j++) {
-        for (int i = 0; i < nx + 1; i++) {
-            if (fields->u_weight.Get(i,j) > varType(1e-12)) {
-                newVelocity =  fields->u_sum.Get(i,j) / fields->u_weight.Get(i,j);
-                fields->u.Set(i,j, newVelocity); 
-            }
-            else
-                fields->u.Set(i,j, varType(0));
-        }
-    }
-
-    // update v (with normalization)
-    for (int j = 0; j < ny + 1; j++) {
-        for (int i = 0; i < nx; i++) {
-            if (fields->v_weight.Get(i,j) > varType(1e-12)) {
-                newVelocity = fields->v_sum.Get(i,j) / fields->v_weight.Get(i,j);
-                fields->v.Set(i,j, newVelocity); 
-            }
-            else
-                fields->v.Set(i,j, varType(0));
-        }
-    }
+  }
 }
 
-void PIC::ProjectGridOnParticles(){
-    
-    int ppcx = particles->ppcx;
-    int ppcy = particles->ppcy;
-
-    for (int icell = 0; icell < nx; icell++) {
-        for (int jcell = 0; jcell < ny; jcell++) {
-
-            for (int a = 0; a < ppcx; a++) {
-                for (int b = 0; b < ppcy; b++) {
-
-                    int ip = icell * ppcx + a;
-                    int jp = jcell * ppcy + b;
-
-                    if (particles->IsDead(ip, jp)) { continue; }
-
-                    varType x = particles->GetX(ip, jp);
-                    varType y = particles->GetY(ip, jp);
-                    
-                    particles->SetU(ip, jp, interpolateU(x, y));
-                    particles->SetV(ip, jp, interpolateV(x, y));
-                }
-            }
-        }
-    }
+void PIC::ProjectGridOnParticles() {
+  const int cap = particles->capacity;
+  for (int idx = 0; idx < cap; ++idx) {
+    if (particles->IsDead(idx))
+      continue;
+    particles->SetU(idx,
+                    interpolateU(particles->GetX(idx), particles->GetY(idx)));
+    particles->SetV(idx,
+                    interpolateV(particles->GetX(idx), particles->GetY(idx)));
+  }
 }

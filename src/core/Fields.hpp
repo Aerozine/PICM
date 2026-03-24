@@ -1,8 +1,8 @@
 #pragma once
 #include "Grid2D.hpp"
 #include <cstdint>
-#include <vector>
 #include <string>
+#include <vector>
 
 /**
  * @file Fields.hpp
@@ -29,20 +29,26 @@
 class Fields2D {
 public:
   /// @brief Possible states for a grid cell.
-    
+
   enum CellType : uint16_t {
-    FLUID  = 0, ///< Active fluid cell, participates in the pressure solve.
+    FLUID = 0,      ///< Active fluid cell, participates in the pressure solve.
     SOLID = 1 << 0, ///< Solid (obstacle / wall) cell, velocity is fixed.
 
-    BC_U  = 1 << 1, ///< Boundary condition, horizontal velocity on the left is fixed.
-    BC_V  = 1 << 2, ///< Boundary condition, vertical velocity underneath is fixed. 
-    BC_P  = 1 << 3, ///< Boundary condition, pressure is fixed on cell center.   
-    BC_S  = 1 << 4,  ///< Boundary condition for smoke map. 
+    BC_U =
+        1
+        << 1, ///< Boundary condition, horizontal velocity on the left is fixed.
+    BC_V =
+        1 << 2, ///< Boundary condition, vertical velocity underneath is fixed.
+    BC_P = 1 << 3, ///< Boundary condition, pressure is fixed on cell center.
+    BC_S = 1 << 4, ///< Boundary condition for smoke map.
 
-    IC_U  = 1 << 5, ///< Initial condition, horizontal velocity on the left is fixed.
-    IC_V  = 1 << 6, ///< Initial condition, vertical velocity underneath is fixed. 
-    IC_P  = 1 << 7, ///< Initial condition, pressure is fixed on cell center.   
-    IC_S  = 1 << 8  ///< Initial condition for smoke map. 
+    IC_U =
+        1
+        << 5, ///< Initial condition, horizontal velocity on the left is fixed.
+    IC_V =
+        1 << 6, ///< Initial condition, vertical velocity underneath is fixed.
+    IC_P = 1 << 7, ///< Initial condition, pressure is fixed on cell center.
+    IC_S = 1 << 8  ///< Initial condition for smoke map.
   };
 
   int nx;          ///< Number of pressure cells in x.
@@ -63,7 +69,7 @@ public:
 
   Grid2D u_sum, u_weight;
   Grid2D v_sum, v_weight;
-  
+
   Grid2D countAliveParticles;
 
   /// Velocity imposed on SOLID cells (0 = no-slip). Reserved for moving
@@ -79,8 +85,8 @@ public:
    * @param dx      Cell width  in x.
    * @param dy      Cell height in y.
    */
-  Fields2D(int nx, int ny, varType density, varType dt,
-            varType dx, varType dy, std::string method)
+  Fields2D(int nx, int ny, varType density, varType dt, varType dx, varType dy,
+           std::string method)
       : nx(nx), ny(ny), density(density), dt(dt), dx(dx), dy(dy), u(nx + 1, ny),
         v(nx, ny + 1), p(nx, ny), div(nx, ny), normVelocity(nx - 1, ny - 1),
         smokeMap(nx - 1, ny - 1),

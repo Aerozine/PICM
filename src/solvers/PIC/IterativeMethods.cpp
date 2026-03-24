@@ -3,8 +3,7 @@
 #include <iostream>
 
 // Cell update
-double PIC::getUpdate(const int i, const int j,
-                                 const varType coef) const {
+double PIC::getUpdate(const int i, const int j, const varType coef) const {
   if (fields->Label(i, j) == Fields2D::SOLID)
     return NAN;
 
