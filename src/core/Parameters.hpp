@@ -82,7 +82,7 @@ public:
   bool write_div = false;           ///< Write divergence field (diagnostic).
   bool write_norm_velocity = false; ///< Write velocity magnitude (diagnostic).
   bool write_smoke = false;         ///< Write smoke (diagnostic).
-  bool write_particles = false;         ///< Write smoke (diagnostic).
+  bool write_particles = false;     ///< Write smoke (diagnostic).
 
   // Solver
   SolverConfig solver; ///< Pressure solver settings.
@@ -124,10 +124,10 @@ private:
   // Raw JSON subtrees — SceneObjects are created lazily in applyToFields().
   nlohmann::json velocityU_json; ///< JSON node for initial u-velocity patches.
   nlohmann::json velocityV_json; ///< JSON node for initial v-velocity patches.
-  nlohmann::json pressure_json; ///< JSON node for initial pressure patches.
+  nlohmann::json pressure_json;  ///< JSON node for initial pressure patches.
   nlohmann::json solid_json;     ///< JSON node for solid geometry.
   nlohmann::json smoke_json;     ///< JSON node for solid geometry.
-  nlohmann::json particles_json;     ///< JSON node for solid geometry.
+  nlohmann::json particles_json; ///< JSON node for solid geometry.
 
   /**
    * @brief Populate members from a parsed JSON object.

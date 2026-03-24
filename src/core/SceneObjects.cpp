@@ -97,13 +97,13 @@ void RectangleObject::applySolid(Fields2D &f) const {
 void RectangleObject::applyVelocityU(Fields2D &f) const {
   const int iMax = std::min(x2, f.u.nx - 1);
   const int jMax = std::min(y2, f.u.ny - 1);
- 
+
   if (condition != "initial" && condition != "boundary") {
     std::cout << "Invalid condition for rectangular horizontal velocity.\n"
               << "Available options: initial or boundary.\n";
     return;
   }
-  
+
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     for (int j = std::max(y1, 0); j <= jMax; ++j) {
       f.u.Set(i, j, val);
@@ -124,21 +124,20 @@ void RectangleObject::applyVelocityV(Fields2D &f) const {
     return;
   }
 
-  std::cout <<"before entering applyU loop\n"<<std::endl;
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     for (int j = std::max(y1, 0); j <= jMax; ++j) {
       f.v.Set(i, j, val);
       if (condition == "initial")
         f.SetLabel(i, j, Fields2D::IC_V);
       else
-        f.SetLabel(i, j, Fields2D::BC_V); 
+        f.SetLabel(i, j, Fields2D::BC_V);
     }
 }
 
 void RectangleObject::applyPressure(Fields2D &f) const {
   const int iMax = std::min(x2, f.p.nx - 1);
   const int jMax = std::min(y2, f.p.ny - 1);
-  
+
   if (condition != "initial" && condition != "boundary") {
     std::cout << "Invalid condition for rectangular velocity.\n"
               << "Available options: initial or boundary.\n";
@@ -151,14 +150,14 @@ void RectangleObject::applyPressure(Fields2D &f) const {
       if (condition == "initial")
         f.SetLabel(i, j, Fields2D::IC_P);
       else
-        f.SetLabel(i, j, Fields2D::BC_P); 
+        f.SetLabel(i, j, Fields2D::BC_P);
     }
 }
 
 void RectangleObject::applySmoke(Fields2D &f) const {
   const int iMax = std::min(x2, f.v.nx - 1);
   const int jMax = std::min(y2, f.v.ny - 1);
- 
+
   if (condition != "initial" && condition != "boundary") {
     std::cout << "Invalid condition for rectangular velocity.\n"
               << "Available options: initial or boundary.\n";
@@ -171,8 +170,8 @@ void RectangleObject::applySmoke(Fields2D &f) const {
       if (condition == "initial")
         f.SetLabel(i, j, Fields2D::IC_S);
       else
-        f.SetLabel(i, j, Fields2D::BC_S); 
-  }
+        f.SetLabel(i, j, Fields2D::BC_S);
+    }
 }
 
 // CylinderObject

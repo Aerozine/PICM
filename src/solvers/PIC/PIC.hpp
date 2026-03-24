@@ -1,64 +1,53 @@
 #pragma once
 #include "../../core/Fields.hpp"
-#include "../../core/Particles.hpp"
 #include "../../core/OutputWriter.hpp"
 #include "../../core/Parameters.hpp"
+#include "../../core/Particles.hpp"
 #include <memory>
 
 /**
  * @file PIC.hpp
- * @brief Particule-In-Cell solver.
- */
-
-/**
- * @brief 2-D incompressible Navier-Stokes solver using a semi-Lagrangian
- *        advection scheme and a pressure-projection method.
+ * @brief Particle-In-Cell solver for 2-D incompressible flow.
  *
- * ### Algorithm — one time step
- * 1. **Project** (+MakeIncompressible): solve the pressure Poisson equation
- *    and correct velocities so that \f$\nabla \cdot \mathbf{u} \approx 0 \f$.
- * 2. **Advect**: trace departure points backward in time (RK2) and
- *    interpolate the velocity field at those points.
+ * ### Algorithm one time step
+ * 1. P2G  transfer particle velocities to the MAC grid (hat kernel).
+ * 2. Project solve pressure Poisson, correct face velocities
+ * 3. G2P  interpolate corrected grid velocities back to particles.
+ * 4. Advect move particles with RK2; kill those leaving the domain or
+ *             entering a solid, register their slots in the free-list.
+ * 5. Reseed repopulate underpopulated fluid cells from the free-list.
+ *
+ * ### Particle budget
+ * The particle array is allocated with CAPACITY_FACTOR × nx×ny×ppcx×ppcy
+ * slots.  The extra slots start dead and are pushed onto the free-list so
+ * the reseeder can inject particles at an open inlet without waiting for
+ * particles to die at the outlet.
  */
 class PIC {
 public:
-  /**
-   * @brief Construct the solver, initialise fields, and open output writers.
-   * @param params Simulation parameters (non-owning reference, must outlive
-   *               this object).
-   */
   explicit PIC(const Parameters &params);
-
   ~PIC();
 
   PIC(const PIC &) = delete;
   PIC &operator=(const PIC &) = delete;
 
-  /// @brief Run the full simulation loop (nt steps) and write output.
   void Run();
-
-  /// @brief Advance the simulation by one time step.
   void Step();
 
-  Fields2D &GetFields() { return *fields; } ///< Access fields (mutable).
-  const Fields2D &GetFields() const {
-    return *fields;
-  } ///< Access fields (const).
+  Fields2D &GetFields() { return *fields; }
+  const Fields2D &GetFields() const { return *fields; }
 
 private:
   const Parameters &params;
 
-  // Cached scalars from params to avoid pointer chasing in hot loops.
   int nx, ny;
   varType dx, dy, dt;
   varType density;
 
-  Fields2D *fields; ///< @todo Replace with std::unique_ptr<Fields2D>.
-  
-  Particles *particles; ///< @todo Replace with std::unique_ptr<Particles>.
+  Fields2D *fields;
+  Particles *particles;
   ParticleSlots *deadSlots;
 
-  // Output writers — null if the corresponding write_* flag is false.
   std::unique_ptr<OutputWriter> uWriter;
   std::unique_ptr<OutputWriter> vWriter;
   std::unique_ptr<OutputWriter> pWriter;
@@ -67,109 +56,45 @@ private:
   std::unique_ptr<OutputWriter> smokeWriter;
   std::unique_ptr<OutputWriter> particlesWriter;
 
-  /// @brief Construct the OutputWriters requested in @c params.
   void InitializeOutputWriters();
-
-  /**
-   * @brief Write all enabled fields at the current step if it falls on a
-   *        sampling interval.
-   * @param step Current time-step index (0-based).
-   */
   void WriteOutput(int step) const;
 
-  // Advection
-
   /**
-   * @brief Advect u and v using a semi-Lagrangian (RK2 backward-trace +
-   *        bilinear interpolation) scheme.
+   * @brief Build the initial free-list of dead particle slots.
+   *
+   * Kills grid-slot particles whose home cell is solid, and pushes all
+   * extra capacity slots (indices >= nx*ny*ppcx*ppcy) onto the free-list.
+   * Must be called after applyToFields() and InitParticleGrid().
    */
-  void AdvectParticles();
+  void InitFreeSlots();
 
+  // P2G
   varType GetW();
   varType hat(varType r);
   void ProjectOneParticleOnMAC(varType x, varType y, varType up, varType vp);
   void ProjectParticlesOnGrid(std::string kernel);
+
+  // G2P
   void ProjectGridOnParticles();
+
+  // Advection
+  void AdvectParticles();
+  [[nodiscard]] varType interpolateU(varType x, varType y) const;
+  [[nodiscard]] varType interpolateV(varType x, varType y) const;
+  void getVelocity(varType x, varType y, varType &u, varType &v) const;
+
+  // Reseeding
   void RefillParticles();
   void CountAliveParticles();
   varType rand01();
 
-  [[nodiscard]] varType interpolateU(varType x, varType y) const;
-
-  /**
-   * @brief Bilinearly interpolate the v field at physical position (x, y).
-   * @param x Physical x-coordinate (clamped to the domain).
-   * @param y Physical y-coordinate (clamped to the domain).
-   * @return  Interpolated v value.
-   */
-  [[nodiscard]] varType interpolateV(varType x, varType y) const;
- 
-  /**
-   * @brief Return both velocity components at physical position (x, y).
-   * @param[in]  x Physical x-coordinate.
-   * @param[in]  y Physical y-coordinate.
-   * @param[out] u Interpolated u value.
-   * @param[out] v Interpolated v value.
-   */
-  void getVelocity(varType x, varType y, varType &u, varType &v) const;
-
-  // Projection
-  /**
-   * @brief Enforce \f$ \nabla \cdot \mathbf{u} = 0 \f$: solve pressure, then
-   * correct velocities.
-   */
+  // Pressure projection
   void MakeIncompressible();
-
-  /**
-   * @brief Dispatch to the pressure solver selected in @c params.
-   * @param maxIters Maximum number of solver iterations.
-   * @param tol      Relative residual convergence threshold.
-   */
   void solvePressure(int maxIters, double tol);
-
-  /**
-   * @brief Apply the pressure gradient to correct face velocities.
-   *
-   * Implements the explicit update:
-   * \f [ u^{n+1} = u^* - \frac{\Delta t}{\rho\,\Delta x}\,(p_i - p_{i-1}) \f]
-   * Faces adjacent to SOLID cells are set to @c usolid instead.
-   */
   void updateVelocities();
-
-  /**
-   * @brief Compute the RMS residual of the discrete Poisson equation.
-   *
-   * The residual at each FLUID cell is:
-   * \f$ r_{ij} = -\text{coef}\cdot\text{div}_{ij}
-   *              + \sum_{\text{nb}} p_{\text{nb}}
-   *              - N\,p_{ij} \f$
-   *
-   * @param coef  Scaling coefficient \f$\rho\,\Delta x^2 / \Delta t \f$.
-   * @return RMS residual over all FLUID cells (0 if none).
-   */
   [[nodiscard]] double computeResidualNorm(varType coef) const;
-
-  /**
-   * @brief Compute the Gauss-Seidel update for cell (i, j).
-   *
-   * \f$ p^{\text{new}}_{ij} =
-   *     \frac{-\text{coef}\cdot\text{div}_{ij} + \sum_{\text{nb}}
-   * p_{\text{nb}}}{N} \f$
-   *
-   * @param i    Cell x-index.
-   * @param j    Cell y-index.
-   * @param coef Scaling coefficient.
-   * @return     New pressure value, or NAN if the cell is not FLUID.
-   */
   [[nodiscard]] double getUpdate(int i, int j, varType coef) const;
-
-  /// @brief Jacobi pressure solver (fully parallel, slower convergence).
   void SolveJacobi(int maxIters, double tol);
-
-  /// @brief Gauss-Seidel pressure solver (sequential, faster convergence).
   void SolveGaussSeidel(int maxIters, double tol);
-
-  /// @brief Red-Black Gauss-Seidel pressure solver (parallel + fast
-  /// convergence).
   void SolveRedBlackGaussSeidel(int maxIters, double tol);
 };

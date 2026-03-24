@@ -65,7 +65,7 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   load("nt", nt);
   load("sampling_rate", sampling_rate);
   load("density", density);
- 
+
   // Output flags
   load("write_u", write_u);
   load("write_v", write_v);

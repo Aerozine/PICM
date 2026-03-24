@@ -175,23 +175,17 @@ bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
   return true;
 }
 
-bool OutputWriter::writeParticles(const Particles& particles,
-                                  const std::string& id) {
-  if (pvd_finalised_) {
+bool OutputWriter::writeParticles(const Particles &particles,
+                                  const std::string &id) {
+  if (pvd_finalised_)
     return false;
-  }
 
-  const int nxp = particles.px;
-  const int nyp = particles.py;
+  const int cap = particles.capacity;
 
   int nAlive = 0;
-  for (int j = 0; j < nyp; ++j) {
-    for (int i = 0; i < nxp; ++i) {
-      if (!particles.IsDead(i, j)) {
-        ++nAlive;
-      }
-    }
-  }
+  for (int idx = 0; idx < cap; ++idx)
+    if (!particles.IsDead(idx))
+      ++nAlive;
 
   std::ostringstream oss;
   oss << id << '_' << std::setw(4) << std::setfill('0') << current_step_
@@ -200,60 +194,58 @@ bool OutputWriter::writeParticles(const Particles& particles,
   std::string vtp_path = output_dir_ + "/" + vtp_name;
 
   std::ofstream out(vtp_path);
-  if (!out.is_open()) {
+  if (!out.is_open())
     return false;
-  }
 
   out << "<?xml version=\"1.0\"?>\n"
-      << "<VTKFile type=\"PolyData\" version=\"0.1\" byte_order=\"LittleEndian\">\n"
+      << "<VTKFile type=\"PolyData\" version=\"0.1\" "
+         "byte_order=\"LittleEndian\">\n"
       << "  <PolyData>\n"
-      << "    <Piece NumberOfPoints=\"" << nAlive
-      << "\" NumberOfVerts=\"" << nAlive
+      << "    <Piece NumberOfPoints=\"" << nAlive << "\" NumberOfVerts=\""
+      << nAlive
       << "\" NumberOfLines=\"0\" NumberOfStrips=\"0\" NumberOfPolys=\"0\">\n";
 
   out << "      <PointData Scalars=\"u\" Vectors=\"velocity\">\n";
 
   // u
-  out << "        <DataArray type=\"Float64\" Name=\"u\" NumberOfComponents=\"1\" format=\"ascii\">\n"
-      << "          ";
+  out << "        <DataArray type=\"Float64\" Name=\"u\" "
+         "NumberOfComponents=\"1\" format=\"ascii\">\n          ";
   bool first = true;
-  for (int j = 0; j < nyp; ++j) {
-    for (int i = 0; i < nxp; ++i) {
-      if (particles.IsDead(i, j)) continue;
-      if (!first) out << ' ';
-      out << particles.GetU(i, j);
-      first = false;
-    }
+  for (int idx = 0; idx < cap; ++idx) {
+    if (particles.IsDead(idx))
+      continue;
+    if (!first)
+      out << ' ';
+    out << particles.GetU(idx);
+    first = false;
   }
   out << "\n        </DataArray>\n";
 
   // v
-  out << "        <DataArray type=\"Float64\" Name=\"v\" NumberOfComponents=\"1\" format=\"ascii\">\n"
-      << "          ";
+  out << "        <DataArray type=\"Float64\" Name=\"v\" "
+         "NumberOfComponents=\"1\" format=\"ascii\">\n          ";
   first = true;
-  for (int j = 0; j < nyp; ++j) {
-    for (int i = 0; i < nxp; ++i) {
-      if (particles.IsDead(i, j)) continue;
-      if (!first) out << ' ';
-      out << particles.GetV(i, j);
-      first = false;
-    }
+  for (int idx = 0; idx < cap; ++idx) {
+    if (particles.IsDead(idx))
+      continue;
+    if (!first)
+      out << ' ';
+    out << particles.GetV(idx);
+    first = false;
   }
   out << "\n        </DataArray>\n";
 
-  // velocity
-  out << "        <DataArray type=\"Float64\" Name=\"velocity\" NumberOfComponents=\"3\" format=\"ascii\">\n"
-      << "          ";
+  // velocity vector (3-component for VTK)
+  out << "        <DataArray type=\"Float64\" Name=\"velocity\" "
+         "NumberOfComponents=\"3\" format=\"ascii\">\n          ";
   first = true;
-  for (int j = 0; j < nyp; ++j) {
-    for (int i = 0; i < nxp; ++i) {
-      if (particles.IsDead(i, j)) continue;
-      if (!first) out << ' ';
-      out << particles.GetU(i, j) << ' '
-          << particles.GetV(i, j) << ' '
-          << 0.0;
-      first = false;
-    }
+  for (int idx = 0; idx < cap; ++idx) {
+    if (particles.IsDead(idx))
+      continue;
+    if (!first)
+      out << ' ';
+    out << particles.GetU(idx) << ' ' << particles.GetV(idx) << ' ' << 0.0;
+    first = false;
   }
   out << "\n        </DataArray>\n";
 
@@ -261,57 +253,46 @@ bool OutputWriter::writeParticles(const Particles& particles,
 
   // Points
   out << "      <Points>\n"
-      << "        <DataArray type=\"Float64\" NumberOfComponents=\"3\" format=\"ascii\">\n"
-      << "          ";
+      << "        <DataArray type=\"Float64\" NumberOfComponents=\"3\" "
+         "format=\"ascii\">\n          ";
   first = true;
-  for (int j = 0; j < nyp; ++j) {
-    for (int i = 0; i < nxp; ++i) {
-      if (particles.IsDead(i, j)) continue;
-      if (!first) out << ' ';
-      out << particles.GetX(i, j) << ' '
-          << particles.GetY(i, j) << ' '
-          << 0.0;
-      first = false;
-    }
+  for (int idx = 0; idx < cap; ++idx) {
+    if (particles.IsDead(idx))
+      continue;
+    if (!first)
+      out << ' ';
+    out << particles.GetX(idx) << ' ' << particles.GetY(idx) << ' ' << 0.0;
+    first = false;
   }
-  out << "\n"
-      << "        </DataArray>\n"
-      << "      </Points>\n";
+  out << "\n        </DataArray>\n      </Points>\n";
 
   // Verts
   out << "      <Verts>\n"
-      << "        <DataArray type=\"Int32\" Name=\"connectivity\" format=\"ascii\">\n"
-      << "          ";
+      << "        <DataArray type=\"Int32\" Name=\"connectivity\" "
+         "format=\"ascii\">\n          ";
   for (int k = 0; k < nAlive; ++k) {
-    if (k > 0) out << ' ';
+    if (k)
+      out << ' ';
     out << k;
   }
-  out << "\n"
-      << "        </DataArray>\n"
-      << "        <DataArray type=\"Int32\" Name=\"offsets\" format=\"ascii\">\n"
-      << "          ";
+  out << "\n        </DataArray>\n"
+      << "        <DataArray type=\"Int32\" Name=\"offsets\" "
+         "format=\"ascii\">\n          ";
   for (int k = 0; k < nAlive; ++k) {
-    if (k > 0) out << ' ';
+    if (k)
+      out << ' ';
     out << (k + 1);
   }
-  out << "\n"
-      << "        </DataArray>\n"
-      << "      </Verts>\n";
+  out << "\n        </DataArray>\n      </Verts>\n";
 
-  out << "    </Piece>\n"
-      << "  </PolyData>\n"
-      << "</VTKFile>\n";
-
+  out << "    </Piece>\n  </PolyData>\n</VTKFile>\n";
   out.close();
 
   appendPVDEntry(vtp_name, static_cast<double>(current_step_));
   ++current_step_;
-
   return true;
 }
 
-
-// write the end of the .pvd file
 void OutputWriter::finalisePVD() {
   if (pvd_finalised_)
     return;

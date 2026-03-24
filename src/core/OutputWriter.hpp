@@ -69,8 +69,7 @@ public:
    */
   bool writeGrid2D(const Grid2D &grid, const std::string &id);
   // may be good to use , but destructor does the same job
-  bool writeParticles(const Particles& particles, const std::string& id);
-
+  bool writeParticles(const Particles &particles, const std::string &id);
 
   /**
    * @brief Write the PVD index file and mark the writer as finalised.
