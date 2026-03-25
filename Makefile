@@ -4,37 +4,26 @@ build:
 build-fast:
 	cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release; cmake --build build 
 
-run-green:
-	./build/bin/PIC -c test/SemiLagrangian/taylorgreen.json
-
-run-test:
-	./build-dbg/bin/PIC -c test/SemiLagrangian/test.json
-
-run-square:
+sl-square:
 	./build-dbg/bin/PIC -c test/SemiLagrangian/test-square.json
 
-uniform:
+sl-uniform:
 	./build-dbg/bin/PIC -c test/SemiLagrangian/test-uniform.json
 
-particles:
+sl-source:
+	./build-dbg/bin/PIC -c test/SemiLagrangian/test-source.json
+
+pic-default:
 	./build-dbg/bin/PIC -c test/PIC/particles.json
 
 pic-uniform:
 	./build-dbg/bin/PIC -c test/PIC/uniform.json
-
-cylinder:
-	./build/bin/PIC -c test/SemiLagrangian/test-large-cylinder.json
-
-source:
-	./build-dbg/bin/PIC -c test/SemiLagrangian/test-source.json
-
-run-fast:
-	./build/bin/PIC -c test/SemiLagrangian/test.json
 
 format:
 	find . -name "*.cpp" -o -name "*.hpp" | xargs clang-format -i --style=LLVM
 
 clean:
 	rm -rf build* results*
+
 memcheck:
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose ./build-dbg/bin/PIC -c test/test-large-cylinder.json

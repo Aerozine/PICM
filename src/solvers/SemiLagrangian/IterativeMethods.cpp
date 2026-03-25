@@ -49,7 +49,6 @@ double SemiLagrangian::computeResidualNorm(const varType coef) const {
 OMP_PRAGMA( omp parallel for collapse(2) reduction(+ : sumSq) reduction(+ : count))
 for (int j = 0; j < ny; ++j) {
   for (int i = 0; i < nx; ++i) {
-    for (int j = 0; j < ny; ++j) {
       if (fields->Label(i, j) == Fields2D::SOLID)
         continue;
 
@@ -116,8 +115,8 @@ for (int j = 0; j < ny; ++j)
     pNew.Set(i, j, getUpdate(i, j, coef));
 
 OMP_PRAGMA( omp parallel for collapse(2))
-for (int i = 0; i < nx; ++i)
-  for (int j = 0; j < ny; ++j)
+for (int j = 0; j < ny; ++j)
+  for (int i = 0; i < nx; ++i)
     if (fields->Label(i, j) != Fields2D::SOLID)
       fields->p.Set(i, j, pNew.Get(i, j));
 

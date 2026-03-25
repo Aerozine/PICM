@@ -32,9 +32,9 @@ void SemiLagrangian::updateVelocities() {
 
   const varType coef = dt / (density * dx);
 
-#OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
-  for (int i = 1; i < fields->u.nx; ++i) {
-    for (int j = 0; j < fields->u.ny; ++j) {
+  OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
+  for (int j = 0; j < fields->u.ny; ++j) {
+    for (int i = 1; i < fields->u.nx - 1; ++i) {
       if (fields->Label(i - 1, j) & Fields2D::SOLID ||
           fields->Label(i, j) & Fields2D::SOLID) {
         fields->u.Set(i, j, fields->usolid);
@@ -46,32 +46,23 @@ void SemiLagrangian::updateVelocities() {
                     fields->u.Get(i, j) -
                         coef * (fields->p.Get(i, j) - fields->p.Get(i - 1, j)));
     }
-    fields->u.Set(i, j,
-                  fields->u.Get(i, j) -
-                      coef * (fields->p.Get(i, j) - fields->p.Get(i - 1, j)));
   }
-}
 
-OMP_PRAGMA( omp parallel for collapse(2) schedule(static))
-for (int j = 1; j < fields->v.ny - 1; ++j) {
-  for (int i = 0; i < fields->v.nx; ++i) {
-    for (int j = 1; j < fields->v.ny; ++j) {
-      if (fields->Label(i, j - 1) & Fields2D::SOLID ||
-          fields->Label(i, j) & Fields2D::SOLID) {
-        fields->v.Set(i, j, fields->usolid);
-        continue;
-      } else if (fields->Label(i, j) & Fields2D::BC_V) {
-        continue;
-      }
-      fields->v.Set(i, j,
-                    fields->v.Get(i, j) -
-                        coef * (fields->p.Get(i, j) - fields->p.Get(i, j - 1)));
+  OMP_PRAGMA( omp parallel for collapse(2) schedule(static))
+  for (int j = 1; j < fields->v.ny - 1; ++j) {
+    for (int i = 0; i < fields->v.nx; ++i) {
+        if (fields->Label(i, j - 1) & Fields2D::SOLID ||
+            fields->Label(i, j) & Fields2D::SOLID) {
+          fields->v.Set(i, j, fields->usolid);
+          continue;
+        } else if (fields->Label(i, j) & Fields2D::BC_V) {
+          continue;
+        }
+        fields->v.Set(i, j,
+                      fields->v.Get(i, j) -
+                          coef * (fields->p.Get(i, j) - fields->p.Get(i, j - 1)));
     }
-    fields->v.Set(i, j,
-                  fields->v.Get(i, j) -
-                      coef * (fields->p.Get(i, j) - fields->p.Get(i, j - 1)));
   }
-}
 }
 
 void SemiLagrangian::MakeIncompressible() {
