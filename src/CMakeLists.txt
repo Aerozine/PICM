@@ -1,4 +1,4 @@
-file(GLOB SOURCES "main.cpp" "core/*.cpp" "solvers/PIC/*.cpp")
+file(GLOB SOURCES "main.cpp" "core/*.cpp" "solvers/PIC/*.cpp" "solvers/SemiLagrangian/*.cpp")
 set(CMAKE_NINJA_FORCE_RESPONSE_FILE "ON" CACHE BOOL "Force Ninja to use response files.")
 
 add_executable(PIC ${SOURCES})
