@@ -1,14 +1,6 @@
 #pragma once
 
-/**
- * @file Precision.hpp
- * @brief Compile-time floating-point precision selection.
- *
- * Define either USE_FLOAT or USE_DOUBLE via CMake to select the working
- * precision for the entire simulation. All numerical fields, grids, and
- * solver variables use @c varType.
- */
-#ifdef USE_HALF // WIP 
+#ifdef USE_HALF // WIP
 #if __has_include(<stdfloat>)
 #include <stdfloat>
 using varType = std::float16_t;

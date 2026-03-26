@@ -12,12 +12,6 @@ void Fields2D::Div() {
 }
 
 void Fields2D::VelocityNormCenterGrid() {
-  // normVelocity is nx × ny (cell-centred).
-  // For cell (i, j), the centre is at ((i+0.5)*dx, (j+0.5)*dy).
-  // We interpolate u and v from their staggered positions to that point.
-  // The last cell column/row is included - Grid2D::Interpolate() clamps the
-  // stencil, so there is no out-of-bounds access.
-
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < ny; ++j)
     for (int i = 0; i < nx; ++i) {

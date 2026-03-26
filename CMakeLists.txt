@@ -3,6 +3,7 @@ project(PIC)
 
 option(USE_FLOAT_PRECISION "Use float instead of double" ON)
 option(USE_FP16 "Use half-precision floating point (FP16)" OFF)
+option(USE_PARALLEL "Use paralellization" OFF)
 
 # WIP
 #option(ADVECT_TRILIN "Use trilinear interpolation instead of bilinear in advect" ON)
@@ -51,10 +52,11 @@ if(NOT OpenMP_CXX_FOUND AND APPLE)
   endif()
 endif()
 
-if(OpenMP_CXX_FOUND)
+if(OpenMP_CXX_FOUND AND USE_PARALLEL )
   message(STATUS "OpenMP: enabled")
 else()
   message(STATUS "OpenMP: NOT found - building single-threaded")
+  set(OpenMP_CXX_FOUND FALSE)
 endif()
 
 find_package(ZLIB QUIET)

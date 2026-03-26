@@ -5,39 +5,7 @@
 #include <string>
 #include <vector>
 
-/**
- * @file OutputWriter.hpp
- * @brief VTK ImageData (.vti) writer with PVD time-series index.
- */
 
-/**
- * @brief Writes simulation fields to disk as VTK ImageData files (.vti)
- *        and maintains a PVD time-series index for ParaView.
- *
- * ### File layout produced
- * ```
- * <output_dir>/
- *   <name>_0000.vti   ← step 0
- *   <name>_0001.vti   ← step 1
- *   ...
- *   <name>.pvd         ← ParaView collection index (written on destruction)
- * ```
- *
- * ### Binary payload format inside each .vti
- * Without zlib:
- * ```
- *   uint32_t  rawByteCount
- *   varType[] values          (nx * ny elements, storage order)
- * ```
- * With zlib (VTK compressed-block format, single block):
- * ```
- *   uint32_t  numBlocks      (= 1)
- *   uint32_t  blockSize      (= rawByteCount)
- *   uint32_t  lastBlockSize  (= rawByteCount)
- *   uint32_t  compressedSize
- *   byte[]    compressed data
- * ```
- */
 class OutputWriter {
 public:
   /**
@@ -48,19 +16,13 @@ public:
    */
   OutputWriter(const std::string &output_dir, const std::string &pvd_name);
 
-  /// Finalises the PVD index on destruction if not already done.
   ~OutputWriter();
 
-  // Non-copyable — owns an output directory and step counter.
   OutputWriter(const OutputWriter &) = delete;
   OutputWriter &operator=(const OutputWriter &) = delete;
 
   /**
    * @brief Serialise one grid to a .vti file and append a PVD entry.
-   *
-   * Grid data is copied directly from @c grid.A (storage order), so the
-   * access pattern is perfectly sequential — no transposition is performed.
-   *
    * @param grid  Grid to write.
    * @param id    Field name embedded in the VTK XML (e.g. @c "u", @c "p").
    * @return @c true on success, @c false if the file could not be opened or
@@ -68,12 +30,6 @@ public:
    */
   bool writeGrid2D(const Grid2D &grid, const std::string &id);
 
-  /**
-   * @brief Write the PVD index file and mark the writer as finalised.
-   *
-   * Called automatically by the destructor if not called explicitly.
-   * Subsequent calls are no-ops.
-   */
   void finalisePVD();
 
 private:
@@ -102,10 +58,6 @@ private:
 
   /**
    * @brief Compress @p values with zlib (if available) or return raw bytes.
-   *
-   * The returned buffer is the payload that follows the VTK binary header —
-   * it does **not** include the uint32_t header word(s).
-   *
    * @param values Source data in simulation precision.
    * @return Compressed (or raw) byte buffer ready to write.
    */

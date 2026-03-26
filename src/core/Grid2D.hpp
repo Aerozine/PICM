@@ -1,35 +1,12 @@
 #pragma once
 #include "Precision.hpp"
 #include <vector>
-
-/**
- * @file Grid2D.hpp
- * @brief 2D scalar grid on a structured Cartesian mesh.
- */
-
-/**
- * @brief A flat, heap-allocated 2D scalar grid.
- *
- * Data is stored in **row-major** order: element (i, j) lives at
- * @c A[nx * j + i], so the i-index (x-direction) is the fast index.
- *
- * This layout matches the VTK ImageData convention for appended binary data,
- * where values are written x-fastest, allowing the raw @c A buffer to be
- * passed directly to the writer without any transposition.
- *
- * All inner loops should therefore iterate over i in the innermost loop to
- * maximise cache locality.
- */
+///@brief  **ROW-MAJOR 2d grid** @c A[nx*j+i]
 class Grid2D {
 public:
-  int nx; ///< Number of cells in the x-direction.
-  int ny; ///< Number of cells in the y-direction.
-
+  int nx;
+  int ny;
   std::vector<varType> A; ///< Flat cell data, row-major: A[nx*j + i].
-
-  /**
-   * @brief Construct a zero-initialised grid of size @p nx × @p ny.
-   */
   Grid2D(int nx, int ny) : nx(nx), ny(ny), A(nx * ny, varType{0}) {}
 
   /// @brief Read the value at cell (i, j).
@@ -44,19 +21,11 @@ public:
   }
 
   /**
-   * @brief Bilinearly interpolate this grid at physical position (x, y).
-   *
-   * Accounts for the staggered half-cell offset of each field type:
-   * - @p field == 0 (u): nodes at (i·dx, (j+0.5)·dy) → j_real -= 0.5
-   * - @p field == 1 (v): nodes at ((i+0.5)·dx, j·dy) → i_real -= 0.5
-   * - Any other value: cell-centred, no offset.
-   *
-   * Indices are clamped so the 2×2 stencil always stays in bounds.
-   *
+   * @brief Bilinearly interpolation
    * @param x     Physical x-coordinate.
    * @param y     Physical y-coordinate.
-   * @param dx    Cell width  in x (m).
-   * @param dy    Cell height in y (m).
+   * @param dx    Cell width  in x.
+   * @param dy    Cell height in y.
    * @param field Stagger type: 0 = u-face, 1 = v-face, other = cell-centre.
    */
   [[nodiscard]] varType Interpolate(varType x, varType y, varType dx,

@@ -4,16 +4,8 @@
 #include <ostream>
 #include <string>
 
-/**
- * @file Parameters.hpp
- * @brief Simulation configuration loaded from a JSON file.
- */
-
-// Forward declaration — avoids pulling Fields2D into every translation unit
-// that only needs grid dimensions or time-step values.
 class Fields2D;
 
-// SolverConfig
 /**
  * @brief Configuration for the iterative pressure (Poisson) solver.
  */
@@ -26,15 +18,12 @@ struct SolverConfig {
     MICCG0        ///< Modified Incomplete Cholesky CG level 0 ( better )
   };
 
-  Type type;        ///< Solver algorithm.
+  Type type;
   int maxIters;     ///< Maximum number of iterations per step.
   double tolerance; ///< Relative residual convergence threshold.
 
   /**
    * @brief Construct a SolverConfig from a JSON object.
-   *
-   * Recognised keys: @c "type", @c "max_iterations", @c "tolerance".
-   * Unknown solver types fall back to GAUSS_SEIDEL with a warning.
    *
    * @param j JSON object node.
    * @return  Populated SolverConfig.
@@ -45,16 +34,7 @@ struct SolverConfig {
   std::string typeName() const;
 };
 
-// Parameters
-/**
- * @brief All simulation parameters parsed from a JSON configuration file.
- *
- * ## Deferred scene construction
- * Scene objects (velocity patches, solid regions) are stored as raw JSON
- * subtrees and are **not** materialised into @c SceneObject instances until
- * @c applyToFields() is called. This keeps Parameters lightweight and avoids
- * any dependency on @c Fields2D in this header.
- */
+/// @brief All simulation parameters parsed from a JSON configuration file.
 class Parameters {
 public:
   // Grid & time
@@ -64,10 +44,8 @@ public:
   int nx = 100;     ///< Number of pressure cells in x.
   int ny = 100;     ///< Number of pressure cells in y.
   int nt = 100;     ///< Total number of time steps to simulate.
-
   // Physics
   double density = 1000.0; ///< Fluid density (kg/m³).
-
   // Output
   int sampling_rate = 1;          ///< Write output every N steps.
   std::string folder = "results"; ///< Output directory.
@@ -76,17 +54,15 @@ public:
 
   bool source = false; ///< create a source.
 
-  bool write_u = true;              ///< Write u-velocity field.
-  bool write_v = true;              ///< Write v-velocity field.
-  bool write_p = true;              ///< Write pressure field.
-  bool write_div = false;           ///< Write divergence field (diagnostic).
-  bool write_norm_velocity = false; ///< Write velocity magnitude (diagnostic).
-  bool write_smoke = false;         ///< Write smoke (diagnostic).
+  bool write_u = true;
+  bool write_v = true;
+  bool write_p = true;
+  bool write_div = false;
+  bool write_norm_velocity = false;
+  bool write_smoke = false;
 
-  // Solver
-  SolverConfig solver; ///< Pressure solver settings.
+  SolverConfig solver;
 
-  // Life cycle
   Parameters() = default;
 
   /**
@@ -108,9 +84,6 @@ public:
   /**
    * @brief Instantiate scene objects from the stored JSON and apply them to
    *        @p fields, then immediately discard the temporary objects.
-   *
-   * This is the only place where @c SceneObject instances are created.
-   * Call once from the solver constructor after @c Fields2D is initialised.
    *
    * @param fields Target fields to mutate (velocities, solid labels).
    */

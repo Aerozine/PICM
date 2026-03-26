@@ -7,32 +7,6 @@
 #include <string>
 #include <vector>
 
-/**
- * @file SceneObjects.hpp
- * @brief Initial-condition primitives applied once to the simulation fields.
- *
- * Scene objects are built from JSON config nodes and applied at startup to
- * set initial velocities and solid geometry. They are discarded immediately
- * after @c applyToFields() returns — they carry no runtime state.
- *
- * ### JSON shape
- * | JSON key      | Class           | Supported operations           |
- * |---------------|-----------------|--------------------------------|
- * | `"rectangle"` | RectangleObject | velocity u/v, solid, smoke, p  |
- * | `"cylinder"`  | CylinderObject  | solid only                     |
- *
- * Coordinate values may be integer literals **or** simple arithmetic
- * expressions referencing `nx` and `ny` (e.g. `"nx/2 - 10"`).
- * See @c resolveInt() for the supported grammar.
-
- */
-
-/**
- * @brief Abstract base for all scene primitives.
- *
- * Default implementations are no-ops so subclasses only override the
- * operations they actually support.
- */
 struct SceneObject {
   virtual ~SceneObject() = default;
 
@@ -54,9 +28,6 @@ struct SceneObject {
 
 /**
  * @brief Axis-aligned rectangle
- *
- * JSON keys: `"val"`, `"x1"`, `"y1"`, `"x2"`, `"y2"`.
- * (x1,y1) and (x2,y2) are inclusive cell-index corners.
  */
 struct RectangleObject : public SceneObject {
   varType val{0};   ///< Velocity/smoke/pressure value written by apply methods.
@@ -71,34 +42,15 @@ struct RectangleObject : public SceneObject {
   void applyPressure(Fields2D &f) const;
 };
 
-/**
- * @brief Filled disc primitive — marks cells inside the disc as SOLID.
- *
- * JSON keys: `"x"`, `"y"`, `"r"` (centre and radius in cell indices).
- *
- * @note Velocity/smoke/pressure initialisation for cylinder objects is not
- *       yet implemented (solid-only primitive).
- */
 struct CylinderObject : public SceneObject {
   int cx{0}, cy{0}; ///< Centre cell indices.
   int r{0};         ///< Radius in cells.
 
   void applySolid(Fields2D &f) const;
-  // Cylinders do not currently support enumerate (solid boundary is applied
-  // once at init, not re-applied each step).
 };
 
 /**
  * @brief Evaluate a simple integer arithmetic expression from a JSON value.
- *
- * Accepts a bare JSON integer, or a string expression with the grammar:
- * @code
- *   expr := signed_int (op signed_int)*
- *   op   := '+' | '-' | '*' | '/'
- * @endcode
- * Names in @p vars (e.g. `"nx"`, `"ny"`) are substituted before evaluation.
- * Longest variable names are substituted first to prevent partial matches.
- *
  * @param val  JSON value: an integer or a string expression.
  * @param vars Variable name → value bindings.
  * @return     Evaluated integer result.
@@ -109,7 +61,6 @@ int resolveInt(const nlohmann::json &val,
 
 /**
  * @brief Construct one SceneObject from a JSON object node.
- *
  * @param type Primitive type string, e.g. `"rectangle"` or `"cylinder"`.
  * @param j    JSON object containing the primitive's parameters.
  * @param vars Variable bindings forwarded to @c resolveInt().
@@ -121,16 +72,6 @@ makeSceneObject(const std::string &type, const nlohmann::json &j,
 
 /**
  * @brief Parse an entire JSON scene node into a list of SceneObjects.
- *
- * The node is a JSON object whose keys are type names and whose values are
- * either a single primitive object or an array of primitive objects:
- * @code
- * {
- *   "rectangle": [{ "x1":0, ... }, { "x1":5, ... }],
- *   "cylinder" : { "x":"nx/2", "y":"ny/2", "r":10 }
- * }
- * @endcode
- *
  * @param node JSON node containing one or more primitive definitions.
  * @param vars Variable bindings forwarded to @c resolveInt().
  * @return     Vector of owning pointers (nullptrs are filtered out).

@@ -8,7 +8,7 @@
 // SolverConfig
 SolverConfig SolverConfig::fromJson(const nlohmann::json &j) {
   SolverConfig cfg{
-      .type = Type::RB_GS,
+      .type = Type::MICCG0,
       .maxIters = j.value("max_iterations", 1000),
       .tolerance = j.value("tolerance", 1e-4),
   };
@@ -27,7 +27,7 @@ SolverConfig SolverConfig::fromJson(const nlohmann::json &j) {
       cfg.type = Type::MICCG0;
     else
       std::cerr << "[SolverConfig] Unknown solver type '" << t
-                << "' – defaulting to red_black_gauss_seidel.\n";
+                << "' – defaulting to mic cg0.\n";
   }
 
   return cfg;
