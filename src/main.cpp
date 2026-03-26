@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
   // SemiLagrangian solver(params);
   // solver.Run();
 
-  PIC solver(params);
+  SemiLagrangian solver(params);
   solver.Run();
 
   std::cout << "Simulation completed successfully!" << std::endl;
