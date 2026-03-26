@@ -1,10 +1,15 @@
 cmake_minimum_required(VERSION 3.15)
 project(PIC)
 
-option(USE_FLOAT_PRECISION "Use float instead of double" OFF)
+option(USE_FLOAT_PRECISION "Use float instead of double" ON)
+option(USE_FP16 "Use half-precision floating point (FP16)" OFF)
+option(USE_PARALLEL "Use paralellization" OFF)
 
+# WIP
+#option(ADVECT_TRILIN "Use trilinear interpolation instead of bilinear in advect" ON)
+#option(ADVECT_RK3 "use high order RK3 instead of RK2" ON)
 include(FetchContent)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -47,10 +52,11 @@ if(NOT OpenMP_CXX_FOUND AND APPLE)
   endif()
 endif()
 
-if(OpenMP_CXX_FOUND)
+if(OpenMP_CXX_FOUND AND USE_PARALLEL )
   message(STATUS "OpenMP: enabled")
 else()
   message(STATUS "OpenMP: NOT found - building single-threaded")
+  set(OpenMP_CXX_FOUND FALSE)
 endif()
 
 find_package(ZLIB QUIET)

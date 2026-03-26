@@ -10,8 +10,6 @@
 
 namespace fs = std::filesystem;
 
-// OutputWriter
-
 OutputWriter::OutputWriter(const std::string &output_dir,
                            const std::string &pvd_name)
     : output_dir_(output_dir), base_name_(pvd_name), current_step_(0),
@@ -26,15 +24,8 @@ OutputWriter::~OutputWriter() {
     finalisePVD();
 }
 
-// Private helpers
-
-// Internal helpers
-
 /**
  * @brief Write a 4-byte little-endian unsigned integer to a binary stream.
- *
- * ParaView uses uint32_t header words to locate appended data by offset, so
- * every length field in the VTK binary block must be exactly 4 bytes.
  *
  * @param out Binary output stream.
  * @param v   Value to write.
@@ -91,7 +82,7 @@ bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
 
   const int nx = grid.nx;
   const int ny = grid.ny;
-  const uint32_t rawBytes = static_cast<uint32_t>(static_cast<std::size_t>(nx) *
+  const auto rawBytes = static_cast<uint32_t>(static_cast<std::size_t>(nx) *
                                                   ny * sizeof(varType));
 
   // Collect grid data in VTK x-fastest (row-major) order.
