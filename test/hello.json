@@ -1,21 +1,19 @@
 {
-    "dx": 0.002,
-    "dy": 0.002,
-    "dt": 0.01,
+    "dx": 0.05,
+    "dy": 0.05,
+    "dt": 0.05,
     "nx": 200,
-    "ny": 120,
-    "nt": 300,
-    "ppcx": 2,
-    "ppcy": 2,
+    "ny": 140,
+    "nt": 1500,
     "density": 1000,
-    "sampling_rate": 1,
+    "sampling_rate": 5,
     "write_u": true,
     "write_v": true,
     "write_p": true,
     "write_div": true,
     "write_norm_velocity": true,
     "write_smoke": true,
-    "write_particles": true,
+    "source": true,
     "folder": "results",
     "filename": "simulation",
     "velocityu": {
@@ -23,9 +21,9 @@
             "condition": "boundary",
             "val": 0.5,
             "x1": "0",
-            "y1": 0,
+            "y1": "0",
             "x2": "1",
-            "y2": "ny-1"
+            "y2": "ny-2"
         }
     },
     "pressure": {
@@ -40,9 +38,9 @@
     },
     "solid": {
         "cylinder": {
-            "x": "50",
-            "y": "60",
-            "r": 10
+            "x": "75",
+            "y": "ny/2",
+            "r": 20
         },
         "rectangle": [
             {
@@ -59,10 +57,20 @@
             }
         ]
     },
+    "smoke": {
+        "rectangle": {
+            "condition": "boundary",
+            "val": 5,
+            "x1": "0",
+            "y1": "0",
+            "x2": "1",
+            "y2": "ny-1"
+        }
+    },
     "solver": {
         "type": "miccg0",
-        "max_iterations": 1000,
-        "tolerance": 0.01
+        "max_iterations": 5000,
+        "tolerance": 0.1
     },
-    "method": "pic"
+    "method": "semi_lagrangian"
 }

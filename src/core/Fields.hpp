@@ -1,159 +1,85 @@
 #pragma once
+/**
+ * @file Fields.hpp
+ * @brief Physical fields for a 2-D incompressible simulation on a MAC grid.
+ */
 #include "Grid2D.hpp"
 #include <cstdint>
 #include <string>
 #include <vector>
 
-/**
- * @file Fields.hpp
- * @brief Physical fields for a 2-D incompressible simulation on a MAC grid.
- */
-
-/**
- * @brief All physical fields for a 2-D incompressible Navier-Stokes solver
- *        on a staggered (MAC / Marker-And-Cell) grid.
- *
- * ### Grid layout
- * | Field         | Size           | Location                    |
- * |---------------|----------------|-----------------------------|
- * | @c u          | (nx+1) × ny    | x-face centres              |
- * | @c v          | nx × (ny+1)    | y-face centres              |
- * | @c p          | nx × ny        | cell centres                |
- * | @c div        | nx × ny        | cell centres (diagnostic)   |
- * | @c normVelocity | (nx-1) × (ny-1)      | cell centres (diagnostic)   |
- * | @c smokeMap | (nx-1) × (ny-1)      | cell centres (diagnostic)   |
- *
- * Cell labels (FLUID / SOLID) are stored in a separate flat array and
- * accessed via @c Label() / @c SetLabel().
- */
 class Fields2D {
 public:
-  /// @brief Possible states for a grid cell.
-
+  /// @brief Possible states for a grid cell (bitmask).
   enum CellType : uint16_t {
     FLUID = 0,      ///< Active fluid cell, participates in the pressure solve.
     SOLID = 1 << 0, ///< Solid (obstacle / wall) cell, velocity is fixed.
 
-    BC_U =
-        1
-        << 1, ///< Boundary condition, horizontal velocity on the left is fixed.
-    BC_V =
-        1 << 2, ///< Boundary condition, vertical velocity underneath is fixed.
-    BC_P = 1 << 3, ///< Boundary condition, pressure is fixed on cell center.
+    BC_U = 1 << 1, ///< Boundary condition: horizontal velocity on the left is fixed.
+    BC_V = 1 << 2, ///< Boundary condition: vertical velocity underneath is fixed.
+    BC_P = 1 << 3, ///< Boundary condition: pressure is fixed on cell center.
     BC_S = 1 << 4, ///< Boundary condition for smoke map.
 
-    IC_U =
-        1
-        << 5, ///< Initial condition, horizontal velocity on the left is fixed.
-    IC_V =
-        1 << 6, ///< Initial condition, vertical velocity underneath is fixed.
-    IC_P = 1 << 7, ///< Initial condition, pressure is fixed on cell center.
+    IC_U = 1 << 5, ///< Initial condition: horizontal velocity on the left is fixed.
+    IC_V = 1 << 6, ///< Initial condition: vertical velocity underneath is fixed.
+    IC_P = 1 << 7, ///< Initial condition: pressure is fixed on cell center.
     IC_S = 1 << 8  ///< Initial condition for smoke map.
   };
 
-  int nx;          ///< Number of pressure cells in x.
-  int ny;          ///< Number of pressure cells in y.
-  varType density; ///< Fluid density.
-  varType dt;      ///< Time-step size.
-  varType dx;      ///< Cell width  in x.
-  varType dy;      ///< Cell height in y.
+  int nx, ny;
+  varType density; ///< Fluid density (kg/m3).
+  varType dt, dx, dy;
 
-  Grid2D u;   ///< x-velocity, staggered: (nx+1) × ny.
-  Grid2D v;   ///< y-velocity, staggered: nx × (ny+1).
-  Grid2D p;   ///< Pressure,   cell-centred: nx × ny.
-  Grid2D div; ///< Velocity divergence \f$ \nabla \cdot \mathbf{u} \f$
-              ///< (diagnostic): \f$ n_x \times n_y \f$.
-  Grid2D
-      normVelocity; ///< |u| interpolated to cell centres (diagnostic): nx × ny.
-  Grid2D smokeMap;  ///< smoke matter in each cell centres
+  Grid2D u;            ///< x-velocity, staggered: (nx+1) x ny.
+  Grid2D v;            ///< y-velocity, staggered: nx x (ny+1).
+  Grid2D p;            ///< Pressure, cell-centred: nx x ny.
+  Grid2D div;          ///< Velocity divergence (diagnostic): nx x ny.
+  Grid2D normVelocity; ///< |u| interpolated to cell centres (diagnostic): nx x ny.
+  Grid2D smokeMap;     ///< Smoke density at cell centres: nx x ny.
 
+  /// PIC-only P2G accumulation buffers (zero-sized for SemiLagrangian).
   Grid2D u_sum, u_weight;
   Grid2D v_sum, v_weight;
-
   Grid2D countAliveParticles;
 
-  /// Velocity imposed on SOLID cells (0 = no-slip). Reserved for moving
-  /// boundaries in future work.
+  /// Velocity imposed on SOLID cells (0 = no-slip).
   varType usolid = REAL_LITERAL(0.0);
 
   /**
    * @brief Construct all fields and zero-initialise them.
-   * @param nx      Number of pressure cells in x.
-   * @param ny      Number of pressure cells in y.
-   * @param density Fluid density.
-   * @param dt      Time-step size.
-   * @param dx      Cell width  in x.
-   * @param dy      Cell height in y.
+   * @param method "PIC" allocates the P2G accumulation buffers; anything else
+   *               leaves them zero-sized.
    */
   Fields2D(int nx, int ny, varType density, varType dt, varType dx, varType dy,
            std::string method)
-      : nx(nx), ny(ny), density(density), dt(dt), dx(dx), dy(dy), u(nx + 1, ny),
-        v(nx, ny + 1), p(nx, ny), div(nx, ny), normVelocity(nx - 1, ny - 1),
-        smokeMap(nx - 1, ny - 1),
-        u_sum(method == "PIC" ? nx + 1 : 0, method == "PIC" ? ny : 0),
-        u_weight(method == "PIC" ? nx + 1 : 0, method == "PIC" ? ny : 0),
-        v_sum(method == "PIC" ? nx : 0, method == "PIC" ? ny + 1 : 0),
-        v_weight(method == "PIC" ? nx : 0, method == "PIC" ? ny + 1 : 0),
+      : nx(nx), ny(ny), density(density), dt(dt), dx(dx), dy(dy),
+        u(nx + 1, ny), v(nx, ny + 1), p(nx, ny), div(nx, ny),
+        normVelocity(nx, ny), smokeMap(nx, ny),
+        u_sum    (method == "PIC" ? nx + 1 : 0, method == "PIC" ? ny     : 0),
+        u_weight (method == "PIC" ? nx + 1 : 0, method == "PIC" ? ny     : 0),
+        v_sum    (method == "PIC" ? nx     : 0, method == "PIC" ? ny + 1 : 0),
+        v_weight (method == "PIC" ? nx     : 0, method == "PIC" ? ny + 1 : 0),
         countAliveParticles(method == "PIC" ? nx : 0, method == "PIC" ? ny : 0),
         labels(static_cast<std::size_t>(nx) * ny, FLUID) {}
 
-  // Cell label accessors
-  /**
-   * @brief Return the cell type (FLUID or SOLID) of cell (i, j).
-   * @param i Column index [0, nx).
-   * @param j Row    index [0, ny).
-   */
-  [[nodiscard]] CellType Label(int i, int j) const {
-    return static_cast<CellType>(labels[idx(i, j)]);
+  /// @brief Return the cell label bitmask of cell (i, j).
+  [[nodiscard]] uint16_t Label(int i, int j) const {
+    return labels[idx(i, j)];
   }
 
-  /**
-   * @brief Set the cell type of cell (i, j).
-   * @param i Column index [0, nx).
-   * @param j Row    index [0, ny).
-   * @param t New cell type.
-   */
+  /// @brief OR a cell type flag into cell (i, j).
   void SetLabel(int i, int j, CellType t) {
     labels[idx(i, j)] |= static_cast<uint16_t>(t);
   }
 
-  // Field update methods
-  /**
-   * @brief Compute the discrete divergence \f$\nabla \cdot \mathbf{u} \f$ into
-   * @c div.
-   *
-   * Uses first-order finite differences on the staggered grid:
-   * \f$
-   *   \mathrm{div}(i,j) = \frac{u(i+1,j) - u(i,j)}{\Delta x}
-   *                     + \frac{v(i,j+1) - v(i,j)}{\Delta y}
-   * \f$
-   */
+  /// @brief Compute the velocity divergence into @c div.
   void Div();
 
-  /**
-   * @brief Interpolate the velocity magnitude |u| to cell centres and store
-   *        the result in @c normVelocity.
-   */
+  /// @brief Interpolate the velocity magnitude per cell into @c normVelocity.
   void VelocityNormCenterGrid();
 
-  // Geometry helpers
-
-  /**
-   * @brief Mark cells inside a disc as SOLID.
-   * @param cx Centre x-index (cells).
-   * @param cy Centre y-index (cells).
-   * @param r  Radius in cells.
-   */
-  void SolidCylinder(int cx, int cy, int r);
-
-  /**
-   * @brief Mark the four border rows/columns as SOLID (no-slip walls).
-   */
-  void SolidBorders();
-
 private:
-  std::vector<uint16_t> labels; ///< Flat cell-type array, same layout as p.
+  std::vector<uint16_t> labels; ///< Flat cell-type bitmask, same layout as p.
 
-  /// @brief Flat index into @c labels (row-major, matching Grid2D).
   [[nodiscard]] int idx(int i, int j) const { return nx * j + i; }
 };

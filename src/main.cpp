@@ -4,29 +4,34 @@
 
 #include <iostream>
 
+#include <iostream>
+ 
 int main(int argc, char *argv[]) {
 #ifndef NDEBUG
-  std::cout << "Compiled with debug mode" << std::endl;
+  std::cout << "Compiled with debug mode\n";
 #endif
-
-  // Parse parameters from command line
+ 
   Parameters params;
-  if (!params.parseCommandLine(argc, argv)) {
+  if (!params.parseCommandLine(argc, argv))
     return 1;
-  }
-
+ 
 #ifndef NDEBUG
-  // Display parameters
   std::cout << params << std::endl;
 #endif
-
-  // Create and run solver
-  // SemiLagrangian solver(params);
-  // solver.Run();
-
-  SemiLagrangian solver(params);
-  solver.Run();
-
-  std::cout << "Simulation completed successfully!" << std::endl;
+ 
+  if (params.method == "pic") {
+    PIC solver(params);
+    solver.Run();
+  } else {
+    // Default: "semi_lagrangian"
+    if (params.method != "semi_lagrangian")
+      std::cerr << "[main] Unknown method '" << params.method
+                << "' – defaulting to semi_lagrangian.\n";
+    SemiLagrangian solver(params);
+    solver.Run();
+  }
+ 
+  std::cout << "Simulation completed successfully!\n";
   return 0;
 }
+ 

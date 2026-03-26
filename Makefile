@@ -23,7 +23,11 @@ format:
 	find . -name "*.cpp" -o -name "*.hpp" | xargs clang-format -i --style=LLVM
 
 clean:
+<<<<<<< HEAD
 	rm -rf build* results*
 
+=======
+	rm -rf build* results* cmake-build*
+>>>>>>> lodev
 memcheck:
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose ./build-dbg/bin/PIC -c test/test-large-cylinder.json
