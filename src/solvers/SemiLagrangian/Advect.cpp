@@ -2,19 +2,6 @@
 #include <algorithm>
 #include <cmath>
 
-// Semi-Lagrangian advection
-//  Each velocity component is advected independently:
-//    1. For every face (i,j), trace a particle backward in time using RK2
-//       to find the "departure point" (x_dep, y_dep).
-//    2. Interpolate the current velocity field at that point.
-//    3. Store the result in new grids, then move them into the fields.
-//
-//  Using separate new grids ensures all reads come from the current-step
-//  values — equivalent to a Jacobi-style update.
-//
-//  Loop order: j (outer) → i (inner) so that consecutive Set() calls write
-//  to consecutive memory locations (row-major: A[nx*j + i]).
-
 void SemiLagrangian::Advect() const {
   Grid2D uNew(fields->u.nx, fields->u.ny);
   Grid2D vNew(fields->v.nx, fields->v.ny);
@@ -74,7 +61,6 @@ void SemiLagrangian::AdvectSmoke() const {
 }
 
 // RK2 backward particle traces
-
 void SemiLagrangian::traceParticleU(const int i, const int j, varType &x,
                                     varType &y) const {
   // u-face physical position: (i·dx, (j+0.5)·dy).

@@ -8,13 +8,8 @@
 #include <vector>
 
 namespace {
-// count neighbour + the number
-// inlined + nodiscard to dont duplicate the work
-struct NbInfo {
-  double sumP;
-  int nb;
-};
-[[nodiscard]] inline NbInfo neighbourSum(const Fields2D &f, int nx, int ny,
+  // sumP,nb
+[[nodiscard]] inline std::pair<varType, int>  neighbourSum(const Fields2D &f, int nx, int ny,
                                          int i, int j) {
   // all 4 neighbours nearly always exist.
   //  No bounds checks, no branches.
@@ -27,36 +22,22 @@ struct NbInfo {
   // Border cells only
   double sumP = 0.0;
   int nb = 0;
-  if (i + 1 < nx) {
-    sumP += f.p.Get(i + 1, j);
-    ++nb;
-  }
-  if (i - 1 >= 0) {
-    sumP += f.p.Get(i - 1, j);
-    ++nb;
-  }
-  if (j + 1 < ny) {
-    sumP += f.p.Get(i, j + 1);
-    ++nb;
-  }
-  if (j - 1 >= 0) {
-    sumP += f.p.Get(i, j - 1);
-    ++nb;
-  }
+  if (i + 1 < nx) {sumP += f.p.Get(i + 1, j);++nb;}
+  if (i - 1 >= 0) {sumP += f.p.Get(i - 1, j);++nb;}
+  if (j + 1 < ny) {sumP += f.p.Get(i, j + 1);++nb;}
+  if (j - 1 >= 0) {sumP += f.p.Get(i, j - 1);++nb;}
   return {sumP, nb};
 }
 
 // Gauss-Seidel update for a single FLUID cell.
 //   p_new = ( -coef * div_{ij} + sum p_nb ) / N_nb
-// Returns NAN for non-FLUID cells.
 [[nodiscard]] inline double gsUpdate(const Fields2D &f, int nx, int ny, int i,
                                      int j, double coef) {
   if (f.Label(i, j) != Fields2D::FLUID)
-    return NAN;
+    return f.p.Get(i,j);
   const auto [sumP, nb] = neighbourSum(f, nx, ny, i, j);
-  if (nb == 0)
-    return NAN;
-  return (-coef * f.div.Get(i, j) + sumP) / nb;
+  // if there is no neighbour just keep the same value
+  return nb>=0? (-coef * f.div.Get(i, j) + sumP) / nb : f.p.Get(i,j);
 }
 
 // RMS residual  r_{ij} = -coef·div_{ij} − (N_nb·p_{ij} − Σ p_nb)
@@ -238,9 +219,7 @@ void solveGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
   for (int it = 0; it < maxIters; ++it) {
     for (int j = 0; j < ny; ++j)
       for (int i = 0; i < nx; ++i) {
-        const double v = gsUpdate(fields, nx, ny, i, j, coef);
-        if (!std::isnan(v))
-          fields.p.Set(i, j, v);
+          fields.p.Set(i, j, gsUpdate(fields,nx,ny,i,j,coef));
       }
 
     const double res = residualNorm(fields, nx, ny, coef);
@@ -269,9 +248,7 @@ for (int j = 0; j < ny; ++j) {
   for (int i = 0; i < nx; ++i) {
     if ((i + j) % 2 != color)
       continue;
-    const double v = gsUpdate(fields, nx, ny, i, j, coef);
-    if (!std::isnan(v))
-      fields.p.Set(i, j, v);
+    fields.p.Set(i, j, gsUpdate(fields, nx, ny, i, j, coef));
   }
 }
     }
@@ -438,7 +415,7 @@ bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol) {
       s[k] = z[k] + beta * s[k];
   }
   // assumed p is good now
-
+  // TODO fields.p can be changed with p[] if p is a grid2D
   // write solution back
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < ny; ++j)

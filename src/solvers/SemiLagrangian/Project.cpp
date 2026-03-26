@@ -32,11 +32,6 @@ void SemiLagrangian::solvePressure(int maxIters, double tol) {
 void SemiLagrangian::updateVelocities() {
   // Explicit pressure-gradient correction on all interior faces:
   //   u^{n+1}_{i,j} = u^*_{i,j} - (dt / (rho * dx)) * (p_{i,j} - p_{i-1,j})
-  //
-  // Faces adjacent to a SOLID cell are set to usolid (no-slip wall).
-  // The outermost layer of faces (i=0 and i=nx for u; j=0 and j=ny for v)
-  // is left unchanged — it represents the domain boundary.
-
   const varType coef = dt / (density * dx);
 
 OMP_PRAGMA( omp parallel for collapse(2) schedule(static))
@@ -44,7 +39,7 @@ for (int j = 0; j < fields->u.ny; ++j) {
   for (int i = 1; i < fields->u.nx - 1; ++i) {
     if ((fields->Label(i - 1, j) == Fields2D::SOLID) ||
         (fields->Label(i, j) == Fields2D::SOLID)) {
-      fields->u.Set(i, j, fields->usolid);
+      fields->u.Set(i, j, 0.0);
       continue;
     }
     fields->u.Set(i, j,
@@ -58,7 +53,7 @@ for (int j = 1; j < fields->v.ny - 1; ++j) {
   for (int i = 0; i < fields->v.nx; ++i) {
     if ((fields->Label(i, j - 1) == Fields2D::SOLID) ||
         (fields->Label(i, j) == Fields2D::SOLID)) {
-      fields->v.Set(i, j, fields->usolid);
+      fields->v.Set(i, j, 0.0);
       continue;
     }
     fields->v.Set(i, j,

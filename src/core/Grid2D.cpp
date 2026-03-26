@@ -2,17 +2,6 @@
 #include <algorithm>
 #include <cmath>
 
-// Bilinear interpolation
-//
-// Staggered MAC grid offsets:
-//   field 0 (u): nodes at (i·dx,       (j+0.5)·dy)  →  j_real -= 0.5
-//   field 1 (v): nodes at ((i+0.5)·dx,  j·dy      )  →  i_real -= 0.5
-//   other (p, smoke, cell-centred): no offset.
-//
-// After applying the offset, (i_real, j_real) is the continuous index into
-// the node array. We split into integer base (i0, j0) and fractional weight
-// (fx, fy), clamp so the 2×2 stencil stays in bounds, then bilinearly blend.
-
 varType Grid2D::Interpolate(const varType x, const varType y, const varType dx,
                             const varType dy, const int field) const {
   varType i_real = x / dx;
