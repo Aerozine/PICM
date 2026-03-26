@@ -12,19 +12,19 @@ double SemiLagrangian::getUpdate(const int i, const int j,
   double sumP = 0.0;
   int nb = 0;
 
-  if (i + 1 < nx) {
+  if (i + 1 < nx && !(fields->Label(i + 1, j) & Fields2D::SOLID)) {
     sumP += fields->p.Get(i + 1, j);
     ++nb;
   }
-  if (i - 1 >= 0) {
+  if (i - 1 >= 0 && !(fields->Label(i - 1, j) & Fields2D::SOLID)) {
     sumP += fields->p.Get(i - 1, j);
     ++nb;
   }
-  if (j + 1 < ny) {
+  if (j + 1 < ny && !(fields->Label(i, j + 1) & Fields2D::SOLID)) {
     sumP += fields->p.Get(i, j + 1);
     ++nb;
   }
-  if (j - 1 >= 0) {
+  if (j - 1 >= 0 && !(fields->Label(i, j - 1) & Fields2D::SOLID)) {
     sumP += fields->p.Get(i, j - 1);
     ++nb;
   }
@@ -144,7 +144,6 @@ void SemiLagrangian::SolveGaussSeidel(int maxIters, double tol) {
   double res0 = 1.0;
 
   for (int it = 0; it < maxIters; ++it) {
-    // Sequential sweep — each cell sees the latest neighbour values.
     for (int j = 0; j < ny; ++j)
       for (int i = 0; i < nx; ++i) {
         const double newVal = getUpdate(i, j, coef);
