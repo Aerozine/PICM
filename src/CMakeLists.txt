@@ -14,7 +14,6 @@ if(ZLIB_FOUND)
   target_compile_definitions(PIC PRIVATE HAVE_ZLIB)
 endif()
 # same for openMP
-find_package(OpenMP)
 if(OpenMP_CXX_FOUND)
   target_link_libraries(PIC PRIVATE OpenMP::OpenMP_CXX)
   target_compile_definitions(PIC PRIVATE USE_OPENMP)

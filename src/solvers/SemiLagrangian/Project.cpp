@@ -8,17 +8,20 @@ void SemiLagrangian::solvePressure(int maxIters, double tol) {
   const double coef  = static_cast<double>(density) *
                        static_cast<double>(dx) * static_cast<double>(dx) /
                        static_cast<double>(dt);
-  const double scale = 1.0 / coef; // dt / (rho * dx^2)
+  const double beta =  static_cast<double>(density) *
+                       static_cast<double>(dx) /
+                       static_cast<double>(dt); 
+  const double scale = 1.0 / coef;
 
   switch (params.solver.type) {
   case SolverConfig::Type::JACOBI:
-    solveJacobi(*fields, nx, ny, coef, maxIters, tol);
+    solveJacobi(*fields, nx, ny, coef, maxIters, tol, beta);
     break;
   case SolverConfig::Type::GAUSS_SEIDEL:
-    solveGaussSeidel(*fields, nx, ny, coef, maxIters, tol);
+    solveGaussSeidel(*fields, nx, ny, coef, maxIters, tol, beta);
     break;
   case SolverConfig::Type::RB_GS:
-    solveRedBlackGaussSeidel(*fields, nx, ny, coef, maxIters, tol);
+    solveRedBlackGaussSeidel(*fields, nx, ny, coef, maxIters, tol, beta);
     break;
   case SolverConfig::Type::MICCG0:
     solveMICCG0(*fields, scale, maxIters, tol);
