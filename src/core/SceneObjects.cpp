@@ -8,7 +8,6 @@
 // simple parser ( no need to change it)
 int resolveInt(const nlohmann::json &val,
                const std::map<std::string, int> &vars) {
-  // if it is an int everythings is good
   if (val.is_number())
     return val.get<int>();
   if (!val.is_string()) // throws an error and stop if not correct
@@ -50,8 +49,7 @@ int resolveInt(const nlohmann::json &val,
 
   std::size_t i = skipSpaces(0);
   if (i >= expr.size())
-    throw std::runtime_error(
-        "[resolveInt] empty expression after substitution");
+    throw std::runtime_error("[resolveInt] empty expression after substitution");
 
   int result = parseNumber(i);
   i = skipSpaces(i);
@@ -63,23 +61,16 @@ int resolveInt(const nlohmann::json &val,
     i = skipSpaces(i);
 
     switch (op) {
-    case '+':
-      result += operand;
-      break;
-    case '-':
-      result -= operand;
-      break;
-    case '*':
-      result *= operand;
-      break;
+    case '+': result += operand; break;
+    case '-': result -= operand; break;
+    case '*': result *= operand; break;
     case '/':
       if (operand == 0)
         throw std::runtime_error("[resolveInt] division by zero");
       result /= operand;
       break;
     default:
-      throw std::runtime_error(std::string("[resolveInt] unknown operator: ") +
-                               op);
+      throw std::runtime_error(std::string("[resolveInt] unknown operator: ") + op);
     }
   }
   return result;
@@ -94,82 +85,62 @@ void RectangleObject::applySolid(Fields2D &f) const {
 }
 
 void RectangleObject::applyVelocityU(Fields2D &f) const {
-  const int iMax = std::min(x2, f.u.nx - 1);
-  const int jMax = std::min(y2, f.u.ny - 1);
-
   if (condition != "initial" && condition != "boundary") {
     std::cout << "Invalid condition for rectangular horizontal velocity.\n"
               << "Available options: initial or boundary.\n";
     return;
   }
-
+  const int iMax = std::min(x2, f.u.nx - 1);
+  const int jMax = std::min(y2, f.u.ny - 1);
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     for (int j = std::max(y1, 0); j <= jMax; ++j) {
       f.u.Set(i, j, val);
-      if (condition == "initial")
-        f.SetLabel(i, j, Fields2D::IC_U);
-      else
-        f.SetLabel(i, j, Fields2D::BC_U);
+      f.SetLabel(i, j, condition == "initial" ? Fields2D::IC_U : Fields2D::BC_U);
     }
 }
 
 void RectangleObject::applyVelocityV(Fields2D &f) const {
-  const int iMax = std::min(x2, f.v.nx - 1);
-  const int jMax = std::min(y2, f.v.ny - 1);
-
   if (condition != "initial" && condition != "boundary") {
     std::cout << "Invalid condition for rectangular vertical velocity.\n"
               << "Available options: initial or boundary.\n";
     return;
   }
-
+  const int iMax = std::min(x2, f.v.nx - 1);
+  const int jMax = std::min(y2, f.v.ny - 1);
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     for (int j = std::max(y1, 0); j <= jMax; ++j) {
       f.v.Set(i, j, val);
-      if (condition == "initial")
-        f.SetLabel(i, j, Fields2D::IC_V);
-      else
-        f.SetLabel(i, j, Fields2D::BC_V);
+      f.SetLabel(i, j, condition == "initial" ? Fields2D::IC_V : Fields2D::BC_V);
     }
 }
 
 void RectangleObject::applyPressure(Fields2D &f) const {
-  const int iMax = std::min(x2, f.p.nx - 1);
-  const int jMax = std::min(y2, f.p.ny - 1);
-
   if (condition != "initial" && condition != "boundary") {
     std::cout << "Invalid condition for rectangular velocity.\n"
               << "Available options: initial or boundary.\n";
     return;
   }
-
+  const int iMax = std::min(x2, f.p.nx - 1);
+  const int jMax = std::min(y2, f.p.ny - 1);
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     for (int j = std::max(y1, 0); j <= jMax; ++j) {
       f.p.Set(i, j, val);
-      if (condition == "initial")
-        f.SetLabel(i, j, Fields2D::IC_P);
-      else
-        f.SetLabel(i, j, Fields2D::BC_P);
+      f.SetLabel(i, j, condition == "initial" ? Fields2D::IC_P : Fields2D::BC_P);
     }
 }
 
 void RectangleObject::applySmoke(Fields2D &f) const {
-  const int iMax = std::min(x2, f.v.nx - 1);
-  const int jMax = std::min(y2, f.v.ny - 1);
-
   if (condition != "initial" && condition != "boundary") {
     std::cout << "Invalid condition for rectangular velocity.\n"
               << "Available options: initial or boundary.\n";
     return;
   }
-
+  const int iMax = std::min(x2, f.smokeMap.nx - 1);
+  const int jMax = std::min(y2, f.smokeMap.ny - 1);
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     for (int j = std::max(y1, 0); j <= jMax; ++j) {
       f.smokeMap.Set(i, j, val);
-      if (condition == "initial")
-        f.SetLabel(i, j, Fields2D::IC_S);
-      else
-        f.SetLabel(i, j, Fields2D::BC_S);
+      f.SetLabel(i, j, condition == "initial" ? Fields2D::IC_S : Fields2D::BC_S);
     }
 }
 
@@ -186,8 +157,7 @@ void CylinderObject::applySolid(Fields2D &f) const {
 }
 
 static std::unique_ptr<RectangleObject>
-parseRectangle(const nlohmann::json &j,
-               const std::map<std::string, int> &vars) {
+parseRectangle(const nlohmann::json &j, const std::map<std::string, int> &vars) {
   auto obj = std::make_unique<RectangleObject>();
   if (j.contains("condition"))
     obj->condition = j["condition"].get<std::string>();

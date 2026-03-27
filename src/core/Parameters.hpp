@@ -44,11 +44,12 @@ public:
   int nx = 100;     ///< Number of pressure cells in x.
   int ny = 100;     ///< Number of pressure cells in y.
   int nt = 100;     ///< Total number of time steps to simulate.
-  int ppcx = 1;     ///< Total number of time steps to simulate.
-  int ppcy = 1;     ///< Total number of time steps to simulate.
+  int ppcx = 1;
+  int ppcy = 1;
 
   // Physics
-  double density = 1000.0; ///< Fluid density (kg/m³).
+  double density = 1000.0; ///< Fluid density (kg/m3).
+
   // Output
   int sampling_rate = 1;          ///< Write output every N steps.
   std::string folder = "results"; ///< Output directory.
@@ -63,6 +64,7 @@ public:
   bool write_smoke = false;
   bool write_particles = false;
 
+  std::string method = "semi_lagrangian";
   SolverConfig solver;
 
   Parameters() = default;
@@ -95,13 +97,13 @@ public:
   friend std::ostream &operator<<(std::ostream &os, const Parameters &p);
 
 private:
-  // Raw JSON subtrees — SceneObjects are created lazily in applyToFields().
-  nlohmann::json velocityU_json; ///< JSON node for initial u-velocity patches.
-  nlohmann::json velocityV_json; ///< JSON node for initial v-velocity patches.
-  nlohmann::json pressure_json;  ///< JSON node for initial pressure patches.
-  nlohmann::json solid_json;     ///< JSON node for solid geometry.
-  nlohmann::json smoke_json;     ///< JSON node for solid geometry.
-  nlohmann::json particles_json; ///< JSON node for solid geometry.
+
+  nlohmann::json velocityU_json;
+  nlohmann::json velocityV_json;
+  nlohmann::json pressure_json;
+  nlohmann::json solid_json;
+  nlohmann::json smoke_json;
+  nlohmann::json particles_json;
 
   /**
    * @brief Populate members from a parsed JSON object.
