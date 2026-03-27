@@ -1,4 +1,5 @@
 #include "PIC.hpp"
+#include <cmath>
 
 void PIC::AdvectParticles() {
   const varType xMax = dx * nx;

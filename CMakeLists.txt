@@ -27,7 +27,7 @@ if(NOT TARGET nlohmann_json::nlohmann_json)
     GIT_TAG v3.12.0)
   FetchContent_MakeAvailable(json)
 endif()
-
+if(USE_PARALLEL)
 find_package(OpenMP QUIET)
 if(NOT OpenMP_CXX_FOUND AND APPLE)
   # On macOS , libomp is available via Homebrew (both intel and Apple-silicon
@@ -58,7 +58,7 @@ else()
   message(STATUS "OpenMP: NOT found - building single-threaded")
   set(OpenMP_CXX_FOUND FALSE)
 endif()
-
+endif ()
 find_package(ZLIB QUIET)
 if(ZLIB_FOUND)
   message(

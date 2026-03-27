@@ -41,7 +41,7 @@ std::string SolverConfig::typeName() const {
   case Type::MICCG0:
     return "miccg0";
   }
-  return "unknown"; // unreachable, silences -Wreturn-type
+  return "unknown";
 }
 
 void Parameters::loadFromJson(const nlohmann::json &j) {
@@ -107,60 +107,60 @@ void Parameters::applyToFields(Fields2D &fields) const {
   }
 }
 
-bool Parameters::loadFromFile(const std::string &path) {
-  try {
-    std::ifstream file(path);
-    if (!file.is_open()) {
-      std::cerr << "[Parameters] Could not open '" << path << "'\n";
+  bool Parameters::loadFromFile(const std::string &path) {
+    try {
+      std::ifstream file(path);
+      if (!file.is_open()) {
+        std::cerr << "[Parameters] Could not open '" << path << "'\n";
+        return false;
+      }
+      nlohmann::json j;
+      file >> j;
+      loadFromJson(j);
+      DBG_PRINTF("[Parameters] Loaded from %s", path.c_str());
+      return true;
+    } catch (const std::exception &e) {
+      std::cerr << "[Parameters] JSON parse error: " << e.what() << '\n';
       return false;
     }
-    nlohmann::json j;
-    file >> j;
-    loadFromJson(j);
-    DBG_PRINTF("[Parameters] Loaded from %s", path.c_str());
-    return true;
-  } catch (const std::exception &e) {
-    std::cerr << "[Parameters] JSON parse error: " << e.what() << '\n';
+  }
+
+  bool Parameters::parseCommandLine(const int argc, char *argv[]) {
+    // Expect exactly:  <prog> -c <path>  or  <prog> --config <path>
+    if (argc == 3) {
+      const std::string_view flag = argv[1];
+      if (flag == "-c" || flag == "--config")
+        return loadFromFile(argv[2]);
+    }
+    printUsage(argv[0]);
     return false;
   }
-}
 
-bool Parameters::parseCommandLine(const int argc, char *argv[]) {
-  // Expect exactly:  <prog> -c <path>  or  <prog> --config <path>
-  if (argc == 3) {
-    const std::string_view flag = argv[1];
-    if (flag == "-c" || flag == "--config")
-      return loadFromFile(argv[2]);
+  void Parameters::printUsage(const char *prog) {
+    // RTFM
+    std::cout << "Usage: " << prog << " -c <config.json>\n";
   }
-  printUsage(argv[0]);
-  return false;
-}
-
-void Parameters::printUsage(const char *prog) {
-  // RTFM
-  std::cout << "Usage: " << prog << " -c <config.json>\n";
-}
-// allow us to use the << operator to print params
-std::ostream &operator<<(std::ostream &os, const Parameters &p) {
-  os << "\n=== Simulation Parameters ===\n"
-     << "  Grid    : " << p.nx << " x " << p.ny << "  dx=" << p.dx
-     << "  dy=" << p.dy << '\n'
-     << "  Time    : nt=" << p.nt << "  dt=" << p.dt << '\n'
-     << "  Density : " << p.density << '\n'
-     << "  Sampling: every " << p.sampling_rate << " step(s)" << '\n'
-     << "  Solver  : " << p.solver.typeName()
-     << "  maxIter=" << p.solver.maxIters << "  tol=" << p.solver.tolerance
-     << '\n'
-     << "  Output  : folder='" << p.folder << "'\n"
-     << "  Write   : u=" << p.write_u << " v=" << p.write_v
-     << " p=" << p.write_p << " div=" << p.write_div
-     << " norm=" << p.write_norm_velocity << '\n'
-     << "  InitVelU: " << (!p.velocityU_json.is_null() ? "defined" : "none")
-     << '\n'
-     << "  InitVelV: " << (!p.velocityV_json.is_null() ? "defined" : "none")
-     << '\n'
-     << "  smoke: " << (!p.smoke_json.is_null() ? "defined" : "none") << '\n'
-     << "  Solid   : " << (!p.solid_json.is_null() ? "defined" : "none") << '\n'
-     << "=============================\n";
-  return os;
-}
+  // allow us to use the << operator to print params
+  std::ostream &operator<<(std::ostream &os, const Parameters &p) {
+    os << "\n=== Simulation Parameters ===\n"
+       << "  Grid    : " << p.nx << " x " << p.ny << "  dx=" << p.dx
+       << "  dy=" << p.dy << '\n'
+       << "  Time    : nt=" << p.nt << "  dt=" << p.dt << '\n'
+       << "  Density : " << p.density << '\n'
+       << "  Sampling: every " << p.sampling_rate << " step(s)" << '\n'
+       << "  Solver  : " << p.solver.typeName()
+       << "  maxIter=" << p.solver.maxIters << "  tol=" << p.solver.tolerance
+       << '\n'
+       << "  Output  : folder='" << p.folder << "'\n"
+       << "  Write   : u=" << p.write_u << " v=" << p.write_v
+       << " p=" << p.write_p << " div=" << p.write_div
+       << " norm=" << p.write_norm_velocity << '\n'
+       << "  InitVelU: " << (!p.velocityU_json.is_null() ? "defined" : "none")
+       << '\n'
+       << "  InitVelV: " << (!p.velocityV_json.is_null() ? "defined" : "none")
+       << '\n'
+       << "  smoke: " << (!p.smoke_json.is_null() ? "defined" : "none") << '\n'
+       << "  Solid   : " << (!p.solid_json.is_null() ? "defined" : "none") << '\n'
+       << "=============================\n";
+    return os;
+  }

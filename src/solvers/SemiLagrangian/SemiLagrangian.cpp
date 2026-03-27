@@ -77,11 +77,10 @@ void SemiLagrangian::Step() {
   fields->Div();        // } Update diagnostics used for
   Advect();             // 2. Semi-Lagrangian transport of velocity.
   AdvectSmoke();
-  fields->VelocityNormCenterGrid(); // } output and progress reporting.
+  fields->VelocityNormCenterGrid();
 }
 
 void SemiLagrangian::Run() {
-  // Compute initial diagnostics and write the t=0 snapshot.
   fields->Div();
   fields->VelocityNormCenterGrid();
   WriteOutput(0);
@@ -90,10 +89,8 @@ void SemiLagrangian::Run() {
   const int reportEvery = std::max(1, params.nt / 10);
 
   for (int t = 1; t <= params.nt; ++t) {
-    // Overwrite progress line in place (~every 10 %).
     if (t % reportEvery == 0) {
       varType maxDiv = REAL_LITERAL(0.0);
-
       for (int j = 0; j < ny; ++j)
         for (int i = 0; i < nx; ++i)
           maxDiv = std::max(maxDiv, std::abs(fields->div.Get(i, j)));
@@ -102,7 +99,6 @@ void SemiLagrangian::Run() {
                 << (100 * t / params.nt) << "%) "
                 << "max |div| = " << maxDiv << std::flush;
     }
-
     Step();
     WriteOutput(t);
   }
