@@ -1,0 +1,60 @@
+{
+  "dx": 0.002,
+  "dy": 0.002,
+  "dt": 0.01,
+  "nx": 500,
+  "ny": 300,
+  "nt": 500,
+  "density": 1000,
+  "sampling_rate": 5,
+  "write_u": true,
+  "write_v": true,
+  "write_p": true,
+  "write_div": true,
+  "write_norm_velocity": true,
+  "write_smoke": true,
+  "folder": "results",
+  "filename": "simulation",
+  "velocityu": {
+    "rectangle": {
+      "condition": "initial",
+      "val": 0.5,
+      "x1": "0",
+      "y1": "0",
+      "x2": "0",
+      "y2": "ny-1"
+    }
+  },
+  "pressure": {
+    "rectangle": {
+      "condition": "boundary",
+      "val": 0,
+      "x1": "nx-1",
+      "y1": "0",
+      "x2": "nx-1",
+      "y2": "ny-1"
+    }
+  },
+  "solid": {
+    "cylinder": {
+      "x": "125",
+      "y": "ny/2",
+      "r": 25
+    }
+  },
+  "smoke": {
+    "rectangle": {
+      "condition": "boundary",
+      "val": 1,
+      "x1": "0",
+      "y1": "0",
+      "x2": "0",
+      "y2": "ny"
+    }
+  },
+  "solver": {
+    "type": "jacobi",
+    "max_iterations": 5000,
+    "tolerance": 0.05
+  }
+}

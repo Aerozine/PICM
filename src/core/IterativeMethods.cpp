@@ -108,6 +108,7 @@ for (int j = 0; j < ny; ++j) {
     if (f.Label(i, j) != Fields2D::FLUID)
       continue;
     const auto [sumP, nb] = neighbourSum(f, nx, ny, i, j, beta);
+    DBG_PRINTF("%f \r %d",sumP , nb);
     const double r = (-coef * f.div.Get(i, j)) - (nb * f.p.Get(i, j) - sumP);
     sumSq += r * r;
     ++count;
@@ -118,11 +119,13 @@ return (count > 0) ? std::sqrt(sumSq / count) : 0.0;
 
 // Relative convergence: records res0 on first call (it==0).
 inline bool checkConvergence(double res, double &res0, int it, double tol) {
-  if (it == 0) {
-    res0 = res;
-    return res0 < 1e-30;
-  }
-  return (res / res0) < tol;
+if (it == 0) {
+  res0 = res;
+  return res < 1e-30;
+}
+if (res0 < 1e-30)
+  return res < 1e-30;
+return (res / res0) < tol;
 }
 
 // For MICCG0 , multiply the coefficient matrix A times a vector
