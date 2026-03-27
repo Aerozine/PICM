@@ -29,7 +29,7 @@ void solvePressure(const Parameters & params,Fields2D & fields) {
     solveRedBlackGaussSeidel(fields, nx, ny, coef, maxIters, tol,beta);
     break;
   case SolverConfig::Type::MICCG0:
-    solveMICCG0(fields, scale, maxIters, tol);
+    solveMICCG0(fields, scale, maxIters, tol,beta);
     break;
   default:
     std::cerr << "[SemiLagrangian] Unknown pressure solver type – aborting.\n";

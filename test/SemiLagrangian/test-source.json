@@ -21,21 +21,21 @@
     "velocityu": {
         "rectangle": {
             "condition": "boundary",
-            "val": 0.5,
+            "val": 1,
             "x1": "0",
             "y1": "0",
-            "x2": "1",
+            "x2": "3",
             "y2": "ny-1"
         }
     },
     "pressure": {
         "rectangle": {
             "condition": "boundary",
-            "val": 0,
-            "x1": "nx-1",
+            "val": 0.5,
+            "x1": "nx-2",
             "y1": "0",
             "x2": "nx",
-            "y2": "ny-1"
+            "y2": "ny-2"
         }
     },
     "solid": {
@@ -57,9 +57,9 @@
    },
 
     "solver": {
-  "type": "jacobi",
-    "max_iterations": 5000,
-    "tolerance": 5e-2
+  "type": "red_black_gauss_seidel",
+    "max_iterations": 50,
+    "tolerance": 5e-1
 }
 }
 
