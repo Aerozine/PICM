@@ -1,25 +1,29 @@
-#include "SemiLagrangian.hpp"
-#include <iostream>
+#include "Project.hpp"
 
+#include <execution>
+#include <iostream>
 // Pressure solve dispatch
 
-void SemiLagrangian::solvePressure(int maxIters, double tol) {
-  const double coef = static_cast<double>(density) * static_cast<double>(dx) *
-                      static_cast<double>(dx) / static_cast<double>(dt);
+void solvePressure(const Parameters & params,Fields2D & fields) {
+  double tol = params.solver.maxIters;
+  int maxIters=params.solver.tolerance;
+  const double coef = static_cast<double>(params.density) * static_cast<double>(params.dx) *
+                      static_cast<double>(params.dx) / static_cast<double>(params.dt);
   const double scale = 1.0 / coef; // dt / (rho * dx^2)
-
+  int nx =  params.nx;
+  int ny =  params.ny;
   switch (params.solver.type) {
   case SolverConfig::Type::JACOBI:
-    solveJacobi(*fields, nx, ny, coef, maxIters, tol);
+    solveJacobi(fields, nx, ny, coef, maxIters, tol);
     break;
   case SolverConfig::Type::GAUSS_SEIDEL:
-    solveGaussSeidel(*fields, nx, ny, coef, maxIters, tol);
+    solveGaussSeidel(fields, nx, ny, coef, maxIters, tol);
     break;
   case SolverConfig::Type::RB_GS:
-    solveRedBlackGaussSeidel(*fields, nx, ny, coef, maxIters, tol);
+    solveRedBlackGaussSeidel(fields, nx, ny, coef, maxIters, tol);
     break;
   case SolverConfig::Type::MICCG0:
-    solveMICCG0(*fields, scale, maxIters, tol);
+    solveMICCG0(fields, scale, maxIters, tol);
     break;
   default:
     std::cerr << "[SemiLagrangian] Unknown pressure solver type – aborting.\n";
@@ -29,41 +33,45 @@ void SemiLagrangian::solvePressure(int maxIters, double tol) {
 
 // Velocity correction
 
-void SemiLagrangian::updateVelocities() {
+void updateVelocities(const Parameters & params,Fields2D & fields) {
   // Explicit pressure-gradient correction on all interior faces:
   //   u^{n+1}_{i,j} = u^*_{i,j} - (dt / (rho * dx)) * (p_{i,j} - p_{i-1,j})
-  const varType coef = dt / (density * dx);
+  const varType coef = params.dt / (params.density * params.dx);
 
-OMP_PRAGMA( omp parallel for collapse(2) schedule(static))
-for (int j = 0; j < fields->u.ny; ++j) {
-  for (int i = 1; i < fields->u.nx - 1; ++i) {
-    if ((fields->Label(i - 1, j) == Fields2D::SOLID) ||
-        (fields->Label(i, j) == Fields2D::SOLID)) {
-      fields->u.Set(i, j, 0.0);
+OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
+for (int j = 0; j < fields.u.ny; ++j) {
+  for (int i = 1; i < fields.u.nx - 1; ++i) {
+    if (fields.Label(i - 1, j) & Fields2D::SOLID ||
+        fields.Label(i, j) & Fields2D::SOLID) {
+      fields.u.Set(i, j, 0.0);
+      continue;
+    } else if (fields.Label(i,j)& Fields2D::BC_U) {
       continue;
     }
-    fields->u.Set(i, j,
-                  fields->u.Get(i, j) -
-                      coef * (fields->p.Get(i, j) - fields->p.Get(i - 1, j)));
+    fields.u.Set(i, j,
+                  fields.u.Get(i, j) -
+                      coef * (fields.p.Get(i, j) - fields.p.Get(i - 1, j)));
   }
 }
 
 OMP_PRAGMA( omp parallel for collapse(2) schedule(static))
-for (int j = 1; j < fields->v.ny - 1; ++j) {
-  for (int i = 0; i < fields->v.nx; ++i) {
-    if ((fields->Label(i, j - 1) == Fields2D::SOLID) ||
-        (fields->Label(i, j) == Fields2D::SOLID)) {
-      fields->v.Set(i, j, 0.0);
+for (int j = 1; j < fields.v.ny - 1; ++j) {
+  for (int i = 0; i < fields.v.nx; ++i) {
+    if ((fields.Label(i, j - 1) == Fields2D::SOLID) ||
+        (fields.Label(i, j) == Fields2D::SOLID)) {
+      fields.v.Set(i, j, 0.0);
       continue;
-    }
-    fields->v.Set(i, j,
-                  fields->v.Get(i, j) -
-                      coef * (fields->p.Get(i, j) - fields->p.Get(i, j - 1)));
+        } else if (fields.Label(i, j) & Fields2D::BC_V) {
+          continue;
+        }
+    fields.v.Set(i, j,
+                  fields.v.Get(i, j) -
+                      coef * (fields.p.Get(i, j) - fields.p.Get(i, j - 1)));
   }
 }
 }
 
-void SemiLagrangian::MakeIncompressible() {
-  solvePressure(params.solver.maxIters, params.solver.tolerance);
-  updateVelocities();
+void MakeIncompressible(const Parameters & params,Fields2D & fields) {
+  solvePressure(params,fields);
+  updateVelocities(params, fields);
 }

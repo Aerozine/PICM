@@ -14,9 +14,7 @@ SolverConfig SolverConfig::fromJson(const nlohmann::json &j) {
   };
 
   if (j.contains("type")) {
-
     const std::string t = j["type"].get<std::string>();
-
     if (t == "jacobi")
       cfg.type = Type::JACOBI;
     else if (t == "gauss_seidel")
@@ -27,9 +25,8 @@ SolverConfig SolverConfig::fromJson(const nlohmann::json &j) {
       cfg.type = Type::MICCG0;
     else
       std::cerr << "[SolverConfig] Unknown solver type '" << t
-                << "' – defaulting to mic cg0.\n";
+                << "' – defaulting to miccg0.\n";
   }
-
   return cfg;
 }
 
@@ -57,7 +54,6 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   nt = j.value("nt", nt);
   sampling_rate = j.value("sampling_rate", sampling_rate);
   density = j.value("density", density);
-  source = j.value("source", source);
   // Output flags
   write_u = j.value("write_u", write_u);
   write_v = j.value("write_v", write_v);
@@ -65,6 +61,9 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   write_div = j.value("write_div", write_div);
   write_norm_velocity = j.value("write_norm_velocity", write_norm_velocity);
   write_smoke = j.value("write_smoke", write_smoke);
+  ppcy=j.value("ppcy",ppcy);
+  ppcx=j.value("ppcx",ppcx);
+  write_particles=j.value("write_particles",write_particles);
   // Output paths
   folder = j.value("folder", folder);
   filename = j.value("filename", filename);
@@ -73,6 +72,8 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
     velocityU_json = j["velocityu"];
   if (j.contains("velocityv"))
     velocityV_json = j["velocityv"];
+  if (j.contains("pressure"))
+    pressure_json = j["pressure"];
   if (j.contains("solid"))
     solid_json = j["solid"];
   if (j.contains("smoke"))
@@ -91,6 +92,10 @@ void Parameters::applyToFields(Fields2D &fields) const {
   if (!velocityV_json.is_null()) {
     for (const auto &obj : parseSceneObjects(velocityV_json, vars))
       obj->applyVelocityV(fields);
+  }
+  if (!pressure_json.is_null()) {
+    for (const auto &obj : parseSceneObjects(pressure_json, vars))
+      obj->applyPressure(fields);
   }
   if (!solid_json.is_null()) {
     for (const auto &obj : parseSceneObjects(solid_json, vars))

@@ -1,7 +1,5 @@
-file(GLOB SOURCES "main.cpp" "core/*.cpp" "solvers/SemiLagrangian/*.cpp")
-set(CMAKE_NINJA_FORCE_RESPONSE_FILE
-    "ON"
-    CACHE BOOL "Force Ninja to use response files.")
+file(GLOB SOURCES "main.cpp" "core/*.cpp" "solvers/PIC/*.cpp" "solvers/SemiLagrangian/*.cpp")
+set(CMAKE_NINJA_FORCE_RESPONSE_FILE "ON" CACHE BOOL "Force Ninja to use response files.")
 
 add_executable(PIC ${SOURCES})
 set_target_properties(PIC PROPERTIES RUNTIME_OUTPUT_DIRECTORY

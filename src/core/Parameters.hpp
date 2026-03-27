@@ -44,6 +44,9 @@ public:
   int nx = 100;     ///< Number of pressure cells in x.
   int ny = 100;     ///< Number of pressure cells in y.
   int nt = 100;     ///< Total number of time steps to simulate.
+  int ppcx = 1;     ///< Total number of time steps to simulate.
+  int ppcy = 1;     ///< Total number of time steps to simulate.
+
   // Physics
   double density = 1000.0; ///< Fluid density (kg/m³).
   // Output
@@ -52,14 +55,13 @@ public:
   std::string filename =
       "simulation"; ///< Base filename (unused at runtime, reserved).
 
-  bool source = false; ///< create a source.
-
   bool write_u = true;
   bool write_v = true;
   bool write_p = true;
   bool write_div = false;
   bool write_norm_velocity = false;
   bool write_smoke = false;
+  bool write_particles = false;
 
   SolverConfig solver;
 
@@ -96,8 +98,10 @@ private:
   // Raw JSON subtrees — SceneObjects are created lazily in applyToFields().
   nlohmann::json velocityU_json; ///< JSON node for initial u-velocity patches.
   nlohmann::json velocityV_json; ///< JSON node for initial v-velocity patches.
+  nlohmann::json pressure_json;  ///< JSON node for initial pressure patches.
   nlohmann::json solid_json;     ///< JSON node for solid geometry.
   nlohmann::json smoke_json;     ///< JSON node for solid geometry.
+  nlohmann::json particles_json; ///< JSON node for solid geometry.
 
   /**
    * @brief Populate members from a parsed JSON object.

@@ -1,5 +1,7 @@
 #include "core/Parameters.hpp"
+#include "solvers/PIC/PIC.hpp"
 #include "solvers/SemiLagrangian/SemiLagrangian.hpp"
+
 #include <iostream>
 
 int main(int argc, char *argv[]) {
@@ -19,6 +21,8 @@ int main(int argc, char *argv[]) {
 #endif
 
   // Create and run solver
+  // SemiLagrangian solver(params);
+  // solver.Run();
   SemiLagrangian solver(params);
   solver.Run();
 

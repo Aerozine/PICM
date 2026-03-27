@@ -2,12 +2,12 @@
 #include <algorithm>
 #include <iostream>
 
-SemiLagrangian::SemiLagrangian(const Parameters &params)
+SemiLagrangian::SemiLagrangian(Parameters &params)
     : params(params), nx(params.nx), ny(params.ny),
       dx(static_cast<varType>(params.dx)), dy(static_cast<varType>(params.dy)),
       dt(static_cast<varType>(params.dt)),
       density(static_cast<varType>(params.density)),
-      fields(new Fields2D(nx, ny, density, dt, dx, dy)) {
+      fields(new Fields2D(nx, ny, density, dt, dx, dy, "SL")){
 
 #ifndef NDEBUG
   std::cout << "Grid dimensions:\n"
@@ -31,7 +31,7 @@ SemiLagrangian::SemiLagrangian(const Parameters &params)
 #endif
 }
 
-SemiLagrangian::~SemiLagrangian() { delete fields; }
+SemiLagrangian::~SemiLagrangian() {}
 
 void SemiLagrangian::InitializeOutputWriters() {
   if (params.write_u)
@@ -73,15 +73,10 @@ void SemiLagrangian::WriteOutput(int step) const {
 
 void SemiLagrangian::Step() {
 
-  if (params.source == true) {
-    params.applyToFields(*fields); // TODO: améliorer, fait vite fait pour
-                                   // avoir une source
-  }
-
-  MakeIncompressible(); // 1. Pressure projection: enforce div u = 0.
+  MakeIncompressible(params,*fields); // 1. Pressure projection: enforce div u = 0.
+  fields->Div();        // } Update diagnostics used for
   Advect();             // 2. Semi-Lagrangian transport of velocity.
   AdvectSmoke();
-  fields->Div();                    // } Update diagnostics used for
   fields->VelocityNormCenterGrid(); // } output and progress reporting.
 }
 
