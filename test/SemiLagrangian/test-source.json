@@ -57,7 +57,7 @@
    },
 
     "solver": {
-  "type": "red_black_gauss_seidel",
+  "type": "jacobi",
     "max_iterations": 5000,
     "tolerance": 5e-2
 }
