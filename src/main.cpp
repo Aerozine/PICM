@@ -13,13 +13,15 @@ int main(int argc, char *argv[]) {
   Parameters params;
   if (!params.parseCommandLine(argc, argv)) {
     return 1;
-
+  }
 #ifndef NDEBUG
     // Display parameters
     std::cout << params << std::endl;
 #endif
 
     if (params.method == "pic") {
+
+    std::cout << "PIC" << std::endl;
       PIC solver(params);
       solver.Run();
     } else {
@@ -27,11 +29,11 @@ int main(int argc, char *argv[]) {
       if (params.method != "semi_lagrangian")
         std::cerr << "[main] Unknown method '" << params.method
                   << "' – defaulting to semi_lagrangian.\n";
+
+    std::cout << "SL" << std::endl;
       SemiLagrangian solver(params);
       solver.Run();
     }
-
     std::cout << "Simulation completed successfully!\n";
     return 0;
   }
-}
