@@ -84,6 +84,7 @@ void updateVelocities(const Parameters & params,Fields2D & fields) {
                     fields.v.Get(i, j) -
                         coef * (fields.p.Get(i, j) - fields.p.Get(i, j - 1)));
     }
+  }
 
     // velocity at boundaries: if not fixed by BCs, copy from adjacent interior value
     for (int i = 0; i < fields.v.nx; ++i) {
@@ -94,7 +95,6 @@ void updateVelocities(const Parameters & params,Fields2D & fields) {
       if (! (fields.Label(i, fields.v.ny - 1) & Fields2D::BC_V))
         fields.v.Set(i, fields.v.ny - 1, fields.v.Get(i, fields.v.ny - 2));
     }
-  }
 }
 void MakeIncompressible(const Parameters & params,Fields2D & fields){
   solvePressure(params,fields);
