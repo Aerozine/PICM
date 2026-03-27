@@ -35,6 +35,7 @@ void SemiLagrangian::updateVelocities() {
   // u^{n+1}_{i,j} = u*_{i,j} - (dt/(rho*dx)) * (p_{i,j} - p_{i-1,j})
   const varType coef = dt / (density * dx);
 
+  // interior update for u
   OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
   for (int j = 0; j < fields->u.ny; ++j) {
     for (int i = 1; i < fields->u.nx - 1; ++i) {
@@ -51,6 +52,17 @@ void SemiLagrangian::updateVelocities() {
     }
   }
 
+  // velocity at boundaries: if not fixed by BCs, copy from adjacent interior value
+  for (int j = 0; j < fields->u.ny; ++j) {
+    
+    if (! (fields->Label(0, j) & Fields2D::BC_U))
+        fields->u.Set(0, j, fields->u.Get(1, j));
+
+    if (! (fields->Label(fields->u.nx - 1, j) & Fields2D::BC_U))
+        fields->u.Set(fields->u.nx - 1, j, fields->u.Get(fields->u.nx - 2, j));
+  }
+
+  // interior update for v
   OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
   for (int j = 1; j < fields->v.ny - 1; ++j) {
     for (int i = 0; i < fields->v.nx; ++i) {
@@ -65,6 +77,16 @@ void SemiLagrangian::updateVelocities() {
                     fields->v.Get(i, j) -
                         coef * (fields->p.Get(i, j) - fields->p.Get(i, j - 1)));
     }
+  }
+
+  // velocity at boundaries: if not fixed by BCs, copy from adjacent interior value
+  for (int i = 0; i < fields->v.nx; ++i) {
+    
+    if (! (fields->Label(i, 0) & Fields2D::BC_V))
+        fields->v.Set(i, 0, fields->v.Get(i, 1));
+
+    if (! (fields->Label(i, fields->v.ny - 1) & Fields2D::BC_V))
+        fields->v.Set(i, fields->v.ny - 1, fields->v.Get(i, fields->v.ny - 2));
   }
 }
 

@@ -9,10 +9,10 @@
 
 namespace {
   // sumP,nb
-[[nodiscard]] inline std::pair<varType, int>  neighbourSum(const Fields2D &f, int nx, int ny,
-                                         int i, int j) {
+[[nodiscard]] inline std::pair<varType, int>  neighbourSum(const Fields2D &f,
+                                              int nx, int ny, int i, int j) {
   // all 4 neighbours nearly always exist.
-  //  No bounds checks, no branches.
+  // No bounds checks, no branches.
   if (i > 0 && i < nx - 1 && j > 0 && j < ny - 1) {
     // early exit
     return {f.p.Get(i + 1, j) + f.p.Get(i - 1, j) + f.p.Get(i, j + 1) +
@@ -30,10 +30,10 @@ namespace {
 }
 
 // Gauss-Seidel update for a single FLUID cell.
-//   p_new = ( -coef * div_{ij} + sum p_nb ) / N_nb
+//  p_new = ( -coef * div_{ij} + sum p_nb ) / N_nb
 [[nodiscard]] inline double gsUpdate(const Fields2D &f, int nx, int ny, int i,
                                      int j, double coef) {
-  if (f.Label(i, j) != Fields2D::FLUID)
+  if(f.Label(i, j) & Fields2D::SOLID)
     return f.p.Get(i,j);
   const auto [sumP, nb] = neighbourSum(f, nx, ny, i, j);
   // if there is no neighbour just keep the same value
