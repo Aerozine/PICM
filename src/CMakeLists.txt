@@ -31,5 +31,5 @@ else()
 endif()
 # vebose build
 target_compile_options(
-  PIC PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O3 -march=native -Wall -Wextra -Wpedantic> 
+  PIC PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O0 -march=native -Wall -Wextra -Wpedantic>
               $<$<CXX_COMPILER_ID:MSVC>:/W4>)

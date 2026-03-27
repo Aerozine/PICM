@@ -7,8 +7,8 @@
 // Pressure solve dispatch
 
 void solvePressure(const Parameters & params,Fields2D & fields) {
-  double tol = params.solver.maxIters;
-  int maxIters=params.solver.tolerance;
+  double tol = params.solver.tolerance;
+  int maxIters=params.solver.maxIters;
   const double coef  = static_cast<double>(params.density) *
                        static_cast<double>(params.dx) * static_cast<double>(params.dx) /
                        static_cast<double>(params.dt);
