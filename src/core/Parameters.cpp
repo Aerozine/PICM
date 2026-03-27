@@ -63,6 +63,7 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   write_smoke = j.value("write_smoke", write_smoke);
   ppcy=j.value("ppcy",ppcy);
   ppcx=j.value("ppcx",ppcx);
+  method=j.value("method","semi_lagrangian");
   write_particles=j.value("write_particles",write_particles);
   // Output paths
   folder = j.value("folder", folder);
@@ -107,34 +108,35 @@ void Parameters::applyToFields(Fields2D &fields) const {
   }
 }
 
-  bool Parameters::loadFromFile(const std::string &path) {
-    try {
-      std::ifstream file(path);
-      if (!file.is_open()) {
-        std::cerr << "[Parameters] Could not open '" << path << "'\n";
-        return false;
-      }
-      nlohmann::json j;
-      file >> j;
-      loadFromJson(j);
-      DBG_PRINTF("[Parameters] Loaded from %s", path.c_str());
-      return true;
-    } catch (const std::exception &e) {
-      std::cerr << "[Parameters] JSON parse error: " << e.what() << '\n';
+
+bool Parameters::loadFromFile(const std::string &path) {
+  try {
+    std::ifstream file(path);
+    if (!file.is_open()) {
+      std::cerr << "[Parameters] Could not open '" << path << "'\n";
       return false;
     }
-  }
-
-  bool Parameters::parseCommandLine(const int argc, char *argv[]) {
-    // Expect exactly:  <prog> -c <path>  or  <prog> --config <path>
-    if (argc == 3) {
-      const std::string_view flag = argv[1];
-      if (flag == "-c" || flag == "--config")
-        return loadFromFile(argv[2]);
-    }
-    printUsage(argv[0]);
+    nlohmann::json j;
+    file >> j;
+    loadFromJson(j);
+    DBG_PRINTF("[Parameters] Loaded from %s", path.c_str());
+    return true;
+  } catch (const std::exception &e) {
+    std::cerr << "[Parameters] JSON parse error: " << e.what() << '\n';
     return false;
   }
+}
+
+bool Parameters::parseCommandLine(const int argc, char *argv[]) {
+  // Expect exactly:  <prog> -c <path>  or  <prog> --config <path>
+  if (argc == 3) {
+    const std::string_view flag = argv[1];
+    if (flag == "-c" || flag == "--config")
+      return loadFromFile(argv[2]);
+  }
+  printUsage(argv[0]);
+  return false;
+}
 
   void Parameters::printUsage(const char *prog) {
     // RTFM
@@ -143,6 +145,7 @@ void Parameters::applyToFields(Fields2D &fields) const {
   // allow us to use the << operator to print params
   std::ostream &operator<<(std::ostream &os, const Parameters &p) {
     os << "\n=== Simulation Parameters ===\n"
+       << "  Method  : " << p.method << '\n'
        << "  Grid    : " << p.nx << " x " << p.ny << "  dx=" << p.dx
        << "  dy=" << p.dy << '\n'
        << "  Time    : nt=" << p.nt << "  dt=" << p.dt << '\n'
