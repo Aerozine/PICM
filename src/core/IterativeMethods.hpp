@@ -51,4 +51,4 @@ void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
  * @param beta      Beta parameter for solid boundary conditions.
  * @return          @c true if converged within @p maxIters.
  */
-bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol);
+bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol, double beta);
