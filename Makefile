@@ -4,27 +4,20 @@ build:
 build-fast:
 	cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release; cmake --build build 
 
-run-green:
-	./build/bin/PIC -c test/taylorgreen.json
+sl-square:
+	./build-dbg/bin/PIC -c test/SemiLagrangian/test-square.json
 
-run-test:
-	./build-dbg/bin/PIC -c test/test.json
+sl-uniform:
+	./build-dbg/bin/PIC -c test/SemiLagrangian/test-uniform.json
 
-run-square:
-	./build-dbg/bin/PIC -c test/test-square.json
+sl-source:
+	./build-dbg/bin/PIC -c test/SemiLagrangian/test-source.json
 
-uniform:
-	./build/bin/PIC -c test/test-uniform.json
+pic-default:
+	./build-dbg/bin/PIC -c test/PIC/particles.json
 
-cylinder:
-	./build/bin/PIC -c test/test-large-cylinder.json
-
-source:
-	./build/bin/PIC -c test/test-source.json
-
-
-run-fast:
-	./build/bin/PIC -c test/test.json
+pic-uniform:
+	./build-dbg/bin/PIC -c test/PIC/uniform.json
 
 format:
 	find . -name "*.cpp" -o -name "*.hpp" | xargs clang-format -i --style=LLVM

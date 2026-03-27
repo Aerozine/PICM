@@ -166,6 +166,124 @@ bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
   return true;
 }
 
+bool OutputWriter::writeParticles(const Particles &particles,
+                                  const std::string &id) {
+  if (pvd_finalised_)
+    return false;
+
+  const int cap = particles.capacity;
+
+  int nAlive = 0;
+  for (int idx = 0; idx < cap; ++idx)
+    if (!particles.IsDead(idx))
+      ++nAlive;
+
+  std::ostringstream oss;
+  oss << id << '_' << std::setw(4) << std::setfill('0') << current_step_
+      << ".vtp";
+  std::string vtp_name = oss.str();
+  std::string vtp_path = output_dir_ + "/" + vtp_name;
+
+  std::ofstream out(vtp_path);
+  if (!out.is_open())
+    return false;
+
+  out << "<?xml version=\"1.0\"?>\n"
+      << "<VTKFile type=\"PolyData\" version=\"0.1\" "
+         "byte_order=\"LittleEndian\">\n"
+      << "  <PolyData>\n"
+      << "    <Piece NumberOfPoints=\"" << nAlive << "\" NumberOfVerts=\""
+      << nAlive
+      << "\" NumberOfLines=\"0\" NumberOfStrips=\"0\" NumberOfPolys=\"0\">\n";
+
+  out << "      <PointData Scalars=\"u\" Vectors=\"velocity\">\n";
+
+  // u
+  out << "        <DataArray type=\"Float64\" Name=\"u\" "
+         "NumberOfComponents=\"1\" format=\"ascii\">\n          ";
+  bool first = true;
+  for (int idx = 0; idx < cap; ++idx) {
+    if (particles.IsDead(idx))
+      continue;
+    if (!first)
+      out << ' ';
+    out << particles.GetU(idx);
+    first = false;
+  }
+  out << "\n        </DataArray>\n";
+
+  // v
+  out << "        <DataArray type=\"Float64\" Name=\"v\" "
+         "NumberOfComponents=\"1\" format=\"ascii\">\n          ";
+  first = true;
+  for (int idx = 0; idx < cap; ++idx) {
+    if (particles.IsDead(idx))
+      continue;
+    if (!first)
+      out << ' ';
+    out << particles.GetV(idx);
+    first = false;
+  }
+  out << "\n        </DataArray>\n";
+
+  // velocity vector (3-component for VTK)
+  out << "        <DataArray type=\"Float64\" Name=\"velocity\" "
+         "NumberOfComponents=\"3\" format=\"ascii\">\n          ";
+  first = true;
+  for (int idx = 0; idx < cap; ++idx) {
+    if (particles.IsDead(idx))
+      continue;
+    if (!first)
+      out << ' ';
+    out << particles.GetU(idx) << ' ' << particles.GetV(idx) << ' ' << 0.0;
+    first = false;
+  }
+  out << "\n        </DataArray>\n";
+
+  out << "      </PointData>\n";
+
+  // Points
+  out << "      <Points>\n"
+      << "        <DataArray type=\"Float64\" NumberOfComponents=\"3\" "
+         "format=\"ascii\">\n          ";
+  first = true;
+  for (int idx = 0; idx < cap; ++idx) {
+    if (particles.IsDead(idx))
+      continue;
+    if (!first)
+      out << ' ';
+    out << particles.GetX(idx) << ' ' << particles.GetY(idx) << ' ' << 0.0;
+    first = false;
+  }
+  out << "\n        </DataArray>\n      </Points>\n";
+
+  // Verts
+  out << "      <Verts>\n"
+      << "        <DataArray type=\"Int32\" Name=\"connectivity\" "
+         "format=\"ascii\">\n          ";
+  for (int k = 0; k < nAlive; ++k) {
+    if (k)
+      out << ' ';
+    out << k;
+  }
+  out << "\n        </DataArray>\n"
+      << "        <DataArray type=\"Int32\" Name=\"offsets\" "
+         "format=\"ascii\">\n          ";
+  for (int k = 0; k < nAlive; ++k) {
+    if (k)
+      out << ' ';
+    out << (k + 1);
+  }
+  out << "\n        </DataArray>\n      </Verts>\n";
+
+  out << "    </Piece>\n  </PolyData>\n</VTKFile>\n";
+  out.close();
+
+  appendPVDEntry(vtp_name, static_cast<double>(current_step_));
+  ++current_step_;
+  return true;
+}
+
 void OutputWriter::finalisePVD() {
   if (pvd_finalised_)
     return;
