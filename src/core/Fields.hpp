@@ -50,7 +50,7 @@ public:
            std::string method)
       : nx(nx), ny(ny), density(density), dt(dt), dx(dx), dy(dy), u(nx + 1, ny),
         v(nx, ny + 1), p(nx, ny), div(nx, ny), normVelocity(nx, ny),
-        smokeMap(nx - 1, ny - 1),
+        smokeMap(nx, ny),
         u_sum(method == "PIC" ? nx + 1 : 0, method == "PIC" ? ny : 0),
         u_weight(method == "PIC" ? nx + 1 : 0, method == "PIC" ? ny : 0),
         v_sum(method == "PIC" ? nx : 0, method == "PIC" ? ny + 1 : 0),
