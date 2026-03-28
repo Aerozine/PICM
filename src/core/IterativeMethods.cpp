@@ -33,7 +33,7 @@ namespace {
   [[nodiscard]] inline std::pair<varType, int> neighbourSum(const Fields2D &f,
                      int nx, int ny, int i, int j, double beta) {
   
-  if (f.Label(i, j) & Fields2D::SOLID) {
+  if (IS_SOLID(f.Label(i, j)) ) {
     return {f.p.Get(i, j), -1};
   }
 
@@ -43,7 +43,7 @@ namespace {
 
   // Left neighbour
   if (i - 1 >= 0) {
-    if (f.Label(i - 1, j) & Fields2D::SOLID) {
+    if (IS_SOLID(f.Label(i - 1, j))) {
       sumP += pC - beta * f.u.Get(i, j);
     } else {
       sumP += f.p.Get(i - 1, j);
@@ -53,7 +53,7 @@ namespace {
 
   // Right neighbour
   if (i + 1 < nx) {
-    if (f.Label(i + 1, j) & Fields2D::SOLID) {
+    if (IS_SOLID(f.Label(i + 1, j)) ) {
       sumP += pC + beta * f.u.Get(i + 1, j);
     } else {
       sumP += f.p.Get(i + 1, j);
@@ -63,7 +63,7 @@ namespace {
 
   // Bottom neighbour
   if (j - 1 >= 0) {
-    if (f.Label(i, j - 1) & Fields2D::SOLID) {
+    if (IS_SOLID(f.Label(i, j - 1))) {
       sumP += pC - beta * f.v.Get(i, j);
     } else {
       sumP += f.p.Get(i, j - 1);
@@ -73,7 +73,7 @@ namespace {
 
   // Top neighbour
   if (j + 1 < ny) {
-    if (f.Label(i, j + 1) & Fields2D::SOLID) {
+    if (IS_SOLID(f.Label(i, j + 1))) {
       sumP += pC + beta * f.v.Get(i, j + 1);
     } else {
       sumP += f.p.Get(i, j + 1);
@@ -88,7 +88,7 @@ namespace {
 //  p_new = ( -coef * div_{ij} + sum p_nb ) / N_nb
 [[nodiscard]] inline double gsUpdate(const Fields2D &f, int nx, int ny, int i,
                                      int j, double coef, double beta) {
-  if (f.Label(i, j) & Fields2D::SOLID)
+  if (IS_SOLID(f.Label(i, j)))
     return f.p.Get(i,j);
   const auto [sumP, nb] = neighbourSum(f, nx, ny, i, j, beta);
   // if there is no neighbour just keep the same value
@@ -105,7 +105,7 @@ namespace {
 OMP_PRAGMA(omp parallel for collapse(2) reduction(+:sumSq) reduction(+:count))
 for (int j = 0; j < ny; ++j) {
   for (int i = 0; i < nx; ++i) {
-    if (f.Label(i, j) != Fields2D::FLUID)
+    if (IS_SOLID(f.Label(i, j)))
       continue;
     const auto [sumP, nb] = neighbourSum(f, nx, ny, i, j, beta);
     const double r = (-coef * f.div.Get(i, j)) - (nb * f.p.Get(i, j) - sumP);
@@ -134,19 +134,19 @@ OMP_PRAGMA(omp parallel for collapse(2))
 for (int j = 0; j < ny; ++j) {
   for (int i = 0; i < nx; ++i) {
     const int id = nx * j + i;
-    if (f.Label(i, j) != Fields2D::FLUID) {
+    if (IS_SOLID(f.Label(i, j))) {
       y[id] = 0.0;
       continue;
     }
 
     double val = Adiag[id] * x[id];
-    if (i + 1 < nx && f.Label(i + 1, j) == Fields2D::FLUID)
+    if (i + 1 < nx && IS_FLUID(f.Label(i + 1, j)))
       val -= scale * x[nx * j + (i + 1)];
-    if (j + 1 < ny && f.Label(i, j + 1) == Fields2D::FLUID)
+    if (j + 1 < ny && IS_FLUID(f.Label(i, j + 1)))
       val -= scale * x[nx * (j + 1) + i];
-    if (i - 1 >= 0 && f.Label(i - 1, j) == Fields2D::FLUID)
+    if (i - 1 >= 0 && IS_FLUID(f.Label(i - 1, j)))
       val -= scale * x[nx * j + (i - 1)];
-    if (j - 1 >= 0 && f.Label(i, j - 1) == Fields2D::FLUID)
+    if (j - 1 >= 0 && IS_FLUID(f.Label(i, j - 1)))
       val -= scale * x[nx * (j - 1) + i];
     y[id] = val;
   }
@@ -165,26 +165,26 @@ void buildPrecon(const Fields2D &f, int nx, int ny, double scale,
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < ny; ++j) {
     for (int i = 0; i < nx; ++i) {
-      if (f.Label(i, j) != Fields2D::FLUID)
+      if (IS_SOLID(f.Label(i, j)))
         continue;
       const int id = nx * j + i;
       double e = Adiag[id];
 
       // x lower neighbour (i-1, j)
-      if (i - 1 >= 0 && f.Label(i - 1, j) == Fields2D::FLUID) {
+      if (i - 1 >= 0 && IS_FLUID(f.Label(i - 1, j)) ) {
         const double pre = precon[nx * j + (i - 1)];
         const double pre2 = pre * pre;
         e -= scale2 * pre2;
-        if (j + 1 < ny && f.Label(i - 1, j + 1) == Fields2D::FLUID)
+        if (j + 1 < ny && IS_FLUID(f.Label(i - 1, j + 1)))
           e -= tau * scale2 * pre2;
       }
 
       // y lower neighbour (i, j-1)
-      if (j - 1 >= 0 && f.Label(i, j - 1) == Fields2D::FLUID) {
+      if (j - 1 >= 0 && IS_FLUID(f.Label(i, j - 1))) {
         const double pre = precon[nx * (j - 1) + i];
         const double pre2 = pre * pre;
         e -= scale2 * pre2;
-        if (i + 1 < nx && f.Label(i + 1, j - 1) == Fields2D::FLUID)
+        if (i + 1 < nx && IS_FLUID(f.Label(i + 1, j - 1)))
           e -= tau * scale2 * pre2;
       }
 
@@ -203,13 +203,13 @@ void applyPrecon(const Fields2D &f, int nx, int ny, double scale,
   // Lq=b forward substitution
   for (int j = 0; j < ny; ++j) {
     for (int i = 0; i < nx; ++i) {
-      if (f.Label(i, j) != Fields2D::FLUID)
+      if (IS_SOLID(f.Label(i, j)))
         continue;
       const int id = nx * j + i;
       double t = r[id];
-      if (i - 1 >= 0 && f.Label(i - 1, j) == Fields2D::FLUID)
+      if (i - 1 >= 0 && IS_FLUID(f.Label(i - 1, j)))
         t += scale * precon[nx * j + (i - 1)] * q[nx * j + (i - 1)];
-      if (j - 1 >= 0 && f.Label(i, j - 1) == Fields2D::FLUID)
+      if (j - 1 >= 0 && IS_FLUID(f.Label(i, j - 1)))
         t += scale * precon[nx * (j - 1) + i] * q[nx * (j - 1) + i];
       q[id] = t * precon[id];
     }
@@ -219,13 +219,13 @@ void applyPrecon(const Fields2D &f, int nx, int ny, double scale,
   std::fill(z.begin(), z.end(), 0.0);
   for (int j = ny - 1; j >= 0; --j) {
     for (int i = nx - 1; i >= 0; --i) {
-      if (f.Label(i, j) != Fields2D::FLUID)
+      if (IS_SOLID(f.Label(i, j)))
         continue;
       const int id = nx * j + i;
       double t = q[id];
-      if (i + 1 < nx && f.Label(i + 1, j) == Fields2D::FLUID)
+      if (i + 1 < nx && IS_FLUID(f.Label(i + 1, j)))
         t += scale * precon[id] * z[nx * j + (i + 1)];
-      if (j + 1 < ny && f.Label(i, j + 1) == Fields2D::FLUID)
+      if (j + 1 < ny && IS_FLUID(f.Label(i, j + 1)))
         t += scale * precon[id] * z[nx * (j + 1) + i];
       z[id] = t * precon[id];
     }
@@ -249,7 +249,7 @@ for (int j = 0; j < ny; ++j)
 OMP_PRAGMA(omp parallel for collapse(2))
 for (int j = 0; j < ny; ++j)
   for (int i = 0; i < nx; ++i)
-    if (fields.Label(i, j) == Fields2D::FLUID)
+    if (IS_FLUID(fields.Label(i, j)))
       fields.p.Set(i, j, pNew.Get(i, j));
 
 const double res = residualNorm(fields, nx, ny, coef, beta);
@@ -340,16 +340,16 @@ bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol){
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < ny; ++j) {
     for (int i = 0; i < nx; ++i) {
-      if (fields.Label(i, j) != Fields2D::FLUID)
+      if (IS_SOLID(fields.Label(i, j)))
         continue;
       const int id = nx * j + i;
-      if (i - 1 >= 0 && fields.Label(i - 1, j) != Fields2D::SOLID)
+      if (i - 1 >= 0 && IS_FLUID(fields.Label(i - 1, j)))
         Adiag[id] += scale;
-      if (i + 1 < nx && fields.Label(i + 1, j) != Fields2D::SOLID)
+      if (i + 1 < nx && IS_FLUID(fields.Label(i + 1, j)) )
         Adiag[id] += scale;
-      if (j - 1 >= 0 && fields.Label(i, j - 1) != Fields2D::SOLID)
+      if (j - 1 >= 0 && IS_FLUID(fields.Label(i, j - 1)))
         Adiag[id] += scale;
-      if (j + 1 < ny && fields.Label(i, j + 1) != Fields2D::SOLID)
+      if (j + 1 < ny && IS_FLUID(fields.Label(i, j + 1)))
         Adiag[id] += scale;
     }
   }
@@ -360,7 +360,7 @@ bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol){
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < ny; ++j)
     for (int i = 0; i < nx; ++i)
-      if (fields.Label(i, j) == Fields2D::FLUID)
+      if (IS_FLUID(fields.Label(i, j)))
         r[nx * j + i] = -static_cast<double>(fields.div.Get(i, j));
 
   double r0_inf = 0.0;
@@ -383,7 +383,7 @@ bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol){
     int zeroDiag = 0;
     for (int jj = 0; jj < ny; ++jj)
       for (int ii = 0; ii < nx; ++ii)
-        if (fields.Label(ii, jj) == Fields2D::FLUID &&
+        if (IS_FLUID(fields.Label(ii, jj)) &&
             Adiag[nx * jj + ii] == 0.0)
           ++zeroDiag;
     if (zeroDiag > 0)
@@ -477,7 +477,7 @@ bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol){
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < ny; ++j)
     for (int i = 0; i < nx; ++i)
-      if (fields.Label(i, j) == Fields2D::FLUID)
+      if (IS_FLUID(fields.Label(i, j)) & !IS_BC(fields.Label(i,j)))
         fields.p.Set(i, j, static_cast<varType>(p[nx * j + i]));
 
   return converged;

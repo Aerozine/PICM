@@ -4,6 +4,10 @@
 #include <string>
 #include <vector>
 #define FIELD_USOLID 0.0
+
+#define IS_BC(cell) (cell & ((1<<1) | (1<<2) | (1<<3) | (1<<4)))
+#define IS_FLUID(cell) (!(cell & (1<<0))) 
+#define IS_SOLID(cell) (cell &(1<<0))
 class Fields2D {
 public:
   /// @brief Possible states for a grid cell.
