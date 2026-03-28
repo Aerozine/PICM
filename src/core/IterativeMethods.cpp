@@ -93,6 +93,7 @@ inline bool checkConvergence(double res, double &res0, int it, double tol) {
     res0 = res;
     return res0 < 1e-30;
   }
+  DBG_PRINTF("%f",res/res0);
   return (res / res0) < tol;
 }
 
@@ -201,13 +202,14 @@ void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
                               int maxIters, double tol, double beta) {
   fields.Div();
   double res0 = 1.0;
+  double resMax = 1.0;
 
   for (int it = 0; it < maxIters; ++it) {
-    double sumSq = 0.0;
+    // double sumSq = 0.0;
     int count = 0;
 
     for (int color = 0; color < 2; ++color) {
-OMP_PRAGMA(omp parallel for collapse(2) reduction(+:sumSq) reduction(+:count))
+OMP_PRAGMA(omp parallel for collapse(2) reduction(+:count))
       for (int j = 0; j < ny; ++j) {
         for (int i = 0; i < nx; ++i) {
           if ((i + j) % 2 != color) continue;
@@ -218,17 +220,20 @@ OMP_PRAGMA(omp parallel for collapse(2) reduction(+:sumSq) reduction(+:count))
           fields.p.Set(i, j, p_new);
 
           const double r = p_new - p_old;
-          sumSq += r * r;
+          if (std::abs(r) > resMax)
+            resMax = std::abs(r);
+          // sumSq += r * r;
           ++count;
         }
       }
     }
 
-    const double res = (count > 0) ? std::sqrt(sumSq / count) : 0.0;
-    if (checkConvergence(res, res0, it, tol)) {
+    // const double res = (count > 0) ? std::sqrt(sumSq / count) : 0.0;
+    // DBG_PRINTF("%f",resMax);
+    if (checkConvergence(resMax, res0, it, tol)) {
 #ifndef NDEBUG
       std::cout << "  RedBlackGS converged in " << it + 1
-                << " iters, rel.res = " << res / res0 << '\n';
+                << " iters, rel.res = " << resMax / res0 << '\n';
 #endif
       return;
     }
