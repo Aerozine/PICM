@@ -84,10 +84,7 @@ vgcore*
 .idea*
 
 src/numLines.txt
-<<<<<<< HEAD
-=======
 
->>>>>>> lodev
 error.sh
 res.txt
 # doxygen

@@ -16,27 +16,24 @@ struct SceneObject {
   virtual void applyPressure (Fields2D &f) const { (void)f; }
 };
 
-/**
- * @brief Axis-aligned rectangle scene primitive.
- */
 struct RectangleObject : public SceneObject {
   std::string condition{"boundary"}; ///< "boundary" or "initial".
   varType val{0};                    ///< Value written by apply methods.
   int x1{0}, y1{0};                 ///< Bottom-left corner (inclusive).
   int x2{0}, y2{0};                 ///< Top-right  corner (inclusive).
 
-  void applySolid    (Fields2D &f) const override;
-  void applyVelocityU(Fields2D &f) const override;
-  void applyVelocityV(Fields2D &f) const override;
-  void applyPressure (Fields2D &f) const override;
-  void applySmoke    (Fields2D &f) const override;
+  void applySolid(Fields2D &f) const;
+  void applyVelocityU(Fields2D &f) const;
+  void applyVelocityV(Fields2D &f) const;
+  void applySmoke(Fields2D &f) const;
+  void applyPressure(Fields2D &f) const;
 };
 
 struct CylinderObject : public SceneObject {
   int cx{0}, cy{0}; ///< Centre cell indices.
   int r{0};         ///< Radius in cells.
 
-  void applySolid(Fields2D &f) const override;
+  void applySolid(Fields2D &f) const;
 };
 
 /**

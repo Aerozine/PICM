@@ -3,7 +3,7 @@ project(PIC)
 
 option(USE_FLOAT_PRECISION "Use float instead of double" ON)
 option(USE_FP16 "Use half-precision floating point (FP16)" OFF)
-option(USE_PARALLEL "Use paralellization" OFF)
+option(USE_PARALLEL "Use paralellization" ON)
 
 # WIP
 #option(ADVECT_TRILIN "Use trilinear interpolation instead of bilinear in advect" ON)
