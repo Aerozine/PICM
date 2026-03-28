@@ -1,6 +1,5 @@
 #include "Project.hpp"
 
-#include <execution>
 #include <iostream>
 
 #include "SemiLagrangian.hpp"
@@ -29,7 +28,7 @@ void solvePressure(const Parameters & params,Fields2D & fields) {
     solveRedBlackGaussSeidel(fields, nx, ny, coef, maxIters, tol,beta);
     break;
   case SolverConfig::Type::MICCG0:
-    solveMICCG0(fields, scale, maxIters, tol,beta);
+    solveMICCG0(fields, scale, maxIters, tol);
     break;
   default:
     std::cerr << "[SemiLagrangian] Unknown pressure solver type – aborting.\n";

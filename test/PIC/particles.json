@@ -60,7 +60,7 @@
         ]
     },
     "solver": {
-        "type": "miccg0",
+        "type": "red_black_gauss_seidel",
         "max_iterations": 1000,
         "tolerance": 0.01
     },
