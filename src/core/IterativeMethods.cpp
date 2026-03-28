@@ -8,27 +8,6 @@
 #include <vector>
 
 namespace {
-  // sumP,nb
-
-  /*[[nodiscard]] inline std::pair<varType, int>  neighbourSum(const Fields2D &f,
-                                              int nx, int ny, int i, int j, double beta) {
-  // all 4 neighbours nearly always exist.
-  // No bounds checks, no branches.
-  if (i > 0 && i < nx - 1 && j > 0 && j < ny - 1) {
-    // early exit
-    return {f.p.Get(i + 1, j) + f.p.Get(i - 1, j) + f.p.Get(i, j + 1) +
-                f.p.Get(i, j - 1),
-            4};
-  }
-  // Border cells only
-  double sumP = 0.0;
-  int nb = 0;
-  if (i + 1 < nx) {sumP += f.p.Get(i + 1, j);++nb;}
-  if (i - 1 >= 0) {sumP += f.p.Get(i - 1, j);++nb;}
-  if (j + 1 < ny) {sumP += f.p.Get(i, j + 1);++nb;}
-  if (j - 1 >= 0) {sumP += f.p.Get(i, j - 1);++nb;}
-  return {sumP, nb};
-}*/
 
 [[nodiscard]] inline std::pair<varType, int> neighbourSum(const Fields2D &f,
                      int nx, int ny, int i, int j, double beta) {
@@ -146,6 +125,7 @@ for (int j = 0; j < ny; ++j) {
 }
 
 }
+
 void solveJacobi(Fields2D &fields, int nx, int ny, double coef, int maxIters,
                  double tol, double beta) {
   fields.Div();
