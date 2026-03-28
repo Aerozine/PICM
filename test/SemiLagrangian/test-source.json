@@ -57,9 +57,15 @@
    },
 
     "solver": {
+<<<<<<< HEAD
   "type": "red_black_gauss_seidel",
     "max_iterations": 500,
     "tolerance": 5e-1
+=======
+  "type": "miccg0",
+    "max_iterations": 500,
+    "tolerance": 0.7
+>>>>>>> lodev
 }
 }
 
