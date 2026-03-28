@@ -62,7 +62,13 @@ void SemiLagrangian::AdvectSmoke() const {
     }
   }
 
-  fields->smokeMap = std::move(smokeNew);
+  // TODO : pass smokeNew as pointer of fields and avoir copy
+  for (int j = 0; j < fields->smokeMap.ny; ++j) {
+    for (int i = 0; i < fields->smokeMap.nx; ++i) {
+        fields->smokeMap.Set(i, j, smokeNew.Get(i, j)); 
+    }
+  }
+
 }
 
 // RK2 backward particle traces

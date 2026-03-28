@@ -13,6 +13,12 @@ sl-uniform:
 sl-source:
 	./build-dbg/bin/PIC -c test/SemiLagrangian/test-source.json
 
+sl-small-cylinder:
+	./build-dbg/bin/PIC -c test/SemiLagrangian/test-small-cylinder.json
+
+sl-div:
+	./build-dbg/bin/PIC -c test/SemiLagrangian/test-dbg-div.json
+
 pic-default:
 	./build-dbg/bin/PIC -c test/PIC/particles.json
 

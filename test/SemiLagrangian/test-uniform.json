@@ -2,9 +2,9 @@
     "dx": 2e-3,
     "dy": 2e-3,
     "dt": 1e-4,
-    "nx": 3,
-    "ny": 3,
-    "nt": 20,
+    "nx": 40,
+    "ny": 30,
+    "nt": 100,
     "density": 1000,
     "sampling_rate": 5,
 
@@ -30,17 +30,17 @@
     },
    "smoke": {
         "rectangle": {
-            "condition": "initial",
+            "condition": "boundary",
             "val": 1.0,
-            "x1": "1",
-            "y1": "1",
-            "x2": "1",
-            "y2": "1"
+            "x1": "0",
+            "y1": "0",
+            "x2": "0",
+            "y2": "ny-1"
         }
    },
     
    "solver": {
-        "type": "gauss_seidel",
+        "type": "red_black_gauss_seidel",
         "max_iterations": 5000,
         "tolerance": 1e-1
 }
