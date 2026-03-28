@@ -31,7 +31,10 @@ SemiLagrangian::SemiLagrangian(Parameters &params)
 #endif
 }
 
-SemiLagrangian::~SemiLagrangian() {}
+SemiLagrangian::~SemiLagrangian()   {
+  delete fields;
+  fields = nullptr;
+}
 
 void SemiLagrangian::InitializeOutputWriters() {
   if (params.write_u)

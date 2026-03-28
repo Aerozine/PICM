@@ -93,7 +93,6 @@ inline bool checkConvergence(double res, double &res0, int it, double tol) {
     res0 = res;
     return res0 < 1e-30;
   }
-  DBG_PRINTF("%f",res/res0);
   return (res / res0) < tol;
 }
 
@@ -198,18 +197,19 @@ void solveGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
 #endif
 }
 
+// Infinite norm for consistency with MICCG0
+// L2 norm in comments 
 void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
                               int maxIters, double tol, double beta) {
   fields.Div();
   double res0 = 1.0;
-  double resMax = 1.0;
 
   for (int it = 0; it < maxIters; ++it) {
     // double sumSq = 0.0;
     int count = 0;
-
+    double resMax = 0.0;
     for (int color = 0; color < 2; ++color) {
-OMP_PRAGMA(omp parallel for collapse(2) reduction(+:count))
+OMP_PRAGMA(omp parallel for collapse(2) reduction(+:count) reduction(max:resMax))
       for (int j = 0; j < ny; ++j) {
         for (int i = 0; i < nx; ++i) {
           if ((i + j) % 2 != color) continue;
@@ -218,7 +218,6 @@ OMP_PRAGMA(omp parallel for collapse(2) reduction(+:count))
           const double p_old = fields.p.Get(i, j);
           const double p_new = gsUpdate(fields, nx, ny, i, j, coef, beta);
           fields.p.Set(i, j, p_new);
-
           const double r = p_new - p_old;
           if (std::abs(r) > resMax)
             resMax = std::abs(r);
@@ -242,7 +241,6 @@ OMP_PRAGMA(omp parallel for collapse(2) reduction(+:count))
   std::cout << "  RedBlackGS: reached maxIters = " << maxIters << '\n';
 #endif
 }
-
 
 // Build precon[id] = 1/E[id]
 // CF ugly formula at 5.7
