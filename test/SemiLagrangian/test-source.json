@@ -57,9 +57,9 @@
    },
 
     "solver": {
-  "type": "red_black_gauss_seidel",
+  "type": "miccg0",
     "max_iterations": 500,
-    "tolerance": 5e-1
+    "tolerance": 0.7
 }
 }
 
