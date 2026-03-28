@@ -4,28 +4,29 @@
 #include <iostream>
 #include <stdexcept>
 
-// ---- Expression evaluator ------------------------------------------------
-
+// simply takes a key value and compute the numerical value
+// simple parser ( no need to change it)
 int resolveInt(const nlohmann::json &val,
                const std::map<std::string, int> &vars) {
   if (val.is_number())
     return val.get<int>();
-  if (!val.is_string())
+  if (!val.is_string()) // throws an error and stop if not correct
     throw std::runtime_error("[resolveInt] expected int or string expression");
 
   std::string expr = val.get<std::string>();
-
-  // Substitute variables, longest names first to avoid partial replacements.
+  // parsing must be done in the string order max
   std::vector<std::pair<std::string, int>> sorted(vars.begin(), vars.end());
+  // use std:sort and define an anonymous function that takes 2 parameter and
+  // define the sort order
   std::sort(sorted.begin(), sorted.end(), [](const auto &a, const auto &b) {
     return a.first.size() > b.first.size();
   });
+  // replace expression
   for (const auto &[name, v] : sorted) {
     std::size_t pos;
     while ((pos = expr.find(name)) != std::string::npos)
       expr.replace(pos, name.size(), std::to_string(v));
   }
-
   auto skipSpaces = [&](std::size_t pos) -> std::size_t {
     while (pos < expr.size() &&
            std::isspace(static_cast<unsigned char>(expr[pos])))
@@ -74,9 +75,7 @@ int resolveInt(const nlohmann::json &val,
   }
   return result;
 }
-
-// ---- RectangleObject apply methods ----------------------------------------
-
+// these small function applies into field the adequate flag
 void RectangleObject::applySolid(Fields2D &f) const {
   const int iMax = std::min(x2, f.nx - 1);
   const int jMax = std::min(y2, f.ny - 1);
@@ -87,8 +86,8 @@ void RectangleObject::applySolid(Fields2D &f) const {
 
 void RectangleObject::applyVelocityU(Fields2D &f) const {
   if (condition != "initial" && condition != "boundary") {
-    std::cout << "[RectangleObject] Invalid condition '" << condition
-              << "' for velocityU. Use 'initial' or 'boundary'.\n";
+    std::cout << "Invalid condition for rectangular horizontal velocity.\n"
+              << "Available options: initial or boundary.\n";
     return;
   }
   const int iMax = std::min(x2, f.u.nx - 1);
@@ -102,8 +101,8 @@ void RectangleObject::applyVelocityU(Fields2D &f) const {
 
 void RectangleObject::applyVelocityV(Fields2D &f) const {
   if (condition != "initial" && condition != "boundary") {
-    std::cout << "[RectangleObject] Invalid condition '" << condition
-              << "' for velocityV. Use 'initial' or 'boundary'.\n";
+    std::cout << "Invalid condition for rectangular vertical velocity.\n"
+              << "Available options: initial or boundary.\n";
     return;
   }
   const int iMax = std::min(x2, f.v.nx - 1);
@@ -117,8 +116,8 @@ void RectangleObject::applyVelocityV(Fields2D &f) const {
 
 void RectangleObject::applyPressure(Fields2D &f) const {
   if (condition != "initial" && condition != "boundary") {
-    std::cout << "[RectangleObject] Invalid condition '" << condition
-              << "' for pressure. Use 'initial' or 'boundary'.\n";
+    std::cout << "Invalid condition for rectangular velocity.\n"
+              << "Available options: initial or boundary.\n";
     return;
   }
   const int iMax = std::min(x2, f.p.nx - 1);
@@ -132,8 +131,8 @@ void RectangleObject::applyPressure(Fields2D &f) const {
 
 void RectangleObject::applySmoke(Fields2D &f) const {
   if (condition != "initial" && condition != "boundary") {
-    std::cout << "[RectangleObject] Invalid condition '" << condition
-              << "' for smoke. Use 'initial' or 'boundary'.\n";
+    std::cout << "Invalid condition for rectangular velocity.\n"
+              << "Available options: initial or boundary.\n";
     return;
   }
   const int iMax = std::min(x2, f.smokeMap.nx - 1);
@@ -144,8 +143,6 @@ void RectangleObject::applySmoke(Fields2D &f) const {
       f.SetLabel(i, j, condition == "initial" ? Fields2D::IC_S : Fields2D::BC_S);
     }
 }
-
-// ---- CylinderObject -------------------------------------------------------
 
 void CylinderObject::applySolid(Fields2D &f) const {
   const int r2 = r * r;
@@ -159,38 +156,53 @@ void CylinderObject::applySolid(Fields2D &f) const {
   }
 }
 
-// ---- Parsers --------------------------------------------------------------
-
 static std::unique_ptr<RectangleObject>
 parseRectangle(const nlohmann::json &j, const std::map<std::string, int> &vars) {
   auto obj = std::make_unique<RectangleObject>();
-  if (j.contains("condition")) obj->condition = j["condition"].get<std::string>();
-  if (j.contains("val"))       obj->val       = j["val"].get<double>();
-  if (j.contains("x1"))        obj->x1        = resolveInt(j["x1"], vars);
-  if (j.contains("y1"))        obj->y1        = resolveInt(j["y1"], vars);
-  if (j.contains("x2"))        obj->x2        = resolveInt(j["x2"], vars);
-  if (j.contains("y2"))        obj->y2        = resolveInt(j["y2"], vars);
+  if (j.contains("condition"))
+    obj->condition = j["condition"].get<std::string>();
+  if (j.contains("val"))
+    obj->val = j["val"].get<double>();
+  if (j.contains("x1"))
+    obj->x1 = resolveInt(j["x1"], vars);
+  if (j.contains("y1"))
+    obj->y1 = resolveInt(j["y1"], vars);
+  if (j.contains("x2"))
+    obj->x2 = resolveInt(j["x2"], vars);
+  if (j.contains("y2"))
+    obj->y2 = resolveInt(j["y2"], vars);
   return obj;
 }
 
 static std::unique_ptr<CylinderObject>
 parseCylinder(const nlohmann::json &j, const std::map<std::string, int> &vars) {
   auto obj = std::make_unique<CylinderObject>();
-  if (j.contains("cx"))      obj->cx = resolveInt(j["cx"], vars);
-  else if (j.contains("x"))  obj->cx = resolveInt(j["x"],  vars);
-  if (j.contains("cy"))      obj->cy = resolveInt(j["cy"], vars);
-  else if (j.contains("y"))  obj->cy = resolveInt(j["y"],  vars);
-  if (j.contains("r"))       obj->r  = resolveInt(j["r"],  vars);
+  // Accept both "x"/"y" and "cx"/"cy" spellings for the centre.
+  if (j.contains("cx"))
+    obj->cx = resolveInt(j["cx"], vars);
+  else if (j.contains("x"))
+    obj->cx = resolveInt(j["x"], vars);
+
+  if (j.contains("cy"))
+    obj->cy = resolveInt(j["cy"], vars);
+  else if (j.contains("y"))
+    obj->cy = resolveInt(j["y"], vars);
+
+  if (j.contains("r"))
+    obj->r = resolveInt(j["r"], vars);
   return obj;
 }
 
 std::unique_ptr<SceneObject>
 makeSceneObject(const std::string &type, const nlohmann::json &j,
                 const std::map<std::string, int> &vars) {
-  if (type == "rectangle") return parseRectangle(j, vars);
-  if (type == "cylinder")  return parseCylinder(j,  vars);
+  if (type == "rectangle")
+    return parseRectangle(j, vars);
+  if (type == "cylinder")
+    return parseCylinder(j, vars);
 
-  std::cerr << "[SceneObjects] Unknown object type: '" << type << "' – ignored.\n";
+  std::cerr << "[SceneObjects] Unknown object type: '" << type
+            << "' – ignored.\n";
   return nullptr;
 }
 
@@ -200,7 +212,7 @@ parseSceneObjects(const nlohmann::json &node,
   std::vector<std::unique_ptr<SceneObject>> result;
 
   for (auto it = node.begin(); it != node.end(); ++it) {
-    const std::string &type    = it.key();
+    const std::string &type = it.key();
     const nlohmann::json &value = it.value();
 
     if (value.is_array()) {

@@ -21,7 +21,7 @@
     "velocityu": {
         "rectangle": {
             "condition": "boundary",
-            "val": 0.5,
+            "val": 1,
             "x1": "0",
             "y1": "0",
             "x2": "1",
@@ -31,7 +31,7 @@
     "pressure": {
         "rectangle": {
             "condition": "boundary",
-            "val": 0,
+            "val": 0.0,
             "x1": "nx-1",
             "y1": "0",
             "x2": "nx",
@@ -57,9 +57,9 @@
    },
 
     "solver": {
-  "type": "jacobi",
-    "max_iterations": 5000,
-    "tolerance": 5e-2
+  "type": "red_black_gauss_seidel",
+    "max_iterations": 500,
+    "tolerance": 5e-1
 }
 }
 

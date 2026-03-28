@@ -3,6 +3,7 @@
 #include "../../core/IterativeMethods.hpp"
 #include "../../core/OutputWriter.hpp"
 #include "../../core/Parameters.hpp"
+#include "Project.hpp"
 #include <memory>
 class SemiLagrangian {
 public:
@@ -11,12 +12,13 @@ public:
    * @param params Simulation parameters (non-owning reference, must outlive
    *               this object).
    */
-  explicit SemiLagrangian(const Parameters &params);
+
+  SemiLagrangian(Parameters &params);
 
   ~SemiLagrangian();
 
-  SemiLagrangian(const SemiLagrangian &) = delete;
-  SemiLagrangian &operator=(const SemiLagrangian &) = delete;
+  //SemiLagrangian(const SemiLagrangian &) = delete;
+  //SemiLagrangian &operator=(const SemiLagrangian &) = delete;
 
   /// @brief Run the full simulation loop (nt steps) and write output.
   void Run();
@@ -24,20 +26,20 @@ public:
   /// @brief Advance the simulation by one time step.
   void Step();
 
-  Fields2D &GetFields() { return *fields; } ///< Access fields (mutable).
-  const Fields2D &GetFields() const {
-    return *fields;
-  } ///< Access fields (const).
+  //Fields2D &GetFields() { return *fields; } ///< Access fields (mutable).
+  //const Fields2D &GetFields() const {
+    //return *fields;
+  //} ///< Access fields (const).
 
 private:
-  const Parameters &params;
+ Parameters &params;
 
   // Cached scalars from params to avoid pointer chasing in hot loops.
   int nx, ny;
   varType dx, dy, dt;
   varType density;
 
-  Fields2D *fields; ///< @todo Replace with std::unique_ptr<Fields2D>.
+  Fields2D *fields; ///< @todo Replace with std::unique_ptr<Fields2D>?
 
   // Output writers — null if the corresponding write_* flag is false.
   std::unique_ptr<OutputWriter> uWriter;
@@ -127,18 +129,4 @@ private:
    * @param[out] v Interpolated v value.
    */
   void getVelocity(varType x, varType y, varType &u, varType &v) const;
-
-  void MakeIncompressible();
-
-  /**
-   * @brief Dispatch to the pressure solver selected in @c params.
-   * @param maxIters Maximum number of solver iterations.
-   * @param tol      Relative residual convergence threshold.
-   */
-  void solvePressure(int maxIters, double tol);
-
-  /**
-   * @brief Apply the pressure gradient to correct face velocities.
-   */
-  void updateVelocities();
 };

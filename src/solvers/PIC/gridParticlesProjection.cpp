@@ -102,7 +102,7 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
           isBC = true;
       }
       if (isSolid)
-        fields->u.Set(i, j, fields->usolid);
+        fields->u.Set(i, j, FIELD_USOLID);
       else if (isBC)
         ; // keep value written by applyToFields
       else if (fields->u_weight.Get(i, j) > varType(1e-12))
@@ -132,7 +132,7 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
           isBC = true;
       }
       if (isSolid)
-        fields->v.Set(i, j, fields->usolid);
+        fields->v.Set(i, j,FIELD_USOLID);
       else if (isBC)
         ;
       else if (fields->v_weight.Get(i, j) > varType(1e-12))

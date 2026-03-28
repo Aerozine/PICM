@@ -8,7 +8,7 @@ PIC::PIC(const Parameters &params)
       dx(static_cast<varType>(params.dx)), dy(static_cast<varType>(params.dy)),
       dt(static_cast<varType>(params.dt)),
       density(static_cast<varType>(params.density)),
-      fields(new Fields2D(nx, ny, density, dt, dx, dy, "PIC")),
+      fields(new Fields2D(params.nx, params.ny, params.density, params.dt, params.dx, params.dy, "PIC")),
       particles(new Particles(nx, ny, dx, dy, params.ppcx, params.ppcy,
                               CAPACITY_FACTOR * params.ppcx * params.ppcy *
                                   params.nx * params.ny)),
@@ -129,7 +129,7 @@ void PIC::WriteOutput(int step) const {
 
 void PIC::Step() {
   ProjectParticlesOnGrid("hat");
-  MakeIncompressible();
+  MakeIncompressible(params,*fields);
   fields->Div();
   fields->VelocityNormCenterGrid();
   ProjectGridOnParticles();

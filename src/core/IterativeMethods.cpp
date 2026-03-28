@@ -309,6 +309,8 @@ for (int j = 0; j < ny; ++j) {
     }
 
     const double res = residualNorm(fields, nx, ny, coef, beta);
+    //DBG_PRINTF("%f" ,res0!=0.0? res / res0:0);
+    
     if (checkConvergence(res, res0, it, tol)) {
 #ifndef NDEBUG
       std::cout << "  RedBlackGS converged in " << it + 1
@@ -322,7 +324,7 @@ for (int j = 0; j < ny; ++j) {
 #endif
 }
 
-bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol) {
+bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol){
   fields.Div();
 
   const int nx = fields.nx;
