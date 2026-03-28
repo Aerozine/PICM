@@ -42,6 +42,6 @@
    "solver": {
         "type": "red_black_gauss_seidel",
         "max_iterations": 5000,
-        "tolerance": 1e-3
+        "tolerance": 1e-4
 }
 }
