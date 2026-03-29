@@ -2,9 +2,9 @@
     "dx": 0.002,
     "dy": 0.002,
     "dt": 0.01,
-    "nx": 200,
-    "ny": 120,
-    "nt": 300,
+    "nx": 150,
+    "ny": 80,
+    "nt": 200,
     "ppcx": 2,
     "ppcy": 2,
     "density": 1000,
@@ -40,9 +40,9 @@
     },
     "solid": {
         "cylinder": {
-            "x": "50",
-            "y": "60",
-            "r": 10
+            "x": "nx/5",
+            "y": "ny/2",
+            "r": 8
         },
         "rectangle": [
             {
@@ -61,8 +61,8 @@
     },
     "solver": {
         "type": "red_black_gauss_seidel",
-        "max_iterations": 1000,
-        "tolerance": 0.01
+        "max_iterations": 1e4,
+        "tolerance": 1e-2
     },
     "method": "pic"
 }
