@@ -2,9 +2,9 @@
     "dx": 2e-3,
     "dy": 2e-3,
     "dt": 0.01,
-    "nx": 200,
-    "ny": 70,
-    "nt": 500,
+    "nx": 500,
+    "ny": 300,
+    "nt": 100,
     "density": 1000,
     "sampling_rate": 1,
 
@@ -35,45 +35,54 @@
             "val": 0,
             "x1": "nx-1",
             "y1": "0",
-            "x2": "nx",
-            "y2": "ny"
+            "x2": "nx-1",
+            "y2": "ny-1"
         }
     },
 
     "solid": {
         "cylinder": {
-            "x": "50",
+<<<<<<< HEAD:test/SemiLagrangian/test-source.json
+            "x": "125",
             "y": "ny/2",
-            "r": 10
+            "r": 25
+        }
+
+=======
+            "x": "100",
+            "y": "ny/2",
+            "r": 30
         },
 
         "rectangle":[{
             "x1": "0",
             "y1": "ny-1",
             "x2": "nx-1",
-            "y2": "ny-5"
+            "y2": "ny-2"
         },
         {
             "x1": "0",
             "y1": "0",
             "x2": "nx-1",
-            "y2": "5"
+            "y2": "1"
         }]
+>>>>>>> vinc:test/SemiLagrangian/large-von-karman.json
     },
    "smoke": {
         "rectangle": {
             "condition":"boundary",
-            "val": 1,
+            "val": 0.5,
             "x1": "0",
             "y1": "0",
-            "x2": "7",
+            "x2": "0",
             "y2": "ny"
         }
    },
 
     "solver": {
   "type": "red_black_gauss_seidel",
-    "max_iterations": 1e7,
-    "tolerance": 1e-4
+    "max_iterations": 1e4,
+    "tolerance": 5e-2
 }
 }
+

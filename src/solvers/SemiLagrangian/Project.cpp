@@ -66,8 +66,8 @@ void updateVelocities(const Parameters & params,Fields2D & fields) {
         && !(fields.Label(0, j) & Fields2D::BC_U))
         fields.u.Set(0, j, fields.u.Get(1, j));
 
-    if (!(fields.Label(fields.nx - 1, j) & Fields2D::SOLID) 
-        && !(fields.Label(fields.nx, j) & Fields2D::BC_U))
+    if (!(fields.Label(fields.nx - 1, j) & Fields2D::SOLID))
+        // && !(fields.Label(fields.nx, j) & Fields2D::BC_U)) // TODO: find solution lol 
         fields.u.Set(fields.u.nx - 1, j, fields.u.Get(fields.u.nx - 2, j));
 }
 
@@ -91,11 +91,11 @@ void updateVelocities(const Parameters & params,Fields2D & fields) {
     // TODO : is this great ?
     for (int i = 0; i < fields.v.nx; ++i) {
       if (!(fields.Label(i, 0) & Fields2D::SOLID) 
-          && !(fields.Label(i, 0) & Fields2D::BC_V))
+        && !(fields.Label(i, 0) & Fields2D::BC_V))
           fields.v.Set(i, 0, fields.v.Get(i, 1));
 
-      if (!(fields.Label(i, fields.ny - 1) & Fields2D::SOLID) 
-          && !(fields.Label(i, fields.ny - 1) & Fields2D::BC_V))
+      if (!(fields.Label(i, fields.ny - 1) & Fields2D::SOLID))
+        // && !(fields.Label(i, fields.ny - 1) & Fields2D::BC_V)) // TODO: find solution lol
           fields.v.Set(i, fields.v.ny - 1, fields.v.Get(i, fields.v.ny - 2));
     }
 }

@@ -21,8 +21,11 @@
 
   // Left neighbour
   if (i == 0) {
-    sumP += pC;
-    ++nb;
+    if (f.Label(0, j) & Fields2D::BC_U) // TODO: bit hacky ?
+      sumP += pC;  
+    else 
+      sumP += 0.0;
+    ++nb;                               // TODO: rm nb -> always 4 now ?
   } else {
     if (f.Label(i - 1, j) & Fields2D::SOLID) {
       sumP += pC - beta * f.u.Get(i, j);
@@ -34,8 +37,16 @@
 
   // Right neighbour
   if (i == nx - 1) {
+<<<<<<< HEAD
     sumP += pC;
     ++nb;
+=======
+    if (f.Label(nx - 1, j) & Fields2D::BC_U) // TODO: bit hacky ?
+      sumP += pC;  
+    else 
+      sumP += 0.0;
+    ++nb;                               // TODO: rm nb -> always 4 now ?
+>>>>>>> vinc
   } else {
     if (f.Label(i + 1, j) & Fields2D::SOLID) {
       sumP += pC + beta * f.u.Get(i + 1, j);
@@ -47,7 +58,14 @@
 
   // Bottom neighbour
   if (j == 0) {
+<<<<<<< HEAD
     sumP += pC;
+=======
+    if (f.Label(i, 0) & Fields2D::BC_V) // TODO: bit hacky ?
+      sumP += pC;  
+    else 
+      sumP += 0.0;
+>>>>>>> vinc
     ++nb;
   } else {
     if (f.Label(i, j - 1) & Fields2D::SOLID) {
@@ -60,7 +78,14 @@
 
   // Top neighbour
   if (j == ny - 1) {
+<<<<<<< HEAD
     sumP += pC;
+=======
+    if (f.Label(i, ny - 1) & Fields2D::BC_V) // TODO: bit hacky ?
+      sumP += pC;  
+    else 
+      sumP += 0.0;
+>>>>>>> vinc
     ++nb;
   } else {
     if (f.Label(i, j + 1) & Fields2D::SOLID) {
