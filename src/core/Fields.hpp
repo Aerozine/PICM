@@ -59,7 +59,7 @@ public:
         labels(static_cast<std::size_t>(nx) * ny, FLUID) {}
 
   /// @brief Return the cell type (FLUID or SOLID) of cell (i, j).
-  [[nodiscard]] CellType Label(int i, int j) const {
+  [[nodiscard]] inline CellType Label(int i, int j) const noexcept {
   return static_cast<CellType>(labels[idx(i, j)]);
   }
 
@@ -78,5 +78,5 @@ private:
   std::vector<uint16_t> labels; ///< Flat cell-type array, same layout as p.
   // TODO improve string method to sth else and maybe particularize ?
 
-  [[nodiscard]] int idx(int i, int j) const { return nx * j + i; }
+  [[nodiscard]] inline int idx(int i, int j) const noexcept { return nx * j + i; }
 };

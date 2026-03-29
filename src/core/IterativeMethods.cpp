@@ -7,11 +7,9 @@
 #include <iostream>
 #include <vector>
 
-namespace {
-
 [[nodiscard]] inline std::pair<varType, int> neighbourSum(const Fields2D &f,
                      int nx, int ny, int i, int j, double beta) {
-  
+
   if (IS_SOLID(f.Label(i, j)) ) {
     std::cout << "Warning: neighbourSum called on SOLID cell\n";
     return {f.p.Get(i, j), -1};
@@ -96,35 +94,6 @@ inline bool checkConvergence(double res, double &res0, int it, double tol) {
   return (res / res0) < tol;
 }
 
-// For MICCG0 , multiply the coefficient matrix A times a vector
-inline void applyA(const Fields2D &f, int nx, int ny, double scale,
-                   const std::vector<double> &Adiag,
-                   const std::vector<double> &x, std::vector<double> &y) {
-
-OMP_PRAGMA(omp parallel for collapse(2))
-for (int j = 0; j < ny; ++j) {
-  for (int i = 0; i < nx; ++i) {
-    const int id = nx * j + i;
-    if (IS_SOLID(f.Label(i, j))) {
-      y[id] = 0.0;
-      continue;
-    }
-
-    double val = Adiag[id] * x[id];
-    if (i + 1 < nx && IS_FLUID(f.Label(i + 1, j)))
-      val -= scale * x[nx * j + (i + 1)];
-    if (j + 1 < ny && IS_FLUID(f.Label(i, j + 1)))
-      val -= scale * x[nx * (j + 1) + i];
-    if (i - 1 >= 0 && IS_FLUID(f.Label(i - 1, j)))
-      val -= scale * x[nx * j + (i - 1)];
-    if (j - 1 >= 0 && IS_FLUID(f.Label(i, j - 1)))
-      val -= scale * x[nx * (j - 1) + i];
-    y[id] = val;
-  }
-}
-}
-
-}
 
 void solveJacobi(Fields2D &fields, int nx, int ny, double coef, int maxIters,
                  double tol, double beta) {
@@ -198,7 +167,7 @@ void solveGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
 }
 
 // Infinite norm for consistency with MICCG0
-// L2 norm in comments 
+// L2 norm in comments
 void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
                               int maxIters, double tol, double beta) {
   fields.Div();
@@ -241,6 +210,37 @@ OMP_PRAGMA(omp parallel for collapse(2) reduction(+:count) reduction(max:resMax)
   std::cout << "  RedBlackGS: reached maxIters = " << maxIters << '\n';
 #endif
 }
+//######################the point of no return ##################
+// 1 sec of debuging here is 10 normal hours
+
+// For MICCG0 , multiply the coefficient matrix A times a vector
+inline void applyA(const Fields2D &f, int nx, int ny, double scale,
+                   const std::vector<double> &Adiag,
+                   const std::vector<double> &x, std::vector<double> &y) {
+
+OMP_PRAGMA(omp parallel for collapse(2))
+for (int j = 0; j < ny; ++j) {
+  for (int i = 0; i < nx; ++i) {
+    const int id = nx * j + i;
+    if (IS_SOLID(f.Label(i, j))) {
+      y[id] = 0.0;
+      continue;
+    }
+
+    double val = Adiag[id] * x[id];
+    if (i + 1 < nx && IS_FLUID(f.Label(i + 1, j)))
+      val -= scale * x[nx * j + (i + 1)];
+    if (j + 1 < ny && IS_FLUID(f.Label(i, j + 1)))
+      val -= scale * x[nx * (j + 1) + i];
+    if (i - 1 >= 0 && IS_FLUID(f.Label(i - 1, j)))
+      val -= scale * x[nx * j + (i - 1)];
+    if (j - 1 >= 0 && IS_FLUID(f.Label(i, j - 1)))
+      val -= scale * x[nx * (j - 1) + i];
+    y[id] = val;
+  }
+}
+}
+
 
 // Build precon[id] = 1/E[id]
 // CF ugly formula at 5.7
@@ -260,7 +260,7 @@ void buildPrecon(const Fields2D &f, int nx, int ny, double scale,
       double e = Adiag[id];
 
       // x lower neighbour (i-1, j)
-      if (i - 1 >= 0 && IS_FLUID(f.Label(i - 1, j)) ) {
+      if (i - 1 >= 0 && IS_FLUID(f.Label(i - 1, j))) {
         const double pre = precon[nx * j + (i - 1)];
         const double pre2 = pre * pre;
         e -= scale2 * pre2;
@@ -296,9 +296,9 @@ void applyPrecon(const Fields2D &f, int nx, int ny, double scale,
         continue;
       const int id = nx * j + i;
       double t = r[id];
-      if (i - 1 >= 0 && IS_FLUID(f.Label(i - 1, j)))
+      if (i - 1 >= 0 && f.Label(i - 1, j) == Fields2D::FLUID)
         t += scale * precon[nx * j + (i - 1)] * q[nx * j + (i - 1)];
-      if (j - 1 >= 0 && IS_FLUID(f.Label(i, j - 1)))
+      if (j - 1 >= 0 && f.Label(i, j - 1) == Fields2D::FLUID)
         t += scale * precon[nx * (j - 1) + i] * q[nx * (j - 1) + i];
       q[id] = t * precon[id];
     }
@@ -321,7 +321,8 @@ void applyPrecon(const Fields2D &f, int nx, int ny, double scale,
   }
 }
 
-bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol){
+
+bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol) {
   fields.Div();
 
   const int nx = fields.nx;
@@ -342,7 +343,7 @@ bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol){
       const int id = nx * j + i;
       if (i - 1 >= 0 && IS_FLUID(fields.Label(i - 1, j)))
         Adiag[id] += scale;
-      if (i + 1 < nx && IS_FLUID(fields.Label(i + 1, j)) )
+      if (i + 1 < nx && IS_FLUID(fields.Label(i + 1, j)))
         Adiag[id] += scale;
       if (j - 1 >= 0 && IS_FLUID(fields.Label(i, j - 1)))
         Adiag[id] += scale;
@@ -380,7 +381,7 @@ bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol){
     int zeroDiag = 0;
     for (int jj = 0; jj < ny; ++jj)
       for (int ii = 0; ii < nx; ++ii)
-        if (IS_FLUID(fields.Label(ii, jj)) &&
+        if (fields.Label(ii, jj) == Fields2D::FLUID &&
             Adiag[nx * jj + ii] == 0.0)
           ++zeroDiag;
     if (zeroDiag > 0)
@@ -469,12 +470,12 @@ bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol){
       s[k] = z[k] + beta * s[k];
   }
   // assumed p is good now
-  // TODO fields.p can be changed with p[] if p is a grid2D
+
   // write solution back
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < ny; ++j)
     for (int i = 0; i < nx; ++i)
-      if (IS_FLUID(fields.Label(i, j)) & !IS_BC(fields.Label(i,j)))
+      if (fields.Label(i, j) == Fields2D::FLUID)
         fields.p.Set(i, j, static_cast<varType>(p[nx * j + i]));
 
   return converged;
