@@ -73,12 +73,7 @@
 
     "solver": {
   "type": "red_black_gauss_seidel",
-<<<<<<< HEAD:test/SemiLagrangian/potato.json
-    "max_iterations": 1e7,
-    "tolerance": 1e-4
-=======
     "max_iterations": 1e4,
     "tolerance": 1e-3
->>>>>>> vinc:test/bin/potato.json
 }
 }

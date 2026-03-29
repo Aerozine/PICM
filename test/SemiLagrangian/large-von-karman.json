@@ -42,13 +42,6 @@
 
     "solid": {
         "cylinder": {
-<<<<<<< HEAD:test/SemiLagrangian/test-source.json
-            "x": "125",
-            "y": "ny/2",
-            "r": 25
-        }
-
-=======
             "x": "100",
             "y": "ny/2",
             "r": 30
@@ -66,7 +59,6 @@
             "x2": "nx-1",
             "y2": "1"
         }]
->>>>>>> vinc:test/SemiLagrangian/large-von-karman.json
     },
    "smoke": {
         "rectangle": {
