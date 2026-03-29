@@ -42,7 +42,7 @@
 
     "solid": {
         "cylinder": {
-            "x": "125",
+            "x": "50",
             "y": "ny/2",
             "r": 10
         },
@@ -66,14 +66,14 @@
             "val": 1,
             "x1": "0",
             "y1": "0",
-            "x2": "0",
+            "x2": "7",
             "y2": "ny"
         }
    },
 
     "solver": {
   "type": "red_black_gauss_seidel",
-    "max_iterations": 1e4,
-    "tolerance": 1e-2
+    "max_iterations": 1e7,
+    "tolerance": 1e-4
 }
 }

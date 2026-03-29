@@ -46,7 +46,7 @@ target_compile_options(PIC PRIVATE
 # Debug sanitizers
 include(CheckCXXCompilerFlag)
 check_cxx_compiler_flag(
-        -fsanitize=address,undefined,leak -fno-omit-frame-pointer
+        -fsanitize=address,undefined,leak
  HAVE_SANITIZER)
 target_compile_options(PIC PRIVATE
         $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:
@@ -56,7 +56,7 @@ target_compile_options(PIC PRIVATE
 IF(HAVE_SANITIZER)
 target_link_options(PIC PRIVATE
         $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:
-        -fsanitize=address,undefined,leak -fno-omit-frame-pointer
+        -fsanitize=address,undefined,leak
         >
 )
 endif()
