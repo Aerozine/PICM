@@ -11,7 +11,6 @@ namespace {
 
 [[nodiscard]] inline std::pair<varType, int> neighbourSum(const Fields2D &f,
                      int nx, int ny, int i, int j, double beta) {
-  
   if (IS_SOLID(f.Label(i, j)) ) {
     std::cout << "Warning: neighbourSum called on SOLID cell\n";
     return {f.p.Get(i, j), -1};
@@ -80,7 +79,7 @@ namespace {
 //  p_new = ( -coef * div_{ij} + sum p_nb ) / N_nb
 [[nodiscard]] inline double gsUpdate(const Fields2D &f, int nx, int ny, int i,
                                      int j, double coef, double beta) {
-  if (IS_SOLID(f.Label(i, j)))
+  if (IS_SOLID(f.Label(i, j)) || f.Label(i, j) & Fields2D::BC_P)
     return f.p.Get(i,j);
   const auto [sumP, nb] = neighbourSum(f, nx, ny, i, j, beta);
   // if there is no neighbour just keep the same value
