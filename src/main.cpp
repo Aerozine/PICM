@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
   // Parse parameters from command line
   Parameters params;
   if (!params.parseCommandLine(argc, argv)) {
-    return 1;
+    return 42;
   }
 #ifndef NDEBUG
     // Display parameters
