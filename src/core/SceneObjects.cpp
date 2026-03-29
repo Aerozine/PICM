@@ -161,7 +161,8 @@ void RectangleObject::applySmoke(Fields2D &f){
   const int jMax = std::min(y2, f.smokeMap.ny - 1);
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     for (int j = std::max(y1, 0); j <= jMax; ++j) {
-      f.p.Set(i, j, (IS_SOLID(f.Label(i,j)))?0.0:val);
+      if (IS_SOLID(f.Label(i, j))) continue;
+      f.smokeMap.Set(i, j, val);
       f.SetLabel(i, j, condition == "initial" ? Fields2D::IC_S : Fields2D::BC_S);
     }
 }
