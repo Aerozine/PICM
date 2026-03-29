@@ -21,7 +21,7 @@
 
   // Left neighbour
   if (i == 0) {
-    sumP += 0.0;
+    sumP += pC;
     ++nb;
   } else {
     if (f.Label(i - 1, j) & Fields2D::SOLID) {
