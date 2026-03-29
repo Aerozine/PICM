@@ -34,7 +34,7 @@
 
   // Right neighbour
   if (i == nx - 1) {
-    sumP += 0.0;
+    sumP += pC;
     ++nb;
   } else {
     if (f.Label(i + 1, j) & Fields2D::SOLID) {
@@ -47,7 +47,7 @@
 
   // Bottom neighbour
   if (j == 0) {
-    sumP += 0.0;
+    sumP += pC;
     ++nb;
   } else {
     if (f.Label(i, j - 1) & Fields2D::SOLID) {
@@ -60,7 +60,7 @@
 
   // Top neighbour
   if (j == ny - 1) {
-    sumP += 0.0;
+    sumP += pC;
     ++nb;
   } else {
     if (f.Label(i, j + 1) & Fields2D::SOLID) {
@@ -78,7 +78,7 @@
 //  p_new = ( -coef * div_{ij} + sum p_nb ) / N_nb
 [[nodiscard]] inline double gsUpdate(const Fields2D &f, int nx, int ny, int i,
                                      int j, double coef, double beta) {
-  if (IS_SOLID(f.Label(i, j)) || (f.Label(i, j) & Fields2D::BC_P) || (f.Label(i, j) & Fields2D::IC_P))
+  if (IS_SOLID(f.Label(i, j)) || f.Label(i, j) & Fields2D::BC_P)
     return f.p.Get(i,j);
   const auto [sumP, nb] = neighbourSum(f, nx, ny, i, j, beta);
   // if there is no neighbour just keep the same value
@@ -296,9 +296,9 @@ void applyPrecon(const Fields2D &f, int nx, int ny, double scale,
         continue;
       const int id = nx * j + i;
       double t = r[id];
-      if (i - 1 >= 0 && f.Label(i - 1, j) == Fields2D::FLUID)
+      if (i - 1 >= 0 && IS_FLUID(f.Label(i - 1, j)))
         t += scale * precon[nx * j + (i - 1)] * q[nx * j + (i - 1)];
-      if (j - 1 >= 0 && f.Label(i, j - 1) == Fields2D::FLUID)
+      if (j - 1 >= 0 && IS_FLUID(f.Label(i, j - 1)))
         t += scale * precon[nx * (j - 1) + i] * q[nx * (j - 1) + i];
       q[id] = t * precon[id];
     }
@@ -321,8 +321,7 @@ void applyPrecon(const Fields2D &f, int nx, int ny, double scale,
   }
 }
 
-
-bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol) {
+bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol){
   fields.Div();
 
   const int nx = fields.nx;
@@ -343,7 +342,7 @@ bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol) {
       const int id = nx * j + i;
       if (i - 1 >= 0 && IS_FLUID(fields.Label(i - 1, j)))
         Adiag[id] += scale;
-      if (i + 1 < nx && IS_FLUID(fields.Label(i + 1, j)))
+      if (i + 1 < nx && IS_FLUID(fields.Label(i + 1, j)) )
         Adiag[id] += scale;
       if (j - 1 >= 0 && IS_FLUID(fields.Label(i, j - 1)))
         Adiag[id] += scale;
@@ -381,7 +380,7 @@ bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol) {
     int zeroDiag = 0;
     for (int jj = 0; jj < ny; ++jj)
       for (int ii = 0; ii < nx; ++ii)
-        if (fields.Label(ii, jj) == Fields2D::FLUID &&
+        if (IS_FLUID(fields.Label(ii, jj)) &&
             Adiag[nx * jj + ii] == 0.0)
           ++zeroDiag;
     if (zeroDiag > 0)
@@ -470,12 +469,12 @@ bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol) {
       s[k] = z[k] + beta * s[k];
   }
   // assumed p is good now
-
+  // TODO fields.p can be changed with p[] if p is a grid2D
   // write solution back
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < ny; ++j)
     for (int i = 0; i < nx; ++i)
-      if (fields.Label(i, j) == Fields2D::FLUID)
+      if (IS_FLUID(fields.Label(i, j)) && !IS_BC(fields.Label(i,j)))
         fields.p.Set(i, j, static_cast<varType>(p[nx * j + i]));
 
   return converged;
