@@ -10,14 +10,11 @@ sl-square:
 sl-uniform:
 	./build-dbg/bin/PIC -c test/SemiLagrangian/test-uniform.json
 
-sl-source:
-	./build-dbg/bin/PIC -c test/SemiLagrangian/test-source.json
-
 sl-small-cylinder:
-	./build-dbg/bin/PIC -c test/SemiLagrangian/test-small-cylinder.json
+	./build-dbg/bin/PIC -c test/SemiLagrangian/small-von-karman.json
 
-sl-potato:
-	./build-dbg/bin/PIC -c test/SemiLagrangian/potato.json
+sl-large-cylinder:
+	./build-dbg/bin/PIC -c test/SemiLagrangian/large-von-karman.json
 
 pic-default:
 	./build-dbg/bin/PIC -c test/PIC/particles.json

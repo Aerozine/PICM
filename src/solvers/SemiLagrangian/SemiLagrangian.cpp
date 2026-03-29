@@ -75,12 +75,11 @@ void SemiLagrangian::WriteOutput(int step) const {
 }
 
 void SemiLagrangian::Step() {
-
-  Advect();             // 2. Semi-Lagrangian transport of velocity.
-  AdvectSmoke();
-  MakeIncompressible(params,*fields); // 1. Pressure projection: enforce div u = 0.
-  fields->Div();        // } Update diagnostics used for
+  MakeIncompressible(params,*fields); 
+  fields->Div();      
   fields->VelocityNormCenterGrid();
+  Advect();           
+  AdvectSmoke();
 }
 
 void SemiLagrangian::Run() {

@@ -1,10 +1,10 @@
 {
-    "dx": 0.01,
-    "dy": 0.01,
-    "dt": 0.001,
-    "nx": 100,
-    "ny": 100,
-    "nt": 100,
+    "dx": 1e-3,
+    "dy": 1e-3,
+    "dt": 1e-4,
+    "nx": 80,
+    "ny": 80,
+    "nt": 400,
     "density": 1000,
     "sampling_rate": 1,
 
@@ -19,11 +19,12 @@
 
     "velocityu": {
         "rectangle": {
-            "val": 5.0,
-            "x1": "nx/2-10",
-            "y1": "ny/2-10",
-            "x2": "nx/2+10",
-            "y2": "ny/2+10"
+            "condition": "initial",
+            "val": 10.0,
+            "x1": "nx/2-7",
+            "y1": "ny/2-7",
+            "x2": "nx/2+7",
+            "y2": "ny/2+7"
         }
     },
     "solid": {
@@ -38,6 +39,6 @@
 "solver": {  
     "type": "red_black_gauss_seidel",
     "max_iterations": 5000,
-    "tolerance": 1e-3
+    "tolerance": 1e-2
 }
 }
