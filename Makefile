@@ -16,8 +16,8 @@ sl-source:
 sl-small-cylinder:
 	./build-dbg/bin/PIC -c test/SemiLagrangian/test-small-cylinder.json
 
-sl-div:
-	./build-dbg/bin/PIC -c test/SemiLagrangian/test-dbg-div.json
+sl-potato:
+	./build-dbg/bin/PIC -c test/SemiLagrangian/potato.json
 
 pic-default:
 	./build-dbg/bin/PIC -c test/PIC/particles.json
