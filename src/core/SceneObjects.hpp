@@ -9,11 +9,11 @@
 struct SceneObject {
   virtual ~SceneObject() = default;
 
-  virtual void applySolid    (Fields2D &f) const { (void)f; }
-  virtual void applyVelocityU(Fields2D &f) const { (void)f; }
-  virtual void applyVelocityV(Fields2D &f) const { (void)f; }
-  virtual void applySmoke    (Fields2D &f) const { (void)f; }
-  virtual void applyPressure (Fields2D &f) const { (void)f; }
+  virtual void applySolid    (Fields2D &f)  { (void)f; }
+  virtual void applyVelocityU(Fields2D &f) { (void)f; }
+  virtual void applyVelocityV(Fields2D &f) { (void)f; }
+  virtual void applySmoke    (Fields2D &f) { (void)f; }
+  virtual void applyPressure (Fields2D &f) { (void)f; }
 };
 
 struct RectangleObject : public SceneObject {
@@ -22,18 +22,18 @@ struct RectangleObject : public SceneObject {
   int x1{0}, y1{0};                 ///< Bottom-left corner (inclusive).
   int x2{0}, y2{0};                 ///< Top-right  corner (inclusive).
 
-  void applySolid(Fields2D &f) const;
-  void applyVelocityU(Fields2D &f) const;
-  void applyVelocityV(Fields2D &f) const;
-  void applySmoke(Fields2D &f) const;
-  void applyPressure(Fields2D &f) const;
+  void applySolid(Fields2D &f);
+  void applyVelocityU(Fields2D &f);
+  void applyVelocityV(Fields2D &f);
+  void applySmoke(Fields2D &f);
+  void applyPressure(Fields2D &f);
 };
 
 struct CylinderObject : public SceneObject {
   int cx{0}, cy{0}; ///< Centre cell indices.
   int r{0};         ///< Radius in cells.
 
-  void applySolid(Fields2D &f) const;
+  void applySolid(Fields2D &f) ;
 };
 
 /**

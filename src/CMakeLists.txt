@@ -30,6 +30,28 @@ else()
     target_compile_definitions(PIC PRIVATE USE_DOUBLE)
 endif()
 # vebose build
-target_compile_options(
-  PIC PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O3 -march=native -Wall -Wextra -Wpedantic>
-              $<$<CXX_COMPILER_ID:MSVC>:/W4>)
+#target_compile_options(
+  #PIC PRIVATE $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O3 -march=native -Wall -Wextra -Wpedantic>
+              #$<$<CXX_COMPILER_ID:MSVC>:/W4>)
+# Warnings
+target_compile_options(PIC PRIVATE
+        $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall -Wextra -Wpedantic>
+        $<$<CXX_COMPILER_ID:MSVC>:/W4>
+)
+
+# Release optimizations
+target_compile_options(PIC PRIVATE
+        $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:-O3 -march=native>
+)
+
+# Debug sanitizers
+target_compile_options(PIC PRIVATE
+        $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:
+        -O0 -g -fsanitize=address,undefined,leak -fno-omit-frame-pointer
+        >
+)
+target_link_options(PIC PRIVATE
+        $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:
+        -fsanitize=address,undefined,leak
+        >
+)
