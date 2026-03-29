@@ -43,15 +43,20 @@ target_compile_options(PIC PRIVATE
 target_compile_options(PIC PRIVATE
         $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:-O3 -march=native>
 )
-
 # Debug sanitizers
+include(CheckCXXCompilerFlag)
+check_cxx_compiler_flag(
+        -fsanitize=address,undefined,leak -fno-omit-frame-pointer
+ HAVE_SANITIZER)
 target_compile_options(PIC PRIVATE
         $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:
-        -O0 -g -fsanitize=address,undefined,leak -fno-omit-frame-pointer
+        -O0 -g
         >
 )
+IF(HAVE_SANITIZER)
 target_link_options(PIC PRIVATE
         $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:
-        -fsanitize=address,undefined,leak
+        -fsanitize=address,undefined,leak -fno-omit-frame-pointer
         >
 )
+endif()
