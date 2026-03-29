@@ -21,7 +21,7 @@
 
   // Left neighbour
   if (i == 0) {
-    sumP += pC;
+    sumP += 0.0;
     ++nb;
   } else {
     if (f.Label(i - 1, j) & Fields2D::SOLID) {
@@ -34,7 +34,7 @@
 
   // Right neighbour
   if (i == nx - 1) {
-    sumP += pC;
+    sumP += 0.0;
     ++nb;
   } else {
     if (f.Label(i + 1, j) & Fields2D::SOLID) {
@@ -47,7 +47,7 @@
 
   // Bottom neighbour
   if (j == 0) {
-    sumP += pC;
+    sumP += 0.0;
     ++nb;
   } else {
     if (f.Label(i, j - 1) & Fields2D::SOLID) {
@@ -60,7 +60,7 @@
 
   // Top neighbour
   if (j == ny - 1) {
-    sumP += pC;
+    sumP += 0.0;
     ++nb;
   } else {
     if (f.Label(i, j + 1) & Fields2D::SOLID) {
@@ -78,7 +78,7 @@
 //  p_new = ( -coef * div_{ij} + sum p_nb ) / N_nb
 [[nodiscard]] inline double gsUpdate(const Fields2D &f, int nx, int ny, int i,
                                      int j, double coef, double beta) {
-  if (IS_SOLID(f.Label(i, j)))
+  if (IS_SOLID(f.Label(i, j)) || (f.Label(i, j) & Fields2D::BC_P) || (f.Label(i, j) & Fields2D::IC_P))
     return f.p.Get(i,j);
   const auto [sumP, nb] = neighbourSum(f, nx, ny, i, j, beta);
   // if there is no neighbour just keep the same value
