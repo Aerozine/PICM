@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <cmath>
 
+// TODO: advect in SOLIDS is useless | add if(SOLID) {skip} ? 
+// is branching worse than looking in each solid ?
 void SemiLagrangian::Advect() const {
   Grid2D uNew(fields->u.nx, fields->u.ny);
   Grid2D vNew(fields->v.nx, fields->v.ny);
