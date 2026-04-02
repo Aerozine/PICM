@@ -7,94 +7,73 @@
 #include <iostream>
 #include <vector>
 
-[[nodiscard]] inline std::pair<varType, int> neighbourSum(const Fields2D &f,
+[[nodiscard]] inline varType neighbourSum(const Fields2D &f,
                      int nx, int ny, int i, int j, double beta) {
 
   if (IS_SOLID(f.Label(i, j)) ) {
     std::cout << "Warning: neighbourSum called on SOLID cell\n";
-    return {f.p.Get(i, j), -1};
+    return f.p.Get(i, j);
   }
 
   varType sumP = 0.0;
-  int nb = 0;
   const varType pC = f.p.Get(i, j);
 
   // Left neighbour
   if (i == 0) {
-    if (f.Label(0, j) & Fields2D::BC_U) // TODO: bit hacky ?
-      sumP += pC;  
-    else 
-      sumP += 0.0;
-    ++nb;                               // TODO: rm nb -> always 4 now ?
+    sumP += pC;
   } else {
     if (f.Label(i - 1, j) & Fields2D::SOLID) {
       sumP += pC - beta * f.u.Get(i, j);
     } else {
       sumP += f.p.Get(i - 1, j);
     }
-    ++nb;
   }
 
   // Right neighbour
   if (i == nx - 1) {
-    if (f.Label(nx - 1, j) & Fields2D::BC_U) // TODO: bit hacky ?
-      sumP += pC;  
-    else 
-      sumP += 0.0;
-    ++nb;                               // TODO: rm nb -> always 4 now ?
+    sumP += pC;
   } else {
     if (f.Label(i + 1, j) & Fields2D::SOLID) {
       sumP += pC + beta * f.u.Get(i + 1, j);
     } else {
       sumP += f.p.Get(i + 1, j);
     }
-    ++nb;
   }
 
   // Bottom neighbour
   if (j == 0) {
-    if (f.Label(i, 0) & Fields2D::BC_V) // TODO: bit hacky ?
-      sumP += pC;  
-    else 
-      sumP += 0.0;
-    ++nb;
+    sumP += pC;
   } else {
     if (f.Label(i, j - 1) & Fields2D::SOLID) {
       sumP += pC - beta * f.v.Get(i, j);
     } else {
       sumP += f.p.Get(i, j - 1);
     }
-    ++nb;
   }
 
   // Top neighbour
   if (j == ny - 1) {
-    if (f.Label(i, ny - 1) & Fields2D::BC_V) // TODO: bit hacky ?
-      sumP += pC;  
-    else 
-      sumP += 0.0;
-    ++nb;
+    sumP += pC;
   } else {
     if (f.Label(i, j + 1) & Fields2D::SOLID) {
       sumP += pC + beta * f.v.Get(i, j + 1);
     } else {
       sumP += f.p.Get(i, j + 1);
     }
-    ++nb;
   }
 
-  return {sumP, nb};
+  return sumP;
 }
 
 // Gauss-Seidel update for a single FLUID cell.
 //  p_new = ( -coef * div_{ij} + sum p_nb ) / N_nb
 [[nodiscard]] inline double gsUpdate(const Fields2D &f, int nx, int ny, int i,
                                      int j, double coef, double beta) {
-  if (IS_SOLID(f.Label(i, j)) || (f.Label(i, j) & Fields2D::BC_P) || (f.Label(i, j) & Fields2D::IC_P))
+  if (IS_SOLID(f.Label(i, j)) 
+      || (f.Label(i, j) & Fields2D::BC_P) || (f.Label(i, j) & Fields2D::IC_P))
     return f.p.Get(i,j);
-  const auto [sumP, nb] = neighbourSum(f, nx, ny, i, j, beta);
-  // if there is no neighbour just keep the same value
-  return nb > 0 ? (-coef * f.div.Get(i, j) + sumP) / nb : f.p.Get(i,j);
+  const auto sumP = neighbourSum(f, nx, ny, i, j, beta);
+  return (-coef * f.div.Get(i, j) + sumP) / 4.0;
 }
 
 // Relative convergence: records res0 on first call (it==0).
@@ -178,15 +157,12 @@ void solveGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
 #endif
 }
 
-// Infinite norm for consistency with MICCG0
-// L2 norm in comments
 void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
                               int maxIters, double tol, double beta) {
   fields.Div();
   double res0 = 1.0;
 
   for (int it = 0; it < maxIters; ++it) {
-    // double sumSq = 0.0;
     int count = 0;
     double resMax = 0.0;
     for (int color = 0; color < 2; ++color) {
@@ -202,14 +178,10 @@ OMP_PRAGMA(omp parallel for collapse(2) reduction(+:count) reduction(max:resMax)
           const double r = p_new - p_old;
           if (std::abs(r) > resMax)
             resMax = std::abs(r);
-          // sumSq += r * r;
           ++count;
         }
       }
     }
-
-    // const double res = (count > 0) ? std::sqrt(sumSq / count) : 0.0;
-    // DBG_PRINTF("%f",resMax);
     if (checkConvergence(resMax, res0, it, tol)) {
 #ifndef NDEBUG
       std::cout << "  RedBlackGS converged in " << it + 1
@@ -222,6 +194,7 @@ OMP_PRAGMA(omp parallel for collapse(2) reduction(+:count) reduction(max:resMax)
   std::cout << "  RedBlackGS: reached maxIters = " << maxIters << '\n';
 #endif
 }
+
 //######################the point of no return ##################
 // 1 sec of debuging here is 10 normal hours
 
