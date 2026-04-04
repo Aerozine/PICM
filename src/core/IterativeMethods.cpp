@@ -20,7 +20,7 @@
 
 
   // Left neighbour
-  if (f.Label(i + 1, j + 1) & Fields2D::BC_U) {
+  if (i == 1 && f.Label(i + 1, j + 1) & Fields2D::BC_U) {
       sumP += pC;
   } else if (f.Label(i, j + 1) & Fields2D::SOLID) {
       sumP += pC - beta * f.u.Get(i, j);
@@ -31,8 +31,10 @@
   }
 
   // Right neighbour
-  if (f.Label(i + 2, j + 1) & Fields2D::SOLID) {
-      sumP += pC - beta * f.u.Get(i + 1, j);
+  if (i == nx - 2 && f.Label(i + 1, j + 1) & Fields2D::BC_U) {
+      sumP += pC;
+  } else if (f.Label(i + 2, j + 1) & Fields2D::SOLID) {
+      sumP += pC + beta * f.u.Get(i + 1, j);
   } else if (f.Label(i + 2, j + 1) & Fields2D::AIR){ 
       sumP += 0.0;
   } else {
@@ -40,7 +42,9 @@
   }
 
   // Bottom neighbour
-  if (f.Label(i + 1, j) & Fields2D::SOLID) {
+  if (j == 1 && f.Label(i + 1, j + 1) & Fields2D::BC_V) {
+      sumP += pC;
+  } else if (f.Label(i + 1, j) & Fields2D::SOLID) {
       sumP += pC - beta * f.v.Get(i, j);
   } else if (f.Label(i + 1, j) & Fields2D::AIR){ 
       sumP += 0.0;
@@ -49,8 +53,10 @@
   }
 
   // Top neighbour
-  if (f.Label(i + 1, j + 2) & Fields2D::SOLID) {
-      sumP += pC - beta * f.v.Get(i, j + 1);
+  if (j == ny - 2 && f.Label(i + 1, j + 1) & Fields2D::BC_V) {
+      sumP += pC;
+  } else if (f.Label(i + 1, j + 2) & Fields2D::SOLID) {
+      sumP += pC + beta * f.v.Get(i, j + 1);
   } else if (f.Label(i + 1, j + 2) & Fields2D::AIR){ 
       sumP += 0.0;
   } else {
@@ -201,18 +207,18 @@ void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
 
     for (int color = 0; color < 2; ++color) {
 OMP_PRAGMA(omp parallel for collapse(2) reduction(+:sumSq) reduction(+:count))
-      for (int j = 1; j <= ny; ++j) {
-        for (int i = 1; i <= nx; ++i) {
+      for (int j = 0; j < ny; ++j) {
+        for (int i = 0; i < nx; ++i) {
           if ((i + j) % 2 != color) 
             continue;
-          if (fields.Label(i, j) & Fields2D::AIR ||
-              fields.Label(i, j) & Fields2D::SOLID ||
-              fields.Label(i, j) & Fields2D::BC_P ||
-              fields.Label(i, j) & Fields2D::IC_P) continue;
-          const double p_old = fields.p.Get(i, j);
-          const auto sumP = neighbourSum(fields, nx, ny, i - 1, j - 1, beta);
-          const double p_new = (-coef * fields.div.Get(i - 1, j - 1) + sumP) / 4.0;
-          fields.p.Set(i, j, p_new);
+          if (fields.Label(i + 1, j + 1) & Fields2D::AIR ||
+              fields.Label(i + 1, j + 1) & Fields2D::SOLID ||
+              fields.Label(i + 1, j + 1) & Fields2D::BC_P ||
+              fields.Label(i + 1, j + 1) & Fields2D::IC_P) continue;
+          const double p_old = fields.p.Get(i + 1, j + 1);
+          const auto sumP = neighbourSum(fields, nx, ny, i, j, beta);
+          const double p_new = (-coef * fields.div.Get(i, j) + sumP) / 4.0;
+          fields.p.Set(i + 1, j + 1, p_new);
           
           const double r = p_new - p_old;
           sumSq += r * r;

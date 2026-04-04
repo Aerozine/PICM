@@ -116,10 +116,8 @@ void RectangleObject::applyVelocityU(Fields2D &f) {
   const int jMax = std::min(y2, f.p.ny - 1);
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     for (int j = std::max(y1, 0); j <= jMax; ++j) {
-      if ((IS_SOLID(f.Label(i, j))) || IS_SOLID(f.Label(i + 1, j)))
-        continue;
       f.u.Set(i - 1, j - 1, val);
-      f.SetLabel(i, j, condition == "initial" ? Fields2D::IC_U : Fields2D::BC_U);
+      f.SetLabel(i , j, condition == "initial" ? Fields2D::IC_U : Fields2D::BC_U);
     }
 }
 
@@ -173,8 +171,8 @@ void RectangleObject::applySmoke(Fields2D &f){
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     for (int j = std::max(y1, 0); j <= jMax; ++j) {
       if (IS_SOLID(f.Label(i, j))) continue;
-      f.smokeMap.Set(i, j, val);
-      f.SetLabel(i + 1, j + 1, condition == "initial" ? Fields2D::IC_S : Fields2D::BC_S);
+      f.smokeMap.Set(i - 1, j - 1, val);
+      f.SetLabel(i, j, condition == "initial" ? Fields2D::IC_S : Fields2D::BC_S);
     }
 }
 
