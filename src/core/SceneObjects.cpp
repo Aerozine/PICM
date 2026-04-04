@@ -85,8 +85,19 @@ void RectangleObject::applySolid(Fields2D &f) {
   for (int j = std::max(y1, 0); j <= jMax; ++j)
     for (int i = std::max(x1, 0); i <= iMax; ++i) {
       f.SetLabel(i, j, Fields2D::SOLID);
-      f.u.Set(i, j, FIELD_USOLID);
-      f.v.Set(i, j, FIELD_USOLID);
+      f.p.Set(i, j, 0.0);
+    }
+}
+
+void RectangleObject::applyAir(Fields2D &f) {
+  // @todo handle the case where y2<y1 same for x
+  if (x1 > x2) std::swap(x1, x2);
+  if (y1 > y2) std::swap(y1, y2);
+  const int iMax = std::min(x2, f.nx - 1);
+  const int jMax = std::min(y2, f.ny - 1);
+  for (int j = std::max(y1, 0); j <= jMax; ++j)
+    for (int i = std::max(x1, 0); i <= iMax; ++i) {
+      f.SetLabel(i, j, Fields2D::AIR);
       f.p.Set(i, j, 0.0);
     }
 }
@@ -175,8 +186,20 @@ void CylinderObject::applySolid(Fields2D &f){
       const int ddx = i - cx;
       if (ddx * ddx + ddy * ddy <= r2) {
         f.SetLabel(i, j, Fields2D::SOLID);
-        f.u.Set(i, j, FIELD_USOLID);
-        f.v.Set(i, j, FIELD_USOLID);
+        f.p.Set(i, j, 0.0);
+      }
+    }
+  }
+}
+
+void CylinderObject::applyAir(Fields2D &f){
+  const int r2 = r * r;
+  for (int j = 0; j < f.ny; ++j) {
+    const int ddy = j - cy;
+    for (int i = 0; i < f.nx; ++i) {
+      const int ddx = i - cx;
+      if (ddx * ddx + ddy * ddy <= r2) {
+        f.SetLabel(i, j, Fields2D::AIR);
         f.p.Set(i, j, 0.0);
       }
     }

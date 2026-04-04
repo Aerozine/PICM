@@ -77,6 +77,8 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
     pressure_json = j["pressure"];
   if (j.contains("solid"))
     solid_json = j["solid"];
+  if (j.contains("air"))
+    air_json = j["air"];
   if (j.contains("smoke"))
     smoke_json = j["smoke"];
   if (j.contains("solver"))
@@ -89,6 +91,10 @@ void Parameters::applyToFields(Fields2D &fields) const {
   if (!solid_json.is_null()) {
     for (const auto &obj : parseSceneObjects(solid_json, vars))
       obj->applySolid(fields);
+  }
+  if (!air_json.is_null()) {
+    for (const auto &obj : parseSceneObjects(air_json, vars))
+      obj->applyAir(fields);
   }
   if (!velocityU_json.is_null()) {
     for (const auto &obj : parseSceneObjects(velocityU_json, vars))

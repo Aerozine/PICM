@@ -13,24 +13,19 @@ public:
   /// @brief Possible states for a grid cell.
 
   enum CellType : uint16_t {
-    FLUID = 0,      ///< Active fluid cell, participates in the pressure solve.
-    SOLID = 1 << 0, ///< Solid (obstacle / wall) cell, velocity is fixed.
+    FLUID = 0,     
+    SOLID = 1 << 0, 
+    AIR = 1 << 1,
 
-    BC_U =
-        1
-        << 1, ///< Boundary condition, horizontal velocity on the left is fixed.
-    BC_V =
-        1 << 2, ///< Boundary condition, vertical velocity underneath is fixed.
-    BC_P = 1 << 3, ///< Boundary condition, pressure is fixed on cell center.
-    BC_S = 1 << 4, ///< Boundary condition for smoke map.
+    BC_U = 1 << 2,
+    BC_V = 1 << 3,
+    BC_P = 1 << 4,
+    BC_S = 1 << 5,
 
-    IC_U =
-        1
-        << 5, ///< Initial condition, horizontal velocity on the left is fixed.
-    IC_V =
-        1 << 6, ///< Initial condition, vertical velocity underneath is fixed.
-    IC_P = 1 << 7, ///< Initial condition, pressure is fixed on cell center.
-    IC_S = 1 << 8  ///< Initial condition for smoke map.
+    IC_U = 1 << 6,
+    IC_V = 1 << 7,
+    IC_P = 1 << 8,
+    IC_S = 1 << 9 
   };
 
   int nx,ny;
@@ -58,7 +53,7 @@ public:
         countAliveParticles(method == "PIC" ? nx : 0, method == "PIC" ? ny : 0),
         labels(static_cast<std::size_t>(nx) * ny, FLUID) {}
 
-  /// @brief Return the cell type (FLUID or SOLID) of cell (i, j).
+  /// @brief Return the cell type of cell (i, j).
   [[nodiscard]] inline CellType Label(int i, int j) const noexcept {
   return static_cast<CellType>(labels[idx(i, j)]);
   }

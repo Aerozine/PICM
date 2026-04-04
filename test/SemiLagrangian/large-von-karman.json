@@ -1,12 +1,12 @@
 {
     "dx": 2e-3,
     "dy": 2e-3,
-    "dt": 0.01,
+    "dt": 1e-2,
     "nx": 500,
     "ny": 300,
-    "nt": 100,
+    "nt": 700,
     "density": 1000,
-    "sampling_rate": 1,
+    "sampling_rate": 5,
 
     "write_u":             true,
     "write_v":             true,
@@ -24,8 +24,8 @@
             "val": 0.5,
             "x1": "0",
             "y1": "0",
-            "x2": "1",
-            "y2": "ny"
+            "x2": "0",
+            "y2": "ny-1"
         }
     },
 
@@ -42,9 +42,9 @@
 
     "solid": {
         "cylinder": {
-            "x": "100",
+            "x": "nx/5",
             "y": "ny/2",
-            "r": 30
+            "r": "ny/15"
         },
 
         "rectangle":[{
@@ -60,21 +60,22 @@
             "y2": "1"
         }]
     },
-   "smoke": {
+
+    "smoke": {
         "rectangle": {
             "condition":"boundary",
             "val": 0.5,
             "x1": "0",
             "y1": "0",
             "x2": "0",
-            "y2": "ny"
+            "y2": "ny-1"
         }
-   },
+    },
+
 
     "solver": {
   "type": "red_black_gauss_seidel",
-    "max_iterations": 1e4,
-    "tolerance": 5e-2
+    "max_iterations": 5e3,
+    "tolerance": 1e-2
 }
 }
-

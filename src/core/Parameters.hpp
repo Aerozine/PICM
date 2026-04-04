@@ -102,6 +102,7 @@ private:
   nlohmann::json velocityV_json;
   nlohmann::json pressure_json;
   nlohmann::json solid_json;
+  nlohmann::json air_json;
   nlohmann::json smoke_json;
   nlohmann::json particles_json;
 

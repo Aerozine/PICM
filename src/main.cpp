@@ -14,10 +14,7 @@ int main(int argc, char *argv[]) {
   if (!params.parseCommandLine(argc, argv)) {
     return 42;
   }
-#ifndef NDEBUG
-    // Display parameters
-    std::cout << params << std::endl;
-#endif
+  std::cout << params << std::endl;
 
     if (params.method == "pic") {
 
