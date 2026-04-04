@@ -10,64 +10,51 @@
 [[nodiscard]] inline varType neighbourSum(const Fields2D &f,
                      int nx, int ny, int i, int j, double beta) {
 
-  if (IS_SOLID(f.Label(i, j)) || f.Label(i, j) & Fields2D::AIR) {
+  if (IS_SOLID(f.Label(i + 1, j + 1)) || f.Label(i + 1, j + 1) & Fields2D::AIR) {
     std::cout << "Warning: neighbourSum called on SOLID/AIR cell";
-    return f.p.Get(i, j);
+    return f.p.Get(i + 1, j + 1);
   }
 
   varType sumP = 0.0;
-  const varType pC = f.p.Get(i, j);
+  const varType pC = f.p.Get(i + 1, j + 1);
+
 
   // Left neighbour
-  if (i == 0) {
-    sumP += pC;
-  } else {
-    if (f.Label(i - 1, j) & Fields2D::SOLID) {
+  if (f.Label(i + 1, j + 1) & Fields2D::BC_U) {
+      sumP += pC;
+  } else if (f.Label(i, j + 1) & Fields2D::SOLID) {
       sumP += pC - beta * f.u.Get(i, j);
-    } else if (f.Label(i - 1, j) & Fields2D::AIR){ 
+  } else if (f.Label(i, j + 1) & Fields2D::AIR){ 
       sumP += 0.0;
-    } else {
-      sumP += f.p.Get(i - 1, j);
-    }
+  } else {
+      sumP += f.p.Get(i, j + 1);
   }
 
   // Right neighbour
-  if (i == nx - 1) {
-    sumP += pC;
-  } else {
-    if (f.Label(i + 1, j) & Fields2D::SOLID) {
-      sumP += pC + beta * f.u.Get(i + 1, j);
-    } else if (f.Label(i + 1, j) & Fields2D::AIR){ 
+  if (f.Label(i + 2, j + 1) & Fields2D::SOLID) {
+      sumP += pC - beta * f.u.Get(i + 1, j);
+  } else if (f.Label(i + 2, j + 1) & Fields2D::AIR){ 
       sumP += 0.0;
-    } else {
-      sumP += f.p.Get(i + 1, j);
-    }
+  } else {
+      sumP += f.p.Get(i + 2, j + 1);
   }
 
   // Bottom neighbour
-  if (j == 0) {
-    sumP += pC;
-  } else {
-    if (f.Label(i, j - 1) & Fields2D::SOLID) {
+  if (f.Label(i + 1, j) & Fields2D::SOLID) {
       sumP += pC - beta * f.v.Get(i, j);
-    } else if (f.Label(i, j - 1) & Fields2D::AIR){ 
+  } else if (f.Label(i + 1, j) & Fields2D::AIR){ 
       sumP += 0.0;
-    } else {
-      sumP += f.p.Get(i, j - 1);
-    }
+  } else {
+      sumP += f.p.Get(i + 1, j);
   }
 
   // Top neighbour
-  if (j == ny - 1) {
-    sumP += pC;
-  } else {
-    if (f.Label(i, j + 1) & Fields2D::SOLID) {
-      sumP += pC + beta * f.v.Get(i, j + 1);
-    } else if (f.Label(i, j + 1) & Fields2D::AIR){ 
+  if (f.Label(i + 1, j + 2) & Fields2D::SOLID) {
+      sumP += pC - beta * f.v.Get(i, j + 1);
+  } else if (f.Label(i + 1, j + 2) & Fields2D::AIR){ 
       sumP += 0.0;
-    } else {
-      sumP += f.p.Get(i, j + 1);
-    }
+  } else {
+      sumP += f.p.Get(i + 1, j + 2);
   }
 
   return sumP;
@@ -77,10 +64,6 @@
 //  p_new = ( -coef * div_{ij} + sum p_nb ) / N_nb
 [[nodiscard]] inline double gsUpdate(const Fields2D &f, int nx, int ny, int i,
                                      int j, double coef, double beta) {
-  if (IS_SOLID(f.Label(i, j)) & Fields2D::SOLID|| f.Label(i, j) & Fields2D::AIR ||
-               f.Label(i, j) & Fields2D::BC_P || f.Label(i, j) & Fields2D::IC_P) {
-    return f.p.Get(i,j);
-  }
   const auto sumP = neighbourSum(f, nx, ny, i, j, beta);
   return (-coef * f.div.Get(i, j) + sumP) / 4.0;
 }
@@ -144,9 +127,9 @@ void solveGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
     for (int j = 0; j < ny; ++j)
       for (int i = 0; i < nx; ++i) {
         if (IS_SOLID(fields.Label(i, j))) continue;
-        const double p_old = fields.p.Get(i, j);
+        const double p_old = fields.p.Get(i + 1, j + 1);
         const double p_new = gsUpdate(fields, nx, ny, i, j, coef, beta);
-        fields.p.Set(i, j, p_new);
+        fields.p.Set(i + 1, j + 1, p_new);
         const double r = p_new - p_old;
         sumSq += r * r;
         ++count;
@@ -218,15 +201,19 @@ void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
 
     for (int color = 0; color < 2; ++color) {
 OMP_PRAGMA(omp parallel for collapse(2) reduction(+:sumSq) reduction(+:count))
-      for (int j = 0; j < ny; ++j) {
-        for (int i = 0; i < nx; ++i) {
-          if ((i + j) % 2 != color) continue;
-          if (IS_SOLID(fields.Label(i, j))) continue;
-
+      for (int j = 1; j <= ny; ++j) {
+        for (int i = 1; i <= nx; ++i) {
+          if ((i + j) % 2 != color) 
+            continue;
+          if (fields.Label(i, j) & Fields2D::AIR ||
+              fields.Label(i, j) & Fields2D::SOLID ||
+              fields.Label(i, j) & Fields2D::BC_P ||
+              fields.Label(i, j) & Fields2D::IC_P) continue;
           const double p_old = fields.p.Get(i, j);
-          const double p_new = gsUpdate(fields, nx, ny, i, j, coef, beta);
+          const auto sumP = neighbourSum(fields, nx, ny, i - 1, j - 1, beta);
+          const double p_new = (-coef * fields.div.Get(i - 1, j - 1) + sumP) / 4.0;
           fields.p.Set(i, j, p_new);
-
+          
           const double r = p_new - p_old;
           sumSq += r * r;
           ++count;

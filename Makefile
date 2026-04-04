@@ -13,6 +13,10 @@ sl-uniform:
 sl-small-cylinder:
 	./build/bin/PIC -c test/SemiLagrangian/small-von-karman.json
 
+sl:
+	./build/bin/PIC -c test/bin/debug.json
+
+
 sl-large-cylinder:
 	./build/bin/PIC -c test/SemiLagrangian/large-von-karman.json
 
