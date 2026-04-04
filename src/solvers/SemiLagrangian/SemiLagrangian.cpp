@@ -88,7 +88,7 @@ void SemiLagrangian::Run() {
   WriteOutput(0);
 
   const double start = GET_TIME();
-  const int reportEvery = std::max(1, params.nt / 10);
+  const int reportEvery = std::max(1, params.nt / 20);
 
   for (int t = 1; t <= params.nt; ++t) {
     if (t % reportEvery == 0) {

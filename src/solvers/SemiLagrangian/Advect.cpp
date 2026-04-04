@@ -1,6 +1,7 @@
 #include "SemiLagrangian.hpp"
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 
 // TODO: advect in SOLIDS is useless | add if(SOLID) {skip} ? 
 // is branching worse than looking in each solid ?
@@ -11,22 +12,22 @@ void SemiLagrangian::Advect() const {
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->u.ny; ++j)
     for (int i = 0; i < fields->u.nx; ++i) {
-      if (fields->Label(i + 1, j + 1) & Fields2D::BC_U) {
+      if (i == 0) {
         uNew.Set(i, j, fields->u.Get(i, j));
         continue;
       }
+      
       varType x, y;
       traceParticleU(i, j, x, y);
       uNew.Set(i, j, interpolateU(x, y));
+      if (i == 9 && j == 7) {
+        std::cout << "Debug: Advecting u  = (" << uNew.Get(i, j) << ")\n";
+      }
     }
 
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->v.ny; ++j)
     for (int i = 0; i < fields->v.nx; ++i) {
-      if (fields->Label(i + 1, j + 1) & Fields2D::BC_V) {
-        vNew.Set(i, j, fields->v.Get(i, j));
-        continue;
-      }
       varType x, y;
       traceParticleV(i, j, x, y);
       vNew.Set(i, j, interpolateV(x, y));
