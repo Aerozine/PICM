@@ -10,8 +10,8 @@
 [[nodiscard]] inline varType neighbourSum(const Fields2D &f,
                      int nx, int ny, int i, int j, double beta) {
 
-  if (IS_SOLID(f.Label(i, j)) ) {
-    std::cout << "Warning: neighbourSum called on SOLID cell\n";
+  if (IS_SOLID(f.Label(i, j)) || f.Label(i, j) & Fields2D::AIR) {
+    std::cout << "Warning: neighbourSum called on SOLID/AIR cell";
     return f.p.Get(i, j);
   }
 
@@ -24,6 +24,8 @@
   } else {
     if (f.Label(i - 1, j) & Fields2D::SOLID) {
       sumP += pC - beta * f.u.Get(i, j);
+    } else if (f.Label(i - 1, j) & Fields2D::AIR){ 
+      sumP += 0.0;
     } else {
       sumP += f.p.Get(i - 1, j);
     }
@@ -35,6 +37,8 @@
   } else {
     if (f.Label(i + 1, j) & Fields2D::SOLID) {
       sumP += pC + beta * f.u.Get(i + 1, j);
+    } else if (f.Label(i + 1, j) & Fields2D::AIR){ 
+      sumP += 0.0;
     } else {
       sumP += f.p.Get(i + 1, j);
     }
@@ -46,6 +50,8 @@
   } else {
     if (f.Label(i, j - 1) & Fields2D::SOLID) {
       sumP += pC - beta * f.v.Get(i, j);
+    } else if (f.Label(i, j - 1) & Fields2D::AIR){ 
+      sumP += 0.0;
     } else {
       sumP += f.p.Get(i, j - 1);
     }
@@ -57,6 +63,8 @@
   } else {
     if (f.Label(i, j + 1) & Fields2D::SOLID) {
       sumP += pC + beta * f.v.Get(i, j + 1);
+    } else if (f.Label(i, j + 1) & Fields2D::AIR){ 
+      sumP += 0.0;
     } else {
       sumP += f.p.Get(i, j + 1);
     }
@@ -69,9 +77,10 @@
 //  p_new = ( -coef * div_{ij} + sum p_nb ) / N_nb
 [[nodiscard]] inline double gsUpdate(const Fields2D &f, int nx, int ny, int i,
                                      int j, double coef, double beta) {
-  if (IS_SOLID(f.Label(i, j)) 
-      || (f.Label(i, j) & Fields2D::BC_P) || (f.Label(i, j) & Fields2D::IC_P))
+  if (IS_SOLID(f.Label(i, j)) & Fields2D::SOLID|| f.Label(i, j) & Fields2D::AIR ||
+               f.Label(i, j) & Fields2D::BC_P || f.Label(i, j) & Fields2D::IC_P) {
     return f.p.Get(i,j);
+  }
   const auto sumP = neighbourSum(f, nx, ny, i, j, beta);
   return (-coef * f.div.Get(i, j) + sumP) / 4.0;
 }
@@ -157,16 +166,58 @@ void solveGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
 #endif
 }
 
+// void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
+//                               int maxIters, double tol, double beta) {
+//   fields.Div();
+//   double res0 = 1.0;
+
+//   for (int it = 0; it < maxIters; ++it) {
+//     int count = 0;
+//     double resMax = 0.0;
+//     for (int color = 0; color < 2; ++color) {
+// OMP_PRAGMA(omp parallel for collapse(2) reduction(+:count) reduction(max:resMax))
+//       for (int j = 0; j < ny; ++j) {
+//         for (int i = 0; i < nx; ++i) {
+//           if ((i + j) % 2 != color) continue;
+//           if (IS_SOLID(fields.Label(i, j))) continue;
+
+//           const double p_old = fields.p.Get(i, j);
+//           const double p_new = gsUpdate(fields, nx, ny, i, j, coef, beta);
+//           fields.p.Set(i, j, p_new);
+//           const double r = p_new - p_old;
+//           if (std::abs(r) > resMax)
+//             resMax = std::abs(r);
+//           ++count;
+//         }
+//       }
+//     }
+//     if (checkConvergence(resMax, res0, it, tol)) {
+// #ifndef NDEBUG
+//       std::cout << "  RedBlackGS converged in " << it + 1
+//                 << " iters, rel.res = " << resMax / res0 << '\n';
+// #endif
+//       return;
+//     }
+//   }
+// #ifndef NDEBUG
+//   std::cout << "  RedBlackGS: reached maxIters = " << maxIters << '\n';
+// #endif
+// }
+
+
+
+
 void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
                               int maxIters, double tol, double beta) {
   fields.Div();
   double res0 = 1.0;
 
   for (int it = 0; it < maxIters; ++it) {
+    double sumSq = 0.0;
     int count = 0;
-    double resMax = 0.0;
+
     for (int color = 0; color < 2; ++color) {
-OMP_PRAGMA(omp parallel for collapse(2) reduction(+:count) reduction(max:resMax))
+OMP_PRAGMA(omp parallel for collapse(2) reduction(+:sumSq) reduction(+:count))
       for (int j = 0; j < ny; ++j) {
         for (int i = 0; i < nx; ++i) {
           if ((i + j) % 2 != color) continue;
@@ -175,17 +226,19 @@ OMP_PRAGMA(omp parallel for collapse(2) reduction(+:count) reduction(max:resMax)
           const double p_old = fields.p.Get(i, j);
           const double p_new = gsUpdate(fields, nx, ny, i, j, coef, beta);
           fields.p.Set(i, j, p_new);
+
           const double r = p_new - p_old;
-          if (std::abs(r) > resMax)
-            resMax = std::abs(r);
+          sumSq += r * r;
           ++count;
         }
       }
     }
-    if (checkConvergence(resMax, res0, it, tol)) {
+
+    const double res = (count > 0) ? std::sqrt(sumSq / count) : 0.0;
+    if (checkConvergence(res, res0, it, tol)) {
 #ifndef NDEBUG
       std::cout << "  RedBlackGS converged in " << it + 1
-                << " iters, rel.res = " << resMax / res0 << '\n';
+                << " iters, rel.res = " << res / res0 << '\n';
 #endif
       return;
     }

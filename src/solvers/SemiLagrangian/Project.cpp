@@ -51,9 +51,9 @@ void updateVelocities(const Parameters & params,Fields2D & fields) {
           fields.Label(i, j) & Fields2D::SOLID) {
         fields.u.Set(i, j, 0.0);
         continue;
-          } else if (fields.Label(i,j)& Fields2D::BC_U) {
-            continue;
-          }
+      } else if (fields.Label(i,j)& Fields2D::BC_U) {
+        continue;
+      }
       fields.u.Set(i, j,
                     fields.u.Get(i, j) -
                         coef * (fields.p.Get(i, j) - fields.p.Get(i - 1, j)));
@@ -67,15 +67,16 @@ void updateVelocities(const Parameters & params,Fields2D & fields) {
           (fields.Label(i, j) & Fields2D::SOLID)) {
         fields.v.Set(i, j, FIELD_USOLID);
         continue;
-          } else if (fields.Label(i, j) & Fields2D::BC_V) {
-            continue;
-          }
+      } else if (fields.Label(i, j) & Fields2D::BC_V) {
+        continue;
+      }
       fields.v.Set(i, j,
                     fields.v.Get(i, j) -
                         coef * (fields.p.Get(i, j) - fields.p.Get(i, j - 1)));
     }
   }
 }
+
 void MakeIncompressible(const Parameters & params,Fields2D & fields){
   solvePressure(params,fields);
   updateVelocities(params, fields);

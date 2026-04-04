@@ -23,13 +23,21 @@ void PIC::RefillParticles() {
 
         varType x = (i + rand01()) * dx;
         varType y = (j + rand01()) * dy;
+        varType u = 0.0, v = 0.0;
 
-        varType u = (fields->Label(i, j) & Fields2D::BC_U) ? fields->u.Get(i, j)
-                                                           : interpolateU(x, y);
+        if (fields->Label(i + 1, j) & Fields2D::SOLID) {
+              u = 0.0;
+              v = interpolateV(x, y);
+        } else if (fields->Label(i - 1, j) & Fields2D::SOLID) {
+              u = interpolateU(x, y);
+              v = 0.0;
+        } else {
+          u = (fields->Label(i, j) & Fields2D::BC_U) ? 
+                    fields->u.Get(i, j) : interpolateU(x, y);
 
-        varType v = (fields->Label(i, j) & Fields2D::BC_V) ? fields->v.Get(i, j)
-                                                           : interpolateV(x, y);
-
+          v = (fields->Label(i, j) & Fields2D::BC_V) ? 
+                    fields->v.Get(i, j) : interpolateV(x, y);
+        }
         particles->DropOneParticle(idx, x, y, u, v, static_cast<unsigned>(idx));
       }
     }

@@ -39,11 +39,7 @@
         }
     },
     "solid": {
-        "cylinder": {
-            "x": "nx/5",
-            "y": "ny/2",
-            "r": 8
-        },
+
         "rectangle": [
             {
                 "x1": 0,
@@ -62,7 +58,7 @@
     "solver": {
         "type": "red_black_gauss_seidel",
         "max_iterations": 1e4,
-        "tolerance": 1e-2
+        "tolerance": 1e-5
     },
     "method": "pic"
 }
