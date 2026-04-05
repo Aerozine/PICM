@@ -20,9 +20,6 @@ void SemiLagrangian::Advect() const {
       varType x, y;
       traceParticleU(i, j, x, y);
       uNew.Set(i, j, interpolateU(x, y));
-      if (i == 9 && j == 7) {
-        std::cout << "Debug: Advecting u  = (" << uNew.Get(i, j) << ")\n";
-      }
     }
 
   OMP_PRAGMA(omp parallel for collapse(2))
