@@ -4,7 +4,7 @@
     "dt": 1e-2,
     "nx": 500,
     "ny": 300,
-    "nt": 700,
+    "nt": 1000,
     "density": 1000,
     "sampling_rate": 5,
 
@@ -21,7 +21,7 @@
     "velocityu": {
         "rectangle": {
             "condition": "boundary",
-            "val": 0.5,
+            "val": 0.3,
             "x1": "0",
             "y1": "0",
             "x2": "0",
@@ -29,7 +29,7 @@
         }
     },
 
-    "pressure": {
+    "air": {
         "rectangle": {
             "condition": "boundary",
             "val": 0,
@@ -42,9 +42,9 @@
 
     "solid": {
         "cylinder": {
-            "x": "nx/5",
+            "x": "nx/8",
             "y": "ny/2",
-            "r": "ny/15"
+            "r": "ny/12"
         },
 
         "rectangle":[{
@@ -75,7 +75,7 @@
 
     "solver": {
   "type": "red_black_gauss_seidel",
-    "max_iterations": 5e3,
-    "tolerance": 1e-2
+    "max_iterations": 1e5,
+    "tolerance": 5e-1
 }
 }

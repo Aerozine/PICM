@@ -166,51 +166,15 @@ void solveGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
 #endif
 }
 
-// void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
-//                               int maxIters, double tol, double beta) {
-//   fields.Div();
-//   double res0 = 1.0;
-
-//   for (int it = 0; it < maxIters; ++it) {
-//     int count = 0;
-//     double resMax = 0.0;
-//     for (int color = 0; color < 2; ++color) {
-// OMP_PRAGMA(omp parallel for collapse(2) reduction(+:count) reduction(max:resMax))
-//       for (int j = 0; j < ny; ++j) {
-//         for (int i = 0; i < nx; ++i) {
-//           if ((i + j) % 2 != color) continue;
-//           if (IS_SOLID(fields.Label(i, j))) continue;
-
-//           const double p_old = fields.p.Get(i, j);
-//           const double p_new = gsUpdate(fields, nx, ny, i, j, coef, beta);
-//           fields.p.Set(i, j, p_new);
-//           const double r = p_new - p_old;
-//           if (std::abs(r) > resMax)
-//             resMax = std::abs(r);
-//           ++count;
-//         }
-//       }
-//     }
-//     if (checkConvergence(resMax, res0, it, tol)) {
-// #ifndef NDEBUG
-//       std::cout << "  RedBlackGS converged in " << it + 1
-//                 << " iters, rel.res = " << resMax / res0 << '\n';
-// #endif
-//       return;
-//     }
-//   }
-// #ifndef NDEBUG
-//   std::cout << "  RedBlackGS: reached maxIters = " << maxIters << '\n';
-// #endif
-// }
-
-
-
-
 void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
                               int maxIters, double tol, double beta) {
   fields.Div();
   double res0 = 1.0;
+
+  const int    N     = std::min(nx, ny);
+  const double pi    = 3.14159265358979;
+  const double omega = std::min(1.95, 2.0 / (1.0 + std::sin(pi / N)));
+
 
   for (int it = 0; it < maxIters; ++it) {
     double sumSq = 0.0;
@@ -225,7 +189,7 @@ OMP_PRAGMA(omp parallel for collapse(2) reduction(+:sumSq) reduction(+:count))
 
           const double p_old = fields.p.Get(i, j);
           const double p_new = gsUpdate(fields, nx, ny, i, j, coef, beta);
-          fields.p.Set(i, j, p_new);
+          fields.p.Set(i, j, p_old + omega * (p_new - p_old));
 
           const double r = p_new - p_old;
           sumSq += r * r;
@@ -236,16 +200,12 @@ OMP_PRAGMA(omp parallel for collapse(2) reduction(+:sumSq) reduction(+:count))
 
     const double res = (count > 0) ? std::sqrt(sumSq / count) : 0.0;
     if (checkConvergence(res, res0, it, tol)) {
-#ifndef NDEBUG
       std::cout << "  RedBlackGS converged in " << it + 1
                 << " iters, rel.res = " << res / res0 << '\n';
-#endif
       return;
     }
   }
-#ifndef NDEBUG
   std::cout << "  RedBlackGS: reached maxIters = " << maxIters << '\n';
-#endif
 }
 
 //######################the point of no return ##################
