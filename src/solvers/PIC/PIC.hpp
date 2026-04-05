@@ -61,4 +61,7 @@ private:
   void RefillParticles();
   void CountAliveParticles();
   varType rand01();
+
+  // Gravity
+  void ApplyGravity();
 };

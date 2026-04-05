@@ -90,6 +90,7 @@ void PIC::Step() {
   fields->VelocityNormCenterGrid();
   ProjectGridOnParticles();
   AdvectParticles();
+  ApplyGravity();
   RefillParticles();
 }
 
