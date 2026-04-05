@@ -14,9 +14,7 @@ varType PIC::hat(varType r) {
     return varType(0);
 }
 
-void PIC::ProjectOneParticleOnMAC(varType x, varType y, varType up,
-                                  varType vp) {
-  // u faces: staggered at (i·dx, (j+0.5)·dy)
+void PIC::ProjectParticleOnMAC(varType x, varType y, varType up, varType vp) {
   varType xu = x / dx;
   varType yu = y / dy - varType(0.5);
   int i0 = static_cast<int>(std::floor(xu));
@@ -35,7 +33,6 @@ void PIC::ProjectOneParticleOnMAC(varType x, varType y, varType up,
     }
   }
 
-  // v faces: staggered at ((i+0.5)·dx, j·dy)
   varType xv = x / dx - varType(0.5);
   varType yv = y / dy;
   i0 = static_cast<int>(std::floor(xv));
@@ -61,7 +58,7 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
     return;
   }
 
-  // Zero accumulation buffers.
+  // Weights to zero.
   for (int j = 0; j < ny; j++)
     for (int i = 0; i < nx + 1; i++) {
       fields->u_sum.Set(i, j, varType(0));
@@ -73,17 +70,13 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
       fields->v_weight.Set(i, j, varType(0));
     }
 
-  // Accumulate — iterate flat over all allocated slots.
-  const int cap = particles->capacity;
-  for (int idx = 0; idx < cap; ++idx) {
-    if (particles->IsDead(idx))
-      continue;
-    ProjectOneParticleOnMAC(particles->GetX(idx), particles->GetY(idx),
+  for (int idx = 0; idx < particles->size(); ++idx) {
+    ProjectParticleOnMAC(particles->GetX(idx), particles->GetY(idx),
                             particles->GetU(idx), particles->GetV(idx));
   }
 
-  // Normalize and write back, preserving BC and solid faces.
-  // u faces: face (i,j) is between cells (i-1,j) and (i,j).
+  // Normalize preserving BC and solid faces.
+  // u faces: face (i,j) is between cells (i,j+1) and (i+1,j+1).
   for (int j = 0; j < ny; j++) {
     for (int i = 0; i < nx + 1; i++) {
       bool isSolid = false, isBC = false;
@@ -112,7 +105,7 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
     }
   }
 
-  // v faces: face (i,j) is between cells (i,j-1) and (i,j).
+  // v faces: face (i,j) is between cells (i+1,j) and (i+1,j+1).
   for (int j = 0; j < ny + 1; j++) {
     for (int i = 0; i < nx; i++) {
       bool isSolid = false, isBC = false;
@@ -142,13 +135,8 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
 }
 
 void PIC::ProjectGridOnParticles() {
-  const int cap = particles->capacity;
-  for (int idx = 0; idx < cap; ++idx) {
-    if (particles->IsDead(idx))
-      continue;
-    particles->SetU(idx,
-                    interpolateU(particles->GetX(idx), particles->GetY(idx)));
-    particles->SetV(idx,
-                    interpolateV(particles->GetX(idx), particles->GetY(idx)));
+  for (int idx = 0; idx < particles->size(); ++idx) {
+    particles->SetU(idx, interpolateU(particles->GetX(idx), particles->GetY(idx)));
+    particles->SetV(idx, interpolateV(particles->GetX(idx), particles->GetY(idx)));
   }
 }

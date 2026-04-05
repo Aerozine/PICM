@@ -4,11 +4,8 @@
 void PIC::AdvectParticles() {
   const varType xMax = dx * nx;
   const varType yMax = dy * ny;
-  const int cap = particles->capacity;
 
-  for (int idx = 0; idx < cap; ++idx) {
-    if (particles->IsDead(idx))
-      continue;
+  for (int idx = 0; idx < particles->size(); ++idx) {
 
     varType x0 = particles->GetX(idx);
     varType y0 = particles->GetY(idx);
@@ -24,24 +21,23 @@ void PIC::AdvectParticles() {
     varType x1 = x0 + dt * umid;
     varType y1 = y0 + dt * vmid;
 
-    // Kill particles that left the domain.
     if (x1 < varType(0) || x1 >= xMax || y1 < varType(0) || y1 >= yMax) {
-      particles->SetDead(idx, true);
-      deadSlots->push(idx);
+      particles->Remove(idx);
+      --idx;
       continue;
     }
 
     int i1 = std::clamp(static_cast<int>(std::floor(x1 / dx)), 0, nx - 1);
     int j1 = std::clamp(static_cast<int>(std::floor(y1 / dy)), 0, ny - 1);
 
-    if (fields->Label(i1, j1) & Fields2D::SOLID) {
-      particles->SetDead(idx, true);
-      deadSlots->push(idx);
+    if (fields->Label(i1 + 1, j1 + 1) & Fields2D::SOLID) {
+      particles->Remove(idx);
+      --idx;
       continue;
-    } else {
-      particles->SetX(idx, x1);
-      particles->SetY(idx, y1);
     }
+
+    particles->SetX(idx, x1);
+    particles->SetY(idx, y1);
   }
 }
 
