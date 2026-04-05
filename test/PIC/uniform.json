@@ -20,44 +20,33 @@
     "folder":   "results",
     "filename": "simulation",
 
-
     "velocityu": {
         "rectangle": {
             "condition": "boundary",
-            "val": 1.0,
-            "x1": "0",
-            "y1": "0",
-            "x2": "1",
-            "y2": "ny-1"
+            "val": 0.5,
+            "x1": "1",
+            "y1": "3",
+            "x2": "2",
+            "y2": "ny-2"
         }
     },
 
     "solid": {
         "rectangle":[{
             "x1": "0",
-            "y1": "ny-1",
-            "x2": "nx-1",
-            "y2": "ny-2"
+            "y1": "0",
+            "x2": "nx+1",
+            "y2": "2"
         },
         {
             "x1": "0",
-            "y1": "0",
-            "x2": "nx-1",
-            "y2": "1"
+            "y1": "ny-1",
+            "x2": "nx+1",
+            "y2": "ny+1"
         }]
     },
 
-   "smoke": {
-        "rectangle": {
-            "condition": "initial",
-            "val": 1.0,
-            "x1": "5",
-            "y1": "ny/2-3",
-            "x2": "15",
-            "y2": "ny/2+3"
-        }
-   },
-    
+   
    "solver": {
         "type": "red_black_gauss_seidel",
         "max_iterations": 5000,

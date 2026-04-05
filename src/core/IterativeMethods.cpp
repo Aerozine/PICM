@@ -9,12 +9,6 @@
 
 [[nodiscard]] inline varType neighbourSum(const Fields2D &f,
                      int nx, int ny, int i, int j, double beta) {
-
-  if (IS_SOLID(f.Label(i + 1, j + 1)) || f.Label(i + 1, j + 1) & Fields2D::AIR) {
-    std::cout << "Warning: neighbourSum called on SOLID/AIR cell";
-    return f.p.Get(i + 1, j + 1);
-  }
-
   varType sumP = 0.0;
   const varType pC = f.p.Get(i + 1, j + 1);
 
@@ -66,14 +60,6 @@
   return sumP;
 }
 
-// Gauss-Seidel update for a single FLUID cell.
-//  p_new = ( -coef * div_{ij} + sum p_nb ) / N_nb
-[[nodiscard]] inline double gsUpdate(const Fields2D &f, int nx, int ny, int i,
-                                     int j, double coef, double beta) {
-  const auto sumP = neighbourSum(f, nx, ny, i, j, beta);
-  return (-coef * f.div.Get(i, j) + sumP) / 4.0;
-}
-
 // Relative convergence: records res0 on first call (it==0).
 inline bool checkConvergence(double res, double &res0, int it, double tol) {
   if (it == 0) {
@@ -82,6 +68,68 @@ inline bool checkConvergence(double res, double &res0, int it, double tol) {
   }
   return (res / res0) < tol;
 }
+
+void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
+                              int maxIters, double tol, double beta) {
+  fields.Div();
+  double res0 = 1.0;
+
+  const int    N     = std::min(nx, ny);
+  const double pi    = 3.14159265358979;
+  const double omega = std::min(1.95, 2.0 / (1.0 + std::sin(pi / N)));
+
+  for (int it = 0; it < maxIters; ++it) {
+    double sumSq = 0.0;
+    int count = 0;
+
+    for (int color = 0; color < 2; ++color) {
+OMP_PRAGMA(omp parallel for collapse(2) reduction(+:sumSq) reduction(+:count))
+      for (int j = 0; j < ny; ++j) {
+        for (int i = 0; i < nx; ++i) {
+          if ((i + j) % 2 != color) 
+            continue;
+          if (fields.Label(i + 1, j + 1) & Fields2D::SOLID ||
+            fields.Label(i + 1, j + 1) & Fields2D::BC_P ||
+            fields.Label(i + 1, j + 1) & Fields2D::AIR ||
+            fields.Label(i + 1, j + 1) & Fields2D::IC_P) {
+            continue;
+          }
+          const double p_old = fields.p.Get(i + 1, j + 1);
+          const auto sumP = neighbourSum(fields, nx, ny, i, j, beta);
+          const double p_new = (-coef * fields.div.Get(i, j) + sumP) / 4.0;
+          fields.p.Set(i + 1, j + 1, p_old + omega * (p_new - p_old));
+          
+          const double r = p_new - p_old;
+          sumSq += r * r;
+          ++count;
+        }
+      }
+    }
+
+    const double res = (count > 0) ? std::sqrt(sumSq / count) : 0.0;
+    if (checkConvergence(res, res0, it, tol)) {
+#ifndef NDEBUG
+      std::cout << "  RedBlackGS converged in " << it + 1
+                << " iters, rel.res = " << res / res0 << '\n';
+#endif
+      return;
+    }
+  }
+#ifndef NDEBUG
+  std::cout << "  RedBlackGS: reached maxIters = " << maxIters << '\n';
+#endif
+}
+
+
+// Gauss-Seidel update for a single FLUID cell.
+//  p_new = ( -coef * div_{ij} + sum p_nb ) / N_nb
+[[nodiscard]] inline double gsUpdate(const Fields2D &f, int nx, int ny, int i,
+                                     int j, double coef, double beta) {
+  const auto sumP = neighbourSum(f, nx, ny, i, j, beta);
+  return (-coef * f.div.Get(i, j) + sumP) / 4.0;
+}
+
+
 
 
 void solveJacobi(Fields2D &fields, int nx, int ny, double coef, int maxIters,
@@ -155,91 +203,7 @@ void solveGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
 #endif
 }
 
-// void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
-//                               int maxIters, double tol, double beta) {
-//   fields.Div();
-//   double res0 = 1.0;
 
-//   for (int it = 0; it < maxIters; ++it) {
-//     int count = 0;
-//     double resMax = 0.0;
-//     for (int color = 0; color < 2; ++color) {
-// OMP_PRAGMA(omp parallel for collapse(2) reduction(+:count) reduction(max:resMax))
-//       for (int j = 0; j < ny; ++j) {
-//         for (int i = 0; i < nx; ++i) {
-//           if ((i + j) % 2 != color) continue;
-//           if (IS_SOLID(fields.Label(i, j))) continue;
-
-//           const double p_old = fields.p.Get(i, j);
-//           const double p_new = gsUpdate(fields, nx, ny, i, j, coef, beta);
-//           fields.p.Set(i, j, p_new);
-//           const double r = p_new - p_old;
-//           if (std::abs(r) > resMax)
-//             resMax = std::abs(r);
-//           ++count;
-//         }
-//       }
-//     }
-//     if (checkConvergence(resMax, res0, it, tol)) {
-// #ifndef NDEBUG
-//       std::cout << "  RedBlackGS converged in " << it + 1
-//                 << " iters, rel.res = " << resMax / res0 << '\n';
-// #endif
-//       return;
-//     }
-//   }
-// #ifndef NDEBUG
-//   std::cout << "  RedBlackGS: reached maxIters = " << maxIters << '\n';
-// #endif
-// }
-
-
-
-
-void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
-                              int maxIters, double tol, double beta) {
-  fields.Div();
-  double res0 = 1.0;
-
-  for (int it = 0; it < maxIters; ++it) {
-    double sumSq = 0.0;
-    int count = 0;
-
-    for (int color = 0; color < 2; ++color) {
-OMP_PRAGMA(omp parallel for collapse(2) reduction(+:sumSq) reduction(+:count))
-      for (int j = 0; j < ny; ++j) {
-        for (int i = 0; i < nx; ++i) {
-          if ((i + j) % 2 != color) 
-            continue;
-          if (fields.Label(i + 1, j + 1) & Fields2D::AIR ||
-              fields.Label(i + 1, j + 1) & Fields2D::SOLID ||
-              fields.Label(i + 1, j + 1) & Fields2D::BC_P ||
-              fields.Label(i + 1, j + 1) & Fields2D::IC_P) continue;
-          const double p_old = fields.p.Get(i + 1, j + 1);
-          const auto sumP = neighbourSum(fields, nx, ny, i, j, beta);
-          const double p_new = (-coef * fields.div.Get(i, j) + sumP) / 4.0;
-          fields.p.Set(i + 1, j + 1, p_new);
-          
-          const double r = p_new - p_old;
-          sumSq += r * r;
-          ++count;
-        }
-      }
-    }
-
-    const double res = (count > 0) ? std::sqrt(sumSq / count) : 0.0;
-    if (checkConvergence(res, res0, it, tol)) {
-#ifndef NDEBUG
-      std::cout << "  RedBlackGS converged in " << it + 1
-                << " iters, rel.res = " << res / res0 << '\n';
-#endif
-      return;
-    }
-  }
-#ifndef NDEBUG
-  std::cout << "  RedBlackGS: reached maxIters = " << maxIters << '\n';
-#endif
-}
 
 //######################the point of no return ##################
 // 1 sec of debuging here is 10 normal hours

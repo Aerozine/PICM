@@ -28,6 +28,26 @@
         }
     },
 
+    "solid": {
+        "cylinder": {
+            "x": "nx/5",
+            "y": "ny/2",
+            "r": "ny/15"
+        },
+        "rectangle":[{
+            "x1": "0",
+            "y1": "0",
+            "x2": "nx+1",
+            "y2": "2"
+        },
+        {
+            "x1": "0",
+            "y1": "ny-1",
+            "x2": "nx+1",
+            "y2": "ny+1"
+        }]
+    },
+
     "air": {
         "rectangle": {
             "condition": "boundary",
@@ -38,28 +58,6 @@
             "y2": "ny+1"
         }
     },
-
-    "solid": {
-        "cylinder": {
-            "x": "nx/5",
-            "y": "ny/2",
-            "r": "ny/15"
-        },
-
-        "rectangle":[{
-            "x1": "0",
-            "y1": "ny-1",
-            "x2": "nx+1",
-            "y2": "ny+1"
-        },
-        {
-            "x1": "0",
-            "y1": "0",
-            "x2": "nx+1",
-            "y2": "2"
-        }]
-    },
-
 
     "solver": {
   "type": "red_black_gauss_seidel",

@@ -83,7 +83,7 @@ void RectangleObject::applySolid(Fields2D &f) {
   const int iMax = std::min(x2, f.p.nx - 1);
   const int jMax = std::min(y2, f.p.ny - 1);
   for (int j = std::max(y1, 0); j <= jMax; ++j)
-    for (int i = std::max(x1, 0); i <= iMax; ++i) {
+    for (int i = std::max(x1, 0); i <= iMax; ++i) { 
       f.SetLabel(i, j, Fields2D::SOLID);
       f.p.Set(i, j, 0.0);
     }
