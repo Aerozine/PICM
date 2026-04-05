@@ -171,18 +171,12 @@ bool OutputWriter::writeParticles(const Particles &particles,
   if (pvd_finalised_)
     return false;
 
-  const int cap = particles.capacity;
+  const int nAlive = particles.size();
 
-  int nAlive = 0;
-  for (int idx = 0; idx < cap; ++idx)
-    if (!particles.IsDead(idx))
-      ++nAlive;
-
-  // Collecte des données vivantes
   std::vector<varType> uValues;
   std::vector<varType> vValues;
-  std::vector<varType> velocityValues; // 3 composantes
-  std::vector<varType> pointValues;    // 3 composantes
+  std::vector<varType> velocityValues;
+  std::vector<varType> pointValues;
   std::vector<int32_t> connectivity;
   std::vector<int32_t> offsets;
 
@@ -193,15 +187,11 @@ bool OutputWriter::writeParticles(const Particles &particles,
   connectivity.reserve(nAlive);
   offsets.reserve(nAlive);
 
-  int k = 0;
-  for (int idx = 0; idx < cap; ++idx) {
-    if (particles.IsDead(idx))
-      continue;
-
-    const varType x = particles.GetX(idx);
-    const varType y = particles.GetY(idx);
-    const varType u = particles.GetU(idx);
-    const varType v = particles.GetV(idx);
+  for (int k = 0; k < nAlive; ++k) {
+    const varType x = particles.GetX(k);
+    const varType y = particles.GetY(k);
+    const varType u = particles.GetU(k);
+    const varType v = particles.GetV(k);
 
     uValues.push_back(u);
     vValues.push_back(v);
@@ -216,10 +206,8 @@ bool OutputWriter::writeParticles(const Particles &particles,
 
     connectivity.push_back(k);
     offsets.push_back(k + 1);
-    ++k;
   }
 
-  // Prépare les payloads binaires (compressés si zlib est dispo)
   const std::vector<unsigned char> uPayload = preparePayload(uValues);
   const std::vector<unsigned char> vPayload = preparePayload(vValues);
   const std::vector<unsigned char> velocityPayload = preparePayload(velocityValues);
@@ -251,7 +239,7 @@ bool OutputWriter::writeParticles(const Particles &particles,
   };
 
   connPayload = compressRaw(connPayload);
-  offPayload = compressRaw(offPayload);
+  offPayload  = compressRaw(offPayload);
 #endif
 
   const uint32_t uRawBytes =
@@ -283,7 +271,6 @@ bool OutputWriter::writeParticles(const Particles &particles,
   const char *compressorAttr = "";
 #endif
 
-  // Offsets dans la section AppendedData
   uint32_t offset = 0;
 #ifdef HAVE_ZLIB
   const uint32_t headerSize = 4 * sizeof(uint32_t);
@@ -361,12 +348,12 @@ bool OutputWriter::writeParticles(const Particles &particles,
               static_cast<std::streamsize>(payload.size()));
   };
 
-  writeBlock(uPayload, uRawBytes);
-  writeBlock(vPayload, vRawBytes);
+  writeBlock(uPayload,        uRawBytes);
+  writeBlock(vPayload,        vRawBytes);
   writeBlock(velocityPayload, velocityRawBytes);
-  writeBlock(pointsPayload, pointsRawBytes);
-  writeBlock(connPayload, connRawBytes);
-  writeBlock(offPayload, offRawBytes);
+  writeBlock(pointsPayload,   pointsRawBytes);
+  writeBlock(connPayload,     connRawBytes);
+  writeBlock(offPayload,      offRawBytes);
 
   out << "\n  </AppendedData>\n"
       << "</VTKFile>\n";
