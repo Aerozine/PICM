@@ -4,7 +4,7 @@
     "dt": 1e-2,
     "nx": 500,
     "ny": 300,
-    "nt": 700,
+    "nt": 1000,
     "density": 1000,
     "sampling_rate": 5,
 
@@ -17,65 +17,63 @@
 
     "folder":   "results",
     "filename": "simulation",
-
     "velocityu": {
         "rectangle": {
             "condition": "boundary",
-            "val": 0.5,
-            "x1": "0",
-            "y1": "0",
-            "x2": "0",
-            "y2": "ny-1"
+            "val": 0.3,
+            "x1": "1",
+            "y1": "3",
+            "x2": "2",
+            "y2": "ny-2"
         }
     },
 
-    "pressure": {
+    "air": {
         "rectangle": {
             "condition": "boundary",
             "val": 0,
-            "x1": "nx-1",
+            "x1": "nx+1",
             "y1": "0",
-            "x2": "nx-1",
-            "y2": "ny-1"
+            "x2": "nx+1",
+            "y2": "ny+1"
         }
     },
 
     "solid": {
         "cylinder": {
-            "x": "nx/5",
+            "x": "nx/6",
             "y": "ny/2",
-            "r": "ny/15"
+            "r": "ny/10"
         },
 
         "rectangle":[{
             "x1": "0",
             "y1": "ny-1",
-            "x2": "nx-1",
-            "y2": "ny-2"
+            "x2": "nx+1",
+            "y2": "ny+1"
         },
         {
             "x1": "0",
             "y1": "0",
-            "x2": "nx-1",
-            "y2": "1"
+            "x2": "nx+1",
+            "y2": "2"
         }]
     },
 
     "smoke": {
         "rectangle": {
-            "condition":"boundary",
-            "val": 0.5,
-            "x1": "0",
-            "y1": "0",
-            "x2": "0",
-            "y2": "ny-1"
+            "condition": "boundary",
+            "val": 1,
+            "x1": "1",
+            "y1": "3",
+            "x2": "2",
+            "y2": "ny-2"
         }
     },
 
-
     "solver": {
   "type": "red_black_gauss_seidel",
-    "max_iterations": 5e3,
-    "tolerance": 1e-2
+    "max_iterations": 1e5,
+    "tolerance": 5e-1
 }
 }

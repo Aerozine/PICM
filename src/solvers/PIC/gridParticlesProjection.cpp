@@ -87,24 +87,23 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
   for (int j = 0; j < ny; j++) {
     for (int i = 0; i < nx + 1; i++) {
       bool isSolid = false, isBC = false;
-      if (i > 0) {
-        auto l = fields->Label(i - 1, j);
-        if (l & Fields2D::SOLID)
+      
+      auto l = fields->Label(i, j + 1);
+      if (l & Fields2D::SOLID)
+        isSolid = true;
+      if (l & Fields2D::BC_U)
+        isBC = true;
+
+      auto r = fields->Label(i + 1, j + 1);
+      if (r & Fields2D::SOLID)
           isSolid = true;
-        if (l & Fields2D::BC_U)
+        if (r & Fields2D::BC_U)
           isBC = true;
-      }
-      if (i < nx) {
-        auto l = fields->Label(i, j);
-        if (l & Fields2D::SOLID)
-          isSolid = true;
-        if (l & Fields2D::BC_U)
-          isBC = true;
-      }
+
       if (isSolid)
         fields->u.Set(i, j, FIELD_USOLID);
       else if (isBC)
-        ; // keep value written by applyToFields
+        ;
       else if (fields->u_weight.Get(i, j) > varType(1e-12))
         fields->u.Set(i, j,
                       fields->u_sum.Get(i, j) / fields->u_weight.Get(i, j));
@@ -117,20 +116,18 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
   for (int j = 0; j < ny + 1; j++) {
     for (int i = 0; i < nx; i++) {
       bool isSolid = false, isBC = false;
-      if (j > 0) {
-        auto l = fields->Label(i, j - 1);
-        if (l & Fields2D::SOLID)
-          isSolid = true;
-        if (l & Fields2D::BC_V)
-          isBC = true;
-      }
-      if (j < ny) {
-        auto l = fields->Label(i, j);
-        if (l & Fields2D::SOLID)
-          isSolid = true;
-        if (l & Fields2D::BC_V)
-          isBC = true;
-      }
+      
+      auto b = fields->Label(i + 1, j);
+      if (b & Fields2D::SOLID)
+        isSolid = true;
+      if (b & Fields2D::BC_V)
+        isBC = true;
+      
+      auto t = fields->Label(i + 1, j + 1);
+      if (t & Fields2D::SOLID)
+        isSolid = true;
+      if (t & Fields2D::BC_V)
+        isBC = true;
       if (isSolid)
         fields->v.Set(i, j,FIELD_USOLID);
       else if (isBC)
