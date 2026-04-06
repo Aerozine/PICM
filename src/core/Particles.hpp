@@ -1,6 +1,7 @@
 #pragma once
 #include "Precision.hpp"
 #include <vector>
+#include "Fields.hpp"
 
 
 struct Vec2 {
@@ -23,7 +24,7 @@ public:
 
     Particles(int nx, int ny, varType dx, varType dy, int ppcx, int ppcy)
     : nx(nx), ny(ny), ppcx(ppcx), ppcy(ppcy), dx(dx), dy(dy) {
-    A.reserve(nx * ny * ppcx * ppcy * 3);
+    //A.reserve(nx * ny * ppcx * ppcy * 3);
     }
     int size() const { return static_cast<int>(A.size()); }
 
@@ -50,5 +51,5 @@ public:
     void SetU(int i, varType v) { A[i].vel.x = v; }
     void SetV(int i, varType v) { A[i].vel.y = v; }
 
-    void InitParticleGrid();  
+    void InitParticleGrid(Fields2D &fields);  
 };

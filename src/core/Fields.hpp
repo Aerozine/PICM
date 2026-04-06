@@ -42,7 +42,7 @@ public:
     Grid2D countAliveParticles;
   // TODO improve string method to sth else and maybe particularize ?
   Fields2D(int nx, int ny, varType density, varType dt, varType dx, varType dy,
-           std::string method)
+           std::string method, std::string freeSurface)
       : nx(nx), ny(ny), density(density), dt(dt), dx(dx), dy(dy), u(nx + 1, ny),
         v(nx, ny + 1), p(nx + 2, ny + 2), div(nx, ny), normVelocity(nx, ny),
         smokeMap(nx, ny),
@@ -51,7 +51,8 @@ public:
         v_sum(method == "PIC" ? nx : 0, method == "PIC" ? ny + 1 : 0),
         v_weight(method == "PIC" ? nx : 0, method == "PIC" ? ny + 1 : 0),
         countAliveParticles(method == "PIC" ? nx : 0, method == "PIC" ? ny : 0),
-        labels(static_cast<std::size_t>(nx + 2) * (ny + 2), FLUID) {}
+        labels(static_cast<std::size_t>(nx + 2) * (ny + 2), 
+        freeSurface == "yes" ? Fields2D::AIR : Fields2D::FLUID) {}
 
   /// @brief Return the cell type of cell (i, j).
   [[nodiscard]] inline CellType Label(int i, int j) const noexcept {

@@ -11,6 +11,7 @@ struct SceneObject {
 
   virtual void applySolid    (Fields2D &f)  { (void)f; }
   virtual void applyAir      (Fields2D &f)  { (void)f; }
+  virtual void applyFluid     (Fields2D &f)  { (void)f; }
   virtual void applyVelocityU(Fields2D &f) { (void)f; }
   virtual void applyVelocityV(Fields2D &f) { (void)f; }
   virtual void applySmoke    (Fields2D &f) { (void)f; }
@@ -25,6 +26,7 @@ struct RectangleObject : public SceneObject {
 
   void applySolid(Fields2D &f);
   void applyAir(Fields2D &f);
+  void applyFluid(Fields2D &f);
   void applyVelocityU(Fields2D &f);
   void applyVelocityV(Fields2D &f);
   void applySmoke(Fields2D &f);

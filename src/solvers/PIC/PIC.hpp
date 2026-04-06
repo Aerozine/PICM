@@ -64,4 +64,7 @@ private:
 
   // Gravity
   void ApplyGravity();
+
+  // CellState
+  void UpdateCellState();
 };
