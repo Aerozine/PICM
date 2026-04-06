@@ -9,7 +9,7 @@ PIC::PIC(const Parameters &params)
       dt(static_cast<varType>(params.dt)),
       density(static_cast<varType>(params.density)),
       fields(new Fields2D(params.nx, params.ny, params.density,
-             params.dt, params.dx, params.dy, "PIC")),
+             params.dt, params.dx, params.dy, "PIC", params.freeSurface)),
       particles(new Particles(nx, ny, dx, dy, params.ppcx, params.ppcy)) {
 
 #ifndef NDEBUG
@@ -24,7 +24,7 @@ PIC::PIC(const Parameters &params)
 #endif
 
   params.applyToFields(*fields);
-  particles->InitParticleGrid();
+  particles->InitParticleGrid(*fields);
 
   InitializeOutputWriters();
 
@@ -91,6 +91,7 @@ void PIC::Step() {
   ProjectGridOnParticles();
   AdvectParticles();
   ApplyGravity();
+  UpdateCellState();
   RefillParticles();
 }
 

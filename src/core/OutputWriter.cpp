@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+#include <cmath>
 
 #ifdef HAVE_ZLIB
 #include <zlib.h>
@@ -173,16 +174,12 @@ bool OutputWriter::writeParticles(const Particles &particles,
 
   const int nAlive = particles.size();
 
-  std::vector<varType> uValues;
-  std::vector<varType> vValues;
-  std::vector<varType> velocityValues;
+  std::vector<varType> normValues;
   std::vector<varType> pointValues;
   std::vector<int32_t> connectivity;
   std::vector<int32_t> offsets;
 
-  uValues.reserve(nAlive);
-  vValues.reserve(nAlive);
-  velocityValues.reserve(static_cast<std::size_t>(nAlive) * 3);
+  normValues.reserve(nAlive);
   pointValues.reserve(static_cast<std::size_t>(nAlive) * 3);
   connectivity.reserve(nAlive);
   offsets.reserve(nAlive);
@@ -193,12 +190,7 @@ bool OutputWriter::writeParticles(const Particles &particles,
     const varType u = particles.GetU(k);
     const varType v = particles.GetV(k);
 
-    uValues.push_back(u);
-    vValues.push_back(v);
-
-    velocityValues.push_back(u);
-    velocityValues.push_back(v);
-    velocityValues.push_back(static_cast<varType>(0));
+    normValues.push_back(std::sqrt(u * u + v * v));
 
     pointValues.push_back(x);
     pointValues.push_back(y);
@@ -208,15 +200,11 @@ bool OutputWriter::writeParticles(const Particles &particles,
     offsets.push_back(k + 1);
   }
 
-  const std::vector<unsigned char> uPayload = preparePayload(uValues);
-  const std::vector<unsigned char> vPayload = preparePayload(vValues);
-  const std::vector<unsigned char> velocityPayload = preparePayload(velocityValues);
-  const std::vector<unsigned char> pointsPayload = preparePayload(pointValues);
+  const std::vector<unsigned char> normPayload    = preparePayload(normValues);
+  const std::vector<unsigned char> pointsPayload  = preparePayload(pointValues);
 
-  const auto *connRaw =
-      reinterpret_cast<const unsigned char *>(connectivity.data());
-  const auto *offRaw =
-      reinterpret_cast<const unsigned char *>(offsets.data());
+  const auto *connRaw = reinterpret_cast<const unsigned char *>(connectivity.data());
+  const auto *offRaw  = reinterpret_cast<const unsigned char *>(offsets.data());
 
   std::vector<unsigned char> connPayload(
       connRaw, connRaw + connectivity.size() * sizeof(int32_t));
@@ -228,26 +216,19 @@ bool OutputWriter::writeParticles(const Particles &particles,
     uLongf compBound = compressBound(static_cast<uLong>(raw.size()));
     std::vector<unsigned char> buf(compBound);
     uLongf compLen = compBound;
-
     const int ret = compress2(buf.data(), &compLen, raw.data(),
                               static_cast<uLong>(raw.size()), Z_BEST_SPEED);
     if (ret != Z_OK)
       throw std::runtime_error("OutputWriter: zlib compress2 failed");
-
     buf.resize(compLen);
     return buf;
   };
-
   connPayload = compressRaw(connPayload);
   offPayload  = compressRaw(offPayload);
 #endif
 
-  const uint32_t uRawBytes =
-      static_cast<uint32_t>(uValues.size() * sizeof(varType));
-  const uint32_t vRawBytes =
-      static_cast<uint32_t>(vValues.size() * sizeof(varType));
-  const uint32_t velocityRawBytes =
-      static_cast<uint32_t>(velocityValues.size() * sizeof(varType));
+  const uint32_t normRawBytes =
+      static_cast<uint32_t>(normValues.size() * sizeof(varType));
   const uint32_t pointsRawBytes =
       static_cast<uint32_t>(pointValues.size() * sizeof(varType));
   const uint32_t connRawBytes =
@@ -278,14 +259,8 @@ bool OutputWriter::writeParticles(const Particles &particles,
   const uint32_t headerSize = sizeof(uint32_t);
 #endif
 
-  const uint32_t uOffset = offset;
-  offset += headerSize + static_cast<uint32_t>(uPayload.size());
-
-  const uint32_t vOffset = offset;
-  offset += headerSize + static_cast<uint32_t>(vPayload.size());
-
-  const uint32_t velocityOffset = offset;
-  offset += headerSize + static_cast<uint32_t>(velocityPayload.size());
+  const uint32_t normOffset   = offset;
+  offset += headerSize + static_cast<uint32_t>(normPayload.size());
 
   const uint32_t pointsOffset = offset;
   offset += headerSize + static_cast<uint32_t>(pointsPayload.size());
@@ -304,16 +279,10 @@ bool OutputWriter::writeParticles(const Particles &particles,
       << "    <Piece NumberOfPoints=\"" << nAlive << "\" NumberOfVerts=\""
       << nAlive
       << "\" NumberOfLines=\"0\" NumberOfStrips=\"0\" NumberOfPolys=\"0\">\n"
-      << "      <PointData Scalars=\"u\" Vectors=\"velocity\">\n"
+      << "      <PointData Scalars=\"normVelocity\">\n"
       << "        <DataArray type=\"" << vtkTypeName()
-      << "\" Name=\"u\" NumberOfComponents=\"1\" format=\"appended\" "
-      << "offset=\"" << uOffset << "\"/>\n"
-      << "        <DataArray type=\"" << vtkTypeName()
-      << "\" Name=\"v\" NumberOfComponents=\"1\" format=\"appended\" "
-      << "offset=\"" << vOffset << "\"/>\n"
-      << "        <DataArray type=\"" << vtkTypeName()
-      << "\" Name=\"velocity\" NumberOfComponents=\"3\" format=\"appended\" "
-      << "offset=\"" << velocityOffset << "\"/>\n"
+      << "\" Name=\"normVelocity\" NumberOfComponents=\"1\" format=\"appended\" "
+      << "offset=\"" << normOffset << "\"/>\n"
       << "      </PointData>\n"
       << "      <Points>\n"
       << "        <DataArray type=\"" << vtkTypeName()
@@ -348,12 +317,10 @@ bool OutputWriter::writeParticles(const Particles &particles,
               static_cast<std::streamsize>(payload.size()));
   };
 
-  writeBlock(uPayload,        uRawBytes);
-  writeBlock(vPayload,        vRawBytes);
-  writeBlock(velocityPayload, velocityRawBytes);
-  writeBlock(pointsPayload,   pointsRawBytes);
-  writeBlock(connPayload,     connRawBytes);
-  writeBlock(offPayload,      offRawBytes);
+  writeBlock(normPayload,   normRawBytes);
+  writeBlock(pointsPayload, pointsRawBytes);
+  writeBlock(connPayload,   connRawBytes);
+  writeBlock(offPayload,    offRawBytes);
 
   out << "\n  </AppendedData>\n"
       << "</VTKFile>\n";

@@ -65,6 +65,7 @@ public:
   bool write_particles = false;
 
   std::string method = "semi_lagrangian";
+  std::string freeSurface = "no";
   SolverConfig solver;
 
   Parameters() = default;
@@ -103,6 +104,7 @@ private:
   nlohmann::json pressure_json;
   nlohmann::json solid_json;
   nlohmann::json air_json;
+  nlohmann::json fluid_json;
   nlohmann::json smoke_json;
   nlohmann::json particles_json;
 

@@ -102,6 +102,18 @@ void RectangleObject::applyAir(Fields2D &f) {
     }
 }
 
+void RectangleObject::applyFluid(Fields2D &f) {
+  // @todo handle the case where y2<y1 same for x
+  if (x1 > x2) std::swap(x1, x2);
+  if (y1 > y2) std::swap(y1, y2);
+  const int iMax = std::min(x2, f.p.nx - 1);
+  const int jMax = std::min(y2, f.p.ny - 1);
+  for (int j = std::max(y1, 0); j <= jMax; ++j)
+    for (int i = std::max(x1, 0); i <= iMax; ++i) {
+      f.SetLabel(i, j, Fields2D::FLUID);
+    }
+}
+
 void RectangleObject::applyVelocityU(Fields2D &f) {
   if (condition != "initial" && condition != "boundary") {
     std::cout << "Invalid condition for rectangular horizontal velocity.\n"

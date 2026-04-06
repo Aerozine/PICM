@@ -60,7 +60,7 @@ void PIC::RefillParticles() {
           particles->Add(xa, ya, ua, va, static_cast<unsigned>(particles->size()));
         }
 
-      } else {
+      } else if (! (fields->Label(i, j) & Fields2D::AIR)){
         int missing = targetPPC -
             static_cast<int>(fields->countAliveParticles.Get(i, j));
         if (missing <= 0)
