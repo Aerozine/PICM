@@ -96,8 +96,9 @@ OMP_PRAGMA(omp parallel for collapse(2) reduction(+:sumSq) reduction(+:count))
           }
           const double p_old = fields.p.Get(i + 1, j + 1);
           const auto sumP = neighbourSum(fields, nx, ny, i, j, beta);
-          const double p_new = (-coef * fields.div.Get(i, j) + sumP) / 4.0;
-          fields.p.Set(i + 1, j + 1, p_old + omega * (p_new - p_old));
+          const double p_neighbour = (-coef * fields.div.Get(i, j) + sumP) / 4.0;
+          const double p_new = p_old + omega * (p_neighbour - p_old);
+          fields.p.Set(i + 1, j + 1, p_new);
           
           const double r = p_new - p_old;
           sumSq += r * r;
@@ -108,16 +109,16 @@ OMP_PRAGMA(omp parallel for collapse(2) reduction(+:sumSq) reduction(+:count))
 
     const double res = (count > 0) ? std::sqrt(sumSq / count) : 0.0;
     if (checkConvergence(res, res0, it, tol)) {
-#ifndef NDEBUG
+// #ifndef NDEBUG
       std::cout << "  RedBlackGS converged in " << it + 1
                 << " iters, rel.res = " << res / res0 << '\n';
-#endif
+// #endif
       return;
     }
   }
-#ifndef NDEBUG
+// #ifndef NDEBUG
   std::cout << "  RedBlackGS: reached maxIters = " << maxIters << '\n';
-#endif
+// #endif
 }
 
 

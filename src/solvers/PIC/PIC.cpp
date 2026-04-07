@@ -85,12 +85,13 @@ void PIC::WriteOutput(int step) const {
 
 void PIC::Step() {
   ProjectParticlesOnGrid("hat");
-  MakeIncompressible(params,*fields);
+  ApplyGravity(); 
+  MakeIncompressible(params, *fields);
+  ProjectGridOnParticles();
   fields->Div();
   fields->VelocityNormCenterGrid();
-  ProjectGridOnParticles();
   AdvectParticles();
-  ApplyGravity();
+  CountAliveParticles();
   UpdateCellState();
   // RefillParticles();
 }
