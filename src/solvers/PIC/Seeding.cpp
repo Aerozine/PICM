@@ -2,7 +2,6 @@
 #include <random>
 
 void PIC::RefillParticles() {
-  CountAliveParticles();
 
   const int targetPPC = particles->ppcx * particles->ppcy;
 
@@ -89,26 +88,3 @@ void PIC::RefillParticles() {
   }
 }
 
-varType PIC::rand01() {
-  static std::mt19937 rng(std::random_device{}());
-  static std::uniform_real_distribution<varType> dist(varType(0), varType(1));
-  return dist(rng);
-}
-
-void PIC::CountAliveParticles() {
-  for (int i = 0; i < nx; i++)
-    for (int j = 0; j < ny; j++)
-      fields->countAliveParticles.Set(i, j, 0.0);
-
-  for (int idx = 0; idx < particles->size(); ++idx) {
-    int ci = std::clamp(static_cast<int>(std::floor(particles->GetX(idx) / dx)),
-                        0, nx - 1);
-    int cj = std::clamp(static_cast<int>(std::floor(particles->GetY(idx) / dy)),
-                        0, ny - 1);
-
-    if (!(fields->Label(ci, cj) & Fields2D::SOLID)) {
-      varType cnt = fields->countAliveParticles.Get(ci, cj);
-      fields->countAliveParticles.Set(ci, cj, cnt + 1.0);
-    }
-  }
-}

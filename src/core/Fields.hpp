@@ -64,6 +64,11 @@ public:
     labels[idx(i, j)] |= static_cast<uint16_t>(t);
   }
 
+  /// @brief Reset the cell label to the given type, clearing all previous flags.
+  void ResetLabel(int i, int j, CellType t) {
+    labels[idx(i, j)] = static_cast<uint16_t>(t);
+  }
+
   ///@brief Compute the divergence to div
   void Div();
 

@@ -79,21 +79,25 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
   // u faces: face (i,j) is between cells (i,j+1) and (i+1,j+1).
   for (int j = 0; j < ny; j++) {
     for (int i = 0; i < nx + 1; i++) {
-      bool isSolid = false, isBC = false;
+      bool isSolid = false, isBC = false, isAir = false;
       
       auto l = fields->Label(i, j + 1);
       if (l & Fields2D::SOLID)
         isSolid = true;
       if (l & Fields2D::BC_U)
         isBC = true;
+      if (l & Fields2D::AIR)
+        isAir = true;
 
       auto r = fields->Label(i + 1, j + 1);
       if (r & Fields2D::SOLID)
-          isSolid = true;
-        if (r & Fields2D::BC_U)
-          isBC = true;
+        isSolid = true;
+      if (r & Fields2D::BC_U)
+        isBC = true;
+      if (r & Fields2D::AIR)
+        isAir = true;
 
-      if (isSolid)
+      if (isSolid || isAir)
         fields->u.Set(i, j, FIELD_USOLID);
       else if (isBC)
         ;
@@ -108,20 +112,25 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
   // v faces: face (i,j) is between cells (i+1,j) and (i+1,j+1).
   for (int j = 0; j < ny + 1; j++) {
     for (int i = 0; i < nx; i++) {
-      bool isSolid = false, isBC = false;
+      bool isSolid = false, isBC = false, isAir = false;
       
       auto b = fields->Label(i + 1, j);
       if (b & Fields2D::SOLID)
         isSolid = true;
       if (b & Fields2D::BC_V)
         isBC = true;
+       if (b & Fields2D::AIR)
+        isAir = true;
       
       auto t = fields->Label(i + 1, j + 1);
       if (t & Fields2D::SOLID)
         isSolid = true;
       if (t & Fields2D::BC_V)
         isBC = true;
-      if (isSolid)
+      if (t & Fields2D::AIR)
+        isAir = true;
+      
+      if (isSolid || isAir)
         fields->v.Set(i, j,FIELD_USOLID);
       else if (isBC)
         ;

@@ -2,15 +2,18 @@
 #include <cmath>
 
 void PIC::AdvectParticles() {
-  const varType xMax = dx * nx;
+  const varType xMax = dx * nx; // not dx * (nx - 1) ?
   const varType yMax = dy * ny;
 
   for (int idx = 0; idx < particles->size(); ++idx) {
 
     varType x0 = particles->GetX(idx);
     varType y0 = particles->GetY(idx);
-    varType u0 = particles->GetU(idx);
-    varType v0 = particles->GetV(idx);
+    // varType u0 = particles->GetU(idx); // should not change anything ?
+    // varType v0 = particles->GetV(idx); // however it gives weird results 
+    varType u0 = interpolateU(x0, y0);    // (cube in free wall becomes a line)
+    varType v0 = interpolateV(x0, y0); 
+
 
     // RK2 mid-point
     varType xmid = x0 + varType(0.5) * dt * u0;
@@ -22,8 +25,10 @@ void PIC::AdvectParticles() {
     varType y1 = y0 + dt * vmid;
 
     if (x1 < varType(0) || x1 >= xMax || y1 < varType(0) || y1 >= yMax) {
-      particles->Remove(idx);
-      --idx;
+      x1 = std::clamp(x1, varType(0.001)*dx, xMax - varType(0.001)*dx); 
+      y1 = std::clamp(y1, varType(0.001)*dy, yMax - varType(0.001)*dy); 
+      particles->SetX(idx, x1);
+      particles->SetY(idx, y1);
       continue;
     }
 
@@ -31,8 +36,10 @@ void PIC::AdvectParticles() {
     int j1 = std::clamp(static_cast<int>(std::floor(y1 / dy)), 0, ny - 1);
 
     if (fields->Label(i1 + 1, j1 + 1) & Fields2D::SOLID) {
-      particles->Remove(idx);
-      --idx;
+      x1 = std::clamp(x1, varType(0.001)*dx, xMax - varType(0.001)*dx); // Ce que
+      y1 = std::clamp(y1, varType(0.001)*dy, yMax - varType(0.001)*dy); // propose l'IA
+      particles->SetX(idx, x1);
+      particles->SetY(idx, y1);
       continue;
     }
 
@@ -41,32 +48,3 @@ void PIC::AdvectParticles() {
   }
 }
 
-varType PIC::interpolateU(const varType x, const varType y) const {
-  const varType i_real = x / dx;
-  const varType j_real = y / dy - REAL_LITERAL(0.5);
-  int i = static_cast<int>(std::floor(i_real));
-  int j = static_cast<int>(std::floor(j_real));
-  const varType fx = i_real - varType(i);
-  const varType fy = j_real - varType(j);
-  i = std::clamp(i, 0, fields->u.nx - 2);
-  j = std::clamp(j, 0, fields->u.ny - 2);
-  return (1 - fy) *
-             ((1 - fx) * fields->u.Get(i, j) + fx * fields->u.Get(i + 1, j)) +
-         fy * ((1 - fx) * fields->u.Get(i, j + 1) +
-               fx * fields->u.Get(i + 1, j + 1));
-}
-
-varType PIC::interpolateV(const varType x, const varType y) const {
-  const varType i_real = x / dx - REAL_LITERAL(0.5);
-  const varType j_real = y / dy;
-  int i = static_cast<int>(std::floor(i_real));
-  int j = static_cast<int>(std::floor(j_real));
-  const varType fx = i_real - varType(i);
-  const varType fy = j_real - varType(j);
-  i = std::clamp(i, 0, fields->v.nx - 2);
-  j = std::clamp(j, 0, fields->v.ny - 2);
-  return (1 - fy) *
-             ((1 - fx) * fields->v.Get(i, j) + fx * fields->v.Get(i + 1, j)) +
-         fy * ((1 - fx) * fields->v.Get(i, j + 1) +
-               fx * fields->v.Get(i + 1, j + 1));
-}

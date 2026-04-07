@@ -1,5 +1,12 @@
 #include "Particles.hpp"
 #include <iostream>
+#include <random>
+
+varType rand01() {
+  static std::mt19937 rng(std::random_device{}());
+  static std::uniform_real_distribution<varType> dist(varType(0), varType(1));
+  return dist(rng);
+}
 
 void Particles::InitParticleGrid(Fields2D &fields) {
     A.clear();
@@ -13,8 +20,8 @@ void Particles::InitParticleGrid(Fields2D &fields) {
                 continue;
             for (int a = 0; a < ppcx; a++) {
                 for (int b = 0; b < ppcy; b++) {
-                    varType x = (icell + (a + varType(0.5)) / ppcx) * dx;
-                    varType y = (jcell + (b + varType(0.5)) / ppcy) * dy;
+                    varType x = (icell + rand01()) * dx;
+                    varType y = (jcell + rand01()) * dy;
                     Add(x, y, 0.0, 0.0, id);
                     ++id;
                 }
@@ -22,3 +29,4 @@ void Particles::InitParticleGrid(Fields2D &fields) {
         }
     }
 }
+

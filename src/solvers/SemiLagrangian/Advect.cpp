@@ -132,8 +132,8 @@ varType SemiLagrangian::interpolateU(const varType x, const varType y) const {
   const varType fx = i_real - static_cast<varType>(i);
   const varType fy = j_real - static_cast<varType>(j);
 
-  i = std::clamp(i, 0, fields->u.nx - 2);
-  j = std::clamp(j, 0, fields->u.ny - 2);
+  i = std::clamp(i, 0, fields->u.nx - 1);
+  j = std::clamp(j, 0, fields->u.ny - 1);
 
   const varType u00 = fields->u.Get(i, j);
   const varType u10 = fields->u.Get(i + 1, j);
@@ -155,8 +155,8 @@ varType SemiLagrangian::interpolateV(const varType x, const varType y) const {
   const varType fx = i_real - static_cast<varType>(i);
   const varType fy = j_real - static_cast<varType>(j);
 
-  i = std::clamp(i, 0, fields->v.nx - 2);
-  j = std::clamp(j, 0, fields->v.ny - 2);
+  i = std::clamp(i, 0, fields->v.nx - 1);
+  j = std::clamp(j, 0, fields->v.ny - 1);
 
   const varType v00 = fields->v.Get(i, j);
   const varType v10 = fields->v.Get(i + 1, j);
@@ -186,8 +186,8 @@ varType SemiLagrangian::interpolateSmoke(const varType x,
   const varType fx = i_real - static_cast<varType>(i);
   const varType fy = j_real - static_cast<varType>(j);
 
-  i = std::clamp(i, 0, fields->smokeMap.nx - 2);
-  j = std::clamp(j, 0, fields->smokeMap.ny - 2);
+  i = std::clamp(i, 0, fields->smokeMap.nx - 1);
+  j = std::clamp(j, 0, fields->smokeMap.ny - 1);
 
   const varType s00 = fields->smokeMap.Get(i, j);
   const varType s10 = fields->smokeMap.Get(i + 1, j);
