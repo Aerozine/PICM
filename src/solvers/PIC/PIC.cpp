@@ -92,7 +92,7 @@ void PIC::Step() {
   AdvectParticles();
   ApplyGravity();
   UpdateCellState();
-  RefillParticles();
+  // RefillParticles();
 }
 
 void PIC::Run() {

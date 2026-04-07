@@ -70,9 +70,7 @@ public:
   /// @brief interpolate the velocity magnitude per cell to @c normVelocity
   void VelocityNormCenterGrid();
 
-private:
   std::vector<uint16_t> labels; ///< Flat cell-type array, same layout as p.
-  // TODO improve string method to sth else and maybe particularize ?
 
   [[nodiscard]] inline int idx(int i, int j) const noexcept { return nx * j + i; }
 };
