@@ -97,10 +97,12 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
       if (r & Fields2D::AIR)
         isAir = true;
 
-      if (isSolid || isAir)
+      if (isSolid)
         fields->u.Set(i, j, FIELD_USOLID);
       else if (isBC)
         ;
+      else if (isAir)
+        fields->u.Set(i, j, varType(0));
       else if (fields->u_weight.Get(i, j) > varType(1e-12))
         fields->u.Set(i, j,
                       fields->u_sum.Get(i, j) / fields->u_weight.Get(i, j));
@@ -119,7 +121,7 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
         isSolid = true;
       if (b & Fields2D::BC_V)
         isBC = true;
-       if (b & Fields2D::AIR)
+      if (b & Fields2D::AIR)
         isAir = true;
       
       auto t = fields->Label(i + 1, j + 1);
@@ -130,10 +132,12 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
       if (t & Fields2D::AIR)
         isAir = true;
       
-      if (isSolid || isAir)
+      if (isSolid)
         fields->v.Set(i, j,FIELD_USOLID);
       else if (isBC)
         ;
+      else if (isAir)
+        fields->v.Set(i, j, varType(0));
       else if (fields->v_weight.Get(i, j) > varType(1e-12))
         fields->v.Set(i, j,
                       fields->v_sum.Get(i, j) / fields->v_weight.Get(i, j));

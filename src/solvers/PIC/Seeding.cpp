@@ -7,16 +7,16 @@ void PIC::RefillParticles() {
 
   for (int i = 0; i < nx; i++) {
     for (int j = 0; j < ny; j++) {
-      if (fields->Label(i, j) & Fields2D::SOLID)
+      if (fields->Label(i + 1, j + 1) & Fields2D::SOLID)
         continue;
 
-      bool isInflow = (fields->Label(i, j) & Fields2D::BC_U) ||
-                      (fields->Label(i, j) & Fields2D::BC_V);
+      bool isInflow = (fields->Label(i + 1, j + 1) & Fields2D::BC_U) ||
+                      (fields->Label(i + 1, j + 1) & Fields2D::BC_V);
 
       if (isInflow) {
         // physically coherent emission rate CH7 p.114
         varType speed = varType(0);
-        if (fields->Label(i, j) & Fields2D::BC_U)
+        if (fields->Label(i + 1, j + 1) & Fields2D::BC_U)
           speed = std::abs(fields->u.Get(i, j));
         else
           speed = std::abs(fields->v.Get(i, j));
@@ -32,9 +32,9 @@ void PIC::RefillParticles() {
           varType x = (i + rand01()) * dx;
           varType y = (j + rand01()) * dy;
 
-          varType u = (fields->Label(i, j) & Fields2D::BC_U) ?
+          varType u = (fields->Label(i + 1, j + 1) & Fields2D::BC_U) ?
                           fields->u.Get(i, j) : interpolateU(x, y);
-          varType v = (fields->Label(i, j) & Fields2D::BC_V) ?
+          varType v = (fields->Label(i + 1, j + 1) & Fields2D::BC_V) ?
                           fields->v.Get(i, j) : interpolateV(x, y);
 
           // random birth time + partial advection CH7 p 115
@@ -59,7 +59,7 @@ void PIC::RefillParticles() {
           particles->Add(xa, ya, ua, va, static_cast<unsigned>(particles->size()));
         }
 
-      } else if (! (fields->Label(i, j) & Fields2D::AIR)){
+      } else if (! (fields->Label(i + 1, j + 1) & Fields2D::AIR)){
         int missing = targetPPC -
             static_cast<int>(fields->countAliveParticles.Get(i, j));
         if (missing <= 0)
@@ -70,16 +70,16 @@ void PIC::RefillParticles() {
           varType y = (j + rand01()) * dy;
           varType u = 0.0, v = 0.0;
 
-          if (fields->Label(i + 1, j) & Fields2D::SOLID) {
-            u = 0.0;
-            v = interpolateV(x, y);
-          } else if (fields->Label(i - 1, j) & Fields2D::SOLID) {
-            u = interpolateU(x, y);
-            v = 0.0;
-          } else {
-            u = interpolateU(x, y);
-            v = interpolateV(x, y);
-          }
+          // if (fields->Label(i + 1, j) & Fields2D::SOLID) {
+          //   u = 0.0;
+          //   v = interpolateV(x, y);
+          // } else if (fields->Label(i - 1, j) & Fields2D::SOLID) {
+          //   u = interpolateU(x, y);
+          //   v = 0.0;
+          // } else {
+          u = interpolateU(x, y);
+          v = interpolateV(x, y);
+          // }
 
           particles->Add(x, y, u, v, static_cast<unsigned>(particles->size()));
         }
