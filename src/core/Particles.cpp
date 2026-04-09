@@ -15,9 +15,7 @@ void Particles::InitParticleGrid(Fields2D &fields) {
 
     for (int icell = 0; icell < nx; icell++) {
         for (int jcell = 0; jcell < ny; jcell++) {
-            if (fields.Label(icell + 1, jcell + 1) & Fields2D::AIR ||
-                fields.Label(icell + 1, jcell + 1) & Fields2D::SOLID)
-                continue;
+            if (IS_FLUID(fields.Label(icell + 1, jcell + 1))){
             for (int a = 0; a < ppcx; a++) {
                 for (int b = 0; b < ppcy; b++) {
                     varType x = (icell + rand01()) * dx;
@@ -25,6 +23,7 @@ void Particles::InitParticleGrid(Fields2D &fields) {
                     Add(x, y, 0.0, 0.0, id);
                     ++id;
                 }
+            }
             }
         }
     }

@@ -74,6 +74,7 @@ Testing/
 results/
 results*/
 simulations/
+pic-results/
 
 # rm paraview files
 *.pvd 

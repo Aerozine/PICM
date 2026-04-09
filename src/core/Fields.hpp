@@ -5,9 +5,11 @@
 #include <vector>
 #define FIELD_USOLID 0.0
 
-#define IS_BC(cell) (cell & ((1<<1) | (1<<2) | (1<<3) | (1<<4)))
-#define IS_FLUID(cell) (!(cell & (1<<0)))
-#define IS_SOLID(cell) (cell &(1<<0))
+#define IS_SOLID(cell) ((((cell)) & Fields2D::SOLID) != 0)
+#define IS_AIR(cell)   ((((cell)) & Fields2D::AIR)   != 0)
+#define IS_FLUID(cell) (!IS_SOLID(cell) && !IS_AIR(cell))
+#define IS_BC(cell)    ((((cell)) & (Fields2D::BC_U | Fields2D::BC_V | Fields2D::BC_P | Fields2D::BC_S)) != 0)
+
 class Fields2D {
 public:
   /// @brief Possible states for a grid cell.
