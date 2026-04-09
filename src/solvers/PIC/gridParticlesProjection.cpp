@@ -59,13 +59,13 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
   }
 
   // Weights to zero.
-  for (int j = 0; j < ny; j++)
-    for (int i = 0; i < nx + 1; i++) {
+  for (int j = 0; j < fields->u.ny; j++)
+    for (int i = 0; i < fields->u.nx; i++) {
       fields->u_sum.Set(i, j, varType(0));
       fields->u_weight.Set(i, j, varType(0));
     }
-  for (int j = 0; j < ny + 1; j++)
-    for (int i = 0; i < nx; i++) {
+  for (int j = 0; j < fields->v.ny; j++)
+    for (int i = 0; i < fields->v.nx; i++) {
       fields->v_sum.Set(i, j, varType(0));
       fields->v_weight.Set(i, j, varType(0));
     }
@@ -77,72 +77,74 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
 
   // Normalize preserving BC and solid faces.
   // u faces: face (i,j) is between cells (i,j+1) and (i+1,j+1).
-  for (int j = 0; j < ny; j++) {
-    for (int i = 0; i < nx + 1; i++) {
-      bool isSolid = false, isBC = false, isAir = false;
+  for (int j = 0; j < fields->u.ny; j++) {
+    for (int i = 0; i < fields->u.nx; i++) {
+      bool isSolid = false, isBC = false; //, isAir = false;
       
       auto l = fields->Label(i, j + 1);
       if (l & Fields2D::SOLID)
         isSolid = true;
       if (l & Fields2D::BC_U)
         isBC = true;
-      if (l & Fields2D::AIR)
-        isAir = true;
+      // if (l & Fields2D::AIR)
+      //   isAir = true;
 
       auto r = fields->Label(i + 1, j + 1);
       if (r & Fields2D::SOLID)
         isSolid = true;
       if (r & Fields2D::BC_U)
         isBC = true;
-      if (r & Fields2D::AIR)
-        isAir = true;
+      // if (r & Fields2D::AIR)
+      //   isAir = true;
 
       if (isSolid)
         fields->u.Set(i, j, FIELD_USOLID);
       else if (isBC)
         ;
-      else if (isAir)
-        fields->u.Set(i, j, varType(0));
+      // else if (isAir)
+      //   fields->u.Set(i, j, varType(0));
       else if (fields->u_weight.Get(i, j) > varType(1e-12))
         fields->u.Set(i, j,
                       fields->u_sum.Get(i, j) / fields->u_weight.Get(i, j));
       else
-        fields->u.Set(i, j, varType(0));
+        continue;
+        // fields->u.Set(i, j, varType(0));
     }
   }
 
   // v faces: face (i,j) is between cells (i+1,j) and (i+1,j+1).
-  for (int j = 0; j < ny + 1; j++) {
-    for (int i = 0; i < nx; i++) {
-      bool isSolid = false, isBC = false, isAir = false;
+  for (int j = 0; j < fields->v.ny; j++) {
+    for (int i = 0; i < fields->v.nx; i++) {
+      bool isSolid = false, isBC = false; //, isAir = false;
       
       auto b = fields->Label(i + 1, j);
       if (b & Fields2D::SOLID)
         isSolid = true;
       if (b & Fields2D::BC_V)
         isBC = true;
-      if (b & Fields2D::AIR)
-        isAir = true;
+      // if (b & Fields2D::AIR)
+      //   isAir = true;
       
       auto t = fields->Label(i + 1, j + 1);
       if (t & Fields2D::SOLID)
         isSolid = true;
       if (t & Fields2D::BC_V)
         isBC = true;
-      if (t & Fields2D::AIR)
-        isAir = true;
+      // if (t & Fields2D::AIR)
+      //   isAir = true;
       
       if (isSolid)
         fields->v.Set(i, j,FIELD_USOLID);
       else if (isBC)
         ;
-      else if (isAir)
-        fields->v.Set(i, j, varType(0));
+      // else if (isAir)
+      //   fields->v.Set(i, j, varType(0));
       else if (fields->v_weight.Get(i, j) > varType(1e-12))
         fields->v.Set(i, j,
                       fields->v_sum.Get(i, j) / fields->v_weight.Get(i, j));
       else
-        fields->v.Set(i, j, varType(0));
+        continue;
+        // fields->v.Set(i, j, varType(0));
     }
   }
 }

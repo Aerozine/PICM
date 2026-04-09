@@ -47,15 +47,17 @@ void updateVelocities(const Parameters & params,Fields2D & fields) {
   OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
   for (int j = 0; j < fields.u.ny; ++j) {
     for (int i = 0; i < fields.u.nx; ++i) {
-      if (fields.Label(i + 1,j + 1)& Fields2D::BC_U) {
+      if (fields.Label(i + 1, j + 1)& Fields2D::BC_U) {
         continue;
-      } else if (fields.Label(i + 1, j + 1) & Fields2D::SOLID ||
-                fields.Label(i, j + 1) & Fields2D::SOLID) {
+      } else if (IS_SOLID(fields.Label(i + 1, j + 1)) || IS_SOLID(fields.Label(i, j + 1))) {
         fields.u.Set(i, j, 0.0);
         continue;
+      // } else if (IS_AIR(fields.Label(i + 1, j + 1)) &&
+      //            IS_AIR(fields.Label(i, j + 1))) {
+      //   fields.u.Set(i, j, FIELD_USOLID);
+      //   continue;
       }
-      fields.u.Set(i, j,
-                    fields.u.Get(i, j) -
+      fields.u.Set(i, j,fields.u.Get(i, j) -
                         coef * (fields.p.Get(i + 1, j + 1) - fields.p.Get(i, j + 1)));
     }
   }
@@ -65,13 +67,16 @@ void updateVelocities(const Parameters & params,Fields2D & fields) {
     for (int i = 0; i < fields.v.nx; ++i) {
       if (fields.Label(i + 1, j + 1) & Fields2D::BC_V) {
         continue;
-      } else if ((fields.Label(i + 1, j + 1) & Fields2D::SOLID) ||
-          (fields.Label(i + 1, j) & Fields2D::SOLID)) {
+      } else if (IS_SOLID(fields.Label(i + 1, j + 1)) ||
+                 IS_SOLID(fields.Label(i + 1, j))) {
         fields.v.Set(i, j, FIELD_USOLID);
         continue;
+      // } else if (IS_AIR(fields.Label(i + 1, j + 1)) &&
+      //            IS_AIR(fields.Label(i + 1, j))) {
+      //   fields.v.Set(i, j, 0.0);
+      //   continue;
       }
-      fields.v.Set(i, j,
-                    fields.v.Get(i, j) -
+      fields.v.Set(i, j, fields.v.Get(i, j) -
                         coef * (fields.p.Get(i + 1, j + 1) - fields.p.Get(i + 1, j)));
     }
   }
