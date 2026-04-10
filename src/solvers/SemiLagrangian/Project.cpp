@@ -71,9 +71,9 @@ void updateVelocities(const Parameters & params,Fields2D & fields) {
                  IS_SOLID(fields.Label(i + 1, j))) {
         fields.v.Set(i, j, FIELD_USOLID);
         continue;
-      // } else if (IS_AIR(fields.Label(i + 1, j + 1)) &&
-      //            IS_AIR(fields.Label(i + 1, j))) {
-      //   fields.v.Set(i, j, 0.0);
+      // } else if (is_air(fields.label(i + 1, j + 1)) &&
+      //            is_air(fields.label(i + 1, j))) {
+      //   fields.v.set(i, j, 0.0);
       //   continue;
       }
       fields.v.Set(i, j, fields.v.Get(i, j) -

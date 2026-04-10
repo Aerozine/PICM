@@ -5,8 +5,8 @@
     "nx": 100,
     "ny": 190,
     "nt": 200,
-    "ppcx": 2,
-    "ppcy": 2,
+    "ppcx": 6,
+    "ppcy": 6,
     "density": 1000,
     "sampling_rate": 1,
     "write_u": true,
@@ -25,7 +25,14 @@
             "y1": "ny-10",
             "x2": "nx/2+20",
             "y2": "ny-40"
-        }]
+        },
+        {
+            "x1": 3,
+            "y1": 3,
+            "x2": "nx-2",
+            "y2": 30
+        }
+    ]
     },
 
     "solid": {
@@ -58,8 +65,8 @@
 
     "solver": {
         "type": "red_black_gauss_seidel",
-        "max_iterations": 1e2,
-        "tolerance": 5e-2
+        "max_iterations": 1e4,
+        "tolerance": 1e-5
     },
     "method": "pic",
     "freeSurface": "yes"

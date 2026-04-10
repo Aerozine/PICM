@@ -14,6 +14,11 @@ OMP_PRAGMA(omp parallel for collapse(2))
 
             if (alive == 0.0){
                 fields->ResetLabel(i + 1, j + 1, Fields2D::AIR);
+                // verifier les indices ici dessous 
+                if(IS_AIR(fields->Label(i, j + 1)))
+                    fields->u.Set(i, j, 0.0);
+                if(IS_AIR(fields->Label(i + 1, j)))
+                    fields->v.Set(i, j, 0.0);
             }
             else{
                 fields->ResetLabel(i + 1, j + 1, Fields2D::FLUID);
