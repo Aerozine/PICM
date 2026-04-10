@@ -59,17 +59,21 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
   }
 
   // Weights to zero.
+OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->u.ny; j++)
     for (int i = 0; i < fields->u.nx; i++) {
       fields->u_sum.Set(i, j, varType(0));
       fields->u_weight.Set(i, j, varType(0));
     }
+
+OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->v.ny; j++)
     for (int i = 0; i < fields->v.nx; i++) {
       fields->v_sum.Set(i, j, varType(0));
       fields->v_weight.Set(i, j, varType(0));
     }
 
+OMP_PRAGMA(omp parallel for)
   for (int idx = 0; idx < particles->size(); ++idx) {
     ProjectParticleOnMAC(particles->GetX(idx), particles->GetY(idx),
                             particles->GetU(idx), particles->GetV(idx));
@@ -77,6 +81,8 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
 
   // Normalize preserving BC and solid faces.
   // u faces: face (i,j) is between cells (i,j+1) and (i+1,j+1).
+
+OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->u.ny; j++) {
     for (int i = 0; i < fields->u.nx; i++) {
       bool isSolid = false, isBC = false; //, isAir = false;
@@ -113,6 +119,8 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
   }
 
   // v faces: face (i,j) is between cells (i+1,j) and (i+1,j+1).
+
+OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->v.ny; j++) {
     for (int i = 0; i < fields->v.nx; i++) {
       bool isSolid = false, isBC = false; //, isAir = false;
@@ -150,6 +158,7 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
 }
 
 void PIC::ProjectGridOnParticles() {
+OMP_PRAGMA(omp parallel for)
   for (int idx = 0; idx < particles->size(); ++idx) {
     particles->SetU(idx, interpolateU(particles->GetX(idx), particles->GetY(idx)));
     particles->SetV(idx, interpolateV(particles->GetX(idx), particles->GetY(idx)));
