@@ -110,7 +110,7 @@ void RectangleObject::applyFluid(Fields2D &f) {
   const int jMax = std::min(y2, f.p.ny - 1);
   for (int j = std::max(y1, 0); j <= jMax; ++j)
     for (int i = std::max(x1, 0); i <= iMax; ++i) {
-      f.SetLabel(i, j, Fields2D::FLUID);
+      f.setFluid(i,j);
     }
 }
 
