@@ -19,8 +19,7 @@ PIC::PIC(const Parameters &params)
             << "  u  (nx+1, ny  ): " << fields->u.nx << " x " << fields->u.ny
             << '\n'
             << "  v  (nx,   ny+1): " << fields->v.nx << " x " << fields->v.ny
-            << '\n'
-            << "  particles capacity: " << particles->capacity << '\n';
+            << '\n';
 #endif
 
   params.applyToFields(*fields);
@@ -84,8 +83,8 @@ void PIC::WriteOutput(int step) const {
 }
 
 void PIC::Step() {
-  ProjectParticlesOnGrid("hat");
   ApplyGravity(); 
+  ProjectParticlesOnGrid("hat");
   MakeIncompressible(params, *fields);
   ProjectGridOnParticles();
   fields->Div();

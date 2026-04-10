@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 project(PIC)
 
-option(USE_FLOAT_PRECISION "Use float instead of double" OFF)
+option(USE_FLOAT_PRECISION "Use float instead of double" ON)
 option(USE_FP16 "Use half-precision floating point (FP16)" OFF)
 option(USE_PARALLEL "Use paralellization" ON)
 

@@ -84,15 +84,15 @@ public:
   void Div();
   static constexpr uint16_t CELL_TYPE_MASK = SOLID | AIR;
 inline void setSolid(int i, int j) {
-  Labels(idx(i, j)) = (Labels(idx(i, j)) & ~CELL_TYPE_MASK) | SOLID;
+  Labels[idx(i, j)] = (Labels[idx(i, j)] & ~CELL_TYPE_MASK) | SOLID;
 }
 
 inline void setAir(int i, int j) {
-  Labels(idx(i, j)) = (Labels(idx(i, j)) & ~CELL_TYPE_MASK) | AIR;
+  Labels[idx(i, j)] = (Labels[idx(i, j)] & ~CELL_TYPE_MASK) | AIR;
 }
 
 inline void setFluid(int i, int j) {
-  Labels(idx(i, j)) = Labels(idx(i, j)) & ~CELL_TYPE_MASK;
+  Labels[idx(i, j)] = Labels[idx(i, j)] & ~CELL_TYPE_MASK;
 }
 
   static inline bool isSolid(uint16_t cell) {

@@ -19,34 +19,20 @@
     "folder": "results",
     "filename": "simulation",
 
-    "air": {
+    "fluid": {
         "rectangle": [{
+            "x1": "nx/2-19",
+            "y1": "ny-40",
+            "x2": "nx/2+19",
+            "y2": "ny"
+        },
+        {
             "x1": "1",
-            "y1": "ny/4",
-            "x2": "nx/2-20",
-            "y2": "ny"
-        },
-        {
-            "x1": "nx/2-19",
-            "y1": "ny/4",
-            "x2": "nx/2+19",
-            "y2": "ny-40"
-        },
-        {
-            "x1": "nx/2+20",
-            "y1": "ny/4",
+            "y1": "1",
             "x2": "nx",
-            "y2": "ny"
-        },
-        {
-            "x1": "nx/2-19",
-            "y1": "ny-2",
-            "x2": "nx/2+19",
-            "y2": "ny"
+            "y2": "30"
         }]
     },
-
-
 
     "solid": {
         "rectangle":[{
@@ -82,7 +68,7 @@
         "tolerance": 5e-2
     },
     "method": "pic",
-    "freeSurface": "no"
+    "freeSurface": "yes"
 }
 
 
