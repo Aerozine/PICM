@@ -6,15 +6,15 @@
     "ny": 80,
     "nt": 150,
     "density": 1000,
-    "sampling_rate": 1,
-
+    "sampling_rate": 5,
+    "write_smoke":         true,
     "write_u":             true,
     "write_v":             true,
     "write_p":             true,
     "write_div":           true,
     "write_norm_velocity": true,
 
-    "folder":   "results",
+    "folder":   "results/SL/small-vk",
     "filename": "simulation",
 
     "velocityu": {

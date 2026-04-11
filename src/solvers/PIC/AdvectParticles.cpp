@@ -22,7 +22,9 @@ OMP_PRAGMA(omp parallel for)
 
     varType x1 = x0 + dt * umid;
     varType y1 = y0 + dt * vmid;
-
+   /*
+    *@todo why ?
+    */
     if (x1 < varType(0) || x1 >= xMax || y1 < varType(0) || y1 >= yMax) {
       keep[idx] = 0;
       continue;

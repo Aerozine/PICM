@@ -1,6 +1,7 @@
 #include "SemiLagrangian.hpp"
 #include <algorithm>
 #include <cmath>
+#include <cassert>
 #include <iostream>
 
 // TODO: advect in SOLIDS is useless | add if(SOLID) {skip} ? 
@@ -12,11 +13,16 @@ void SemiLagrangian::Advect() const {
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->u.ny; ++j)
     for (int i = 0; i < fields->u.nx; ++i) {
-      if (i == 0) {
+      // if label (i + 1, j + 1) is a BC_U, this means there is a
+      // BC on the left boundary of this cell i.e. u(i, j)
+      if(fields->Label(i + 1, j + 1) & Fields2D::BC_U){
         uNew.Set(i, j, fields->u.Get(i, j));
         continue;
       }
-      
+      if(IS_SOLID(fields->Label(i, j + 1)) || IS_SOLID(fields->Label(i + 1, j + 1))){
+        uNew.Set(i, j, FIELD_USOLID);
+        continue;
+      }
       varType x, y;
       traceParticleU(i, j, x, y);
       uNew.Set(i, j, interpolateU(x, y));
@@ -25,6 +31,15 @@ void SemiLagrangian::Advect() const {
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->v.ny; ++j)
     for (int i = 0; i < fields->v.nx; ++i) {
+      if(fields->Label(i + 1, j + 1) & Fields2D::BC_V){
+        vNew.Set(i, j, fields->v.Get(i, j));
+        continue;
+      }
+      if(IS_SOLID(fields->Label(i + 1, j)) || IS_SOLID(fields->Label(i + 1, j + 1))){
+        vNew.Set(i, j, FIELD_USOLID);
+        continue;
+      }
+
       varType x, y;
       traceParticleV(i, j, x, y);
       vNew.Set(i, j, interpolateV(x, y));
@@ -40,8 +55,8 @@ void SemiLagrangian::AdvectSmoke() const {
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->smokeMap.ny; ++j) {
     for (int i = 0; i < fields->smokeMap.nx; ++i) {
-
       if (fields->Label(i, j) & Fields2D::BC_S) {
+        assert( std::isfinite(fields->smokeMap.Get(i, j)) );
         smokeNew.Set(i, j, fields->smokeMap.Get(i, j));
         continue;
       }
@@ -66,6 +81,8 @@ void SemiLagrangian::AdvectSmoke() const {
       yDep = std::clamp(yDep, REAL_LITERAL(0.0),
                         static_cast<varType>(ny - 1) * dy);
 
+      assert(std::isfinite(xDep));
+      assert(std::isfinite(yDep));
       smokeNew.Set(i, j, interpolateSmoke(xDep, yDep));
     }
   }
@@ -73,7 +90,8 @@ void SemiLagrangian::AdvectSmoke() const {
   // TODO : pass smokeNew as pointer of fields and avoir copy
   for (int j = 0; j < fields->smokeMap.ny; ++j) {
     for (int i = 0; i < fields->smokeMap.nx; ++i) {
-        fields->smokeMap.Set(i, j, smokeNew.Get(i, j)); 
+        assert( std::isfinite(smokeNew.Get(i, j)) );
+        fields->smokeMap.Set(i, j, smokeNew.Get(i, j));
     }
   }
 
@@ -162,7 +180,10 @@ varType SemiLagrangian::interpolateV(const varType x, const varType y) const {
   const varType v10 = fields->v.Get(i + 1, j);
   const varType v01 = fields->v.Get(i, j + 1);
   const varType v11 = fields->v.Get(i + 1, j + 1);
-
+  assert( std::isfinite(
+  (REAL_LITERAL(1.0) - fy) *
+           ((REAL_LITERAL(1.0) - fx) * v00 + fx * v10) +
+       fy * ((REAL_LITERAL(1.0) - fx) * v01 + fx * v11)));
   return (REAL_LITERAL(1.0) - fy) *
              ((REAL_LITERAL(1.0) - fx) * v00 + fx * v10) +
          fy * ((REAL_LITERAL(1.0) - fx) * v01 + fx * v11);
@@ -193,7 +214,9 @@ varType SemiLagrangian::interpolateSmoke(const varType x,
   const varType s10 = fields->smokeMap.Get(i + 1, j);
   const varType s01 = fields->smokeMap.Get(i, j + 1);
   const varType s11 = fields->smokeMap.Get(i + 1, j + 1);
-
+  assert( std::isfinite((1.0 - fy) *
+                    ((1.0 - fx) * s00 + fx * s10) +
+                    fy * (1.0 - fx) * s01 + fx * s11) );
   return (REAL_LITERAL(1.0) - fy) *
              ((REAL_LITERAL(1.0) - fx) * s00 + fx * s10) +
          fy * ((REAL_LITERAL(1.0) - fx) * s01 + fx * s11);
