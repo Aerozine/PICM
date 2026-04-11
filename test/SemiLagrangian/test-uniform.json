@@ -15,7 +15,7 @@
     "write_norm_velocity": true,
     "write_smoke":         true,
 
-    "folder":   "results",
+    "folder":   "results/SL/uniform",
     "filename": "simulation",
 
 

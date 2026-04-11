@@ -14,7 +14,7 @@
     "write_div":           true,
     "write_norm_velocity": true,
 
-    "folder":   "results",
+    "folder":   "results/SL/square",
     "filename": "simulation",
 
     "velocityu": {

@@ -68,6 +68,7 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   write_particles=j.value("write_particles",write_particles);
   // Output paths
   folder = j.value("folder", folder);
+  // @todo remove the filename ?
   filename = j.value("filename", filename);
   // Boundary condition
   if (j.contains("velocityu"))
