@@ -2,11 +2,11 @@
     "dx": 0.002,
     "dy": 0.002,
     "dt": 0.005,
-    "nx": 160,
-    "ny": 80,
-    "nt": 200,
-    "ppcx": 3,
-    "ppcy": 3,
+    "nx": 200,
+    "ny": 200,
+    "nt": 300,
+    "ppcx": 4,
+    "ppcy": 4,
     "density": 1000,
     "sampling_rate": 1,
     "write_u": true,
@@ -19,23 +19,33 @@
     "folder": "results",
     "filename": "simulation",
 
-    "velocityu": {
-        "rectangle": {
-            "condition": "boundary",
-            "val": 0.5,
-            "x1": "1",
-            "y1": "3",
-            "x2": "2",
+    "air": {
+        "rectangle": [{
+            "x1": "3",
+            "y1": "151",
+            "x2": "nx-2",
             "y2": "ny-2"
-        }
+        },
+        {
+            "x1": "101",
+            "y1": "3",
+            "x2": "nx-2",
+            "y2": "150"
+        }]
     },
 
     "solid": {
-        "cylinder": {
-            "x": "nx/5",
-            "y": "ny/2",
-            "r": "ny/15"
+        "cylinder": [{
+            "x": "50",
+            "y": "50",
+            "r": "20"
         },
+        {
+            "x": "150",
+            "y": "50",
+            "r": "20"
+        }],
+
         "rectangle":[{
             "x1": "0",
             "y1": "0",
@@ -47,23 +57,27 @@
             "y1": "ny-1",
             "x2": "nx+1",
             "y2": "ny+1"
-        }]
-    },
-
-    "air": {
-        "rectangle": {
-            "condition": "boundary",
-            "val": 0,
-            "x1": "nx+1",
+        },
+        {
+            "x1": "0",
+            "y1": "0",
+            "x2": "2",
+            "y2": "ny+1"
+        },
+        {
+            "x1": "nx-1",
             "y1": "0",
             "x2": "nx+1",
             "y2": "ny+1"
-        }
+        }]
     },
+
+
     "solver": {
         "type": "red_black_gauss_seidel",
         "max_iterations": 1e5,
-        "tolerance": 1e-2
+        "tolerance": 1e-3
     },
-    "method": "pic"
+    "method": "pic",
+    "freeSurface": "no"
 }

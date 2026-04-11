@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+#include <cmath>
 
 #ifdef HAVE_ZLIB
 #include <zlib.h>
@@ -171,113 +172,158 @@ bool OutputWriter::writeParticles(const Particles &particles,
   if (pvd_finalised_)
     return false;
 
-  const int cap = particles.capacity;
+  const int nAlive = particles.size();
 
-  int nAlive = 0;
-  for (int idx = 0; idx < cap; ++idx)
-    if (!particles.IsDead(idx))
-      ++nAlive;
+  std::vector<varType> normValues;
+  std::vector<varType> pointValues;
+  std::vector<int32_t> connectivity;
+  std::vector<int32_t> offsets;
+
+  normValues.reserve(nAlive);
+  pointValues.reserve(static_cast<std::size_t>(nAlive) * 3);
+  connectivity.reserve(nAlive);
+  offsets.reserve(nAlive);
+
+  for (int k = 0; k < nAlive; ++k) {
+    const varType x = particles.GetX(k);
+    const varType y = particles.GetY(k);
+    const varType u = particles.GetU(k);
+    const varType v = particles.GetV(k);
+
+    normValues.push_back(std::sqrt(u * u + v * v));
+
+    pointValues.push_back(x);
+    pointValues.push_back(y);
+    pointValues.push_back(static_cast<varType>(0));
+
+    connectivity.push_back(k);
+    offsets.push_back(k + 1);
+  }
+
+  const std::vector<unsigned char> normPayload    = preparePayload(normValues);
+  const std::vector<unsigned char> pointsPayload  = preparePayload(pointValues);
+
+  const auto *connRaw = reinterpret_cast<const unsigned char *>(connectivity.data());
+  const auto *offRaw  = reinterpret_cast<const unsigned char *>(offsets.data());
+
+  std::vector<unsigned char> connPayload(
+      connRaw, connRaw + connectivity.size() * sizeof(int32_t));
+  std::vector<unsigned char> offPayload(
+      offRaw, offRaw + offsets.size() * sizeof(int32_t));
+
+#ifdef HAVE_ZLIB
+  auto compressRaw = [](const std::vector<unsigned char> &raw) {
+    uLongf compBound = compressBound(static_cast<uLong>(raw.size()));
+    std::vector<unsigned char> buf(compBound);
+    uLongf compLen = compBound;
+    const int ret = compress2(buf.data(), &compLen, raw.data(),
+                              static_cast<uLong>(raw.size()), Z_BEST_SPEED);
+    if (ret != Z_OK)
+      throw std::runtime_error("OutputWriter: zlib compress2 failed");
+    buf.resize(compLen);
+    return buf;
+  };
+  connPayload = compressRaw(connPayload);
+  offPayload  = compressRaw(offPayload);
+#endif
+
+  const uint32_t normRawBytes =
+      static_cast<uint32_t>(normValues.size() * sizeof(varType));
+  const uint32_t pointsRawBytes =
+      static_cast<uint32_t>(pointValues.size() * sizeof(varType));
+  const uint32_t connRawBytes =
+      static_cast<uint32_t>(connectivity.size() * sizeof(int32_t));
+  const uint32_t offRawBytes =
+      static_cast<uint32_t>(offsets.size() * sizeof(int32_t));
 
   std::ostringstream oss;
   oss << id << '_' << std::setw(4) << std::setfill('0') << current_step_
       << ".vtp";
-  std::string vtp_name = oss.str();
-  std::string vtp_path = output_dir_ + "/" + vtp_name;
+  const std::string vtp_name = oss.str();
+  const std::string vtp_path = output_dir_ + "/" + vtp_name;
 
-  std::ofstream out(vtp_path);
+  std::ofstream out(vtp_path, std::ios::binary);
   if (!out.is_open())
     return false;
 
-  out << "<?xml version=\"1.0\"?>\n"
+#ifdef HAVE_ZLIB
+  const char *compressorAttr = " compressor=\"vtkZLibDataCompressor\"";
+#else
+  const char *compressorAttr = "";
+#endif
+
+  uint32_t offset = 0;
+#ifdef HAVE_ZLIB
+  const uint32_t headerSize = 4 * sizeof(uint32_t);
+#else
+  const uint32_t headerSize = sizeof(uint32_t);
+#endif
+
+  const uint32_t normOffset   = offset;
+  offset += headerSize + static_cast<uint32_t>(normPayload.size());
+
+  const uint32_t pointsOffset = offset;
+  offset += headerSize + static_cast<uint32_t>(pointsPayload.size());
+
+  const uint32_t connOffset = offset;
+  offset += headerSize + static_cast<uint32_t>(connPayload.size());
+
+  const uint32_t offOffset = offset;
+  offset += headerSize + static_cast<uint32_t>(offPayload.size());
+
+  std::ostringstream xml;
+  xml << "<?xml version=\"1.0\"?>\n"
       << "<VTKFile type=\"PolyData\" version=\"0.1\" "
-         "byte_order=\"LittleEndian\">\n"
+      << "byte_order=\"LittleEndian\"" << compressorAttr << ">\n"
       << "  <PolyData>\n"
       << "    <Piece NumberOfPoints=\"" << nAlive << "\" NumberOfVerts=\""
       << nAlive
-      << "\" NumberOfLines=\"0\" NumberOfStrips=\"0\" NumberOfPolys=\"0\">\n";
-
-  out << "      <PointData Scalars=\"u\" Vectors=\"velocity\">\n";
-
-  // u
-  out << "        <DataArray type=\"Float64\" Name=\"u\" "
-         "NumberOfComponents=\"1\" format=\"ascii\">\n          ";
-  bool first = true;
-  for (int idx = 0; idx < cap; ++idx) {
-    if (particles.IsDead(idx))
-      continue;
-    if (!first)
-      out << ' ';
-    out << particles.GetU(idx);
-    first = false;
-  }
-  out << "\n        </DataArray>\n";
-
-  // v
-  out << "        <DataArray type=\"Float64\" Name=\"v\" "
-         "NumberOfComponents=\"1\" format=\"ascii\">\n          ";
-  first = true;
-  for (int idx = 0; idx < cap; ++idx) {
-    if (particles.IsDead(idx))
-      continue;
-    if (!first)
-      out << ' ';
-    out << particles.GetV(idx);
-    first = false;
-  }
-  out << "\n        </DataArray>\n";
-
-  // velocity vector (3-component for VTK)
-  out << "        <DataArray type=\"Float64\" Name=\"velocity\" "
-         "NumberOfComponents=\"3\" format=\"ascii\">\n          ";
-  first = true;
-  for (int idx = 0; idx < cap; ++idx) {
-    if (particles.IsDead(idx))
-      continue;
-    if (!first)
-      out << ' ';
-    out << particles.GetU(idx) << ' ' << particles.GetV(idx) << ' ' << 0.0;
-    first = false;
-  }
-  out << "\n        </DataArray>\n";
-
-  out << "      </PointData>\n";
-
-  // Points
-  out << "      <Points>\n"
-      << "        <DataArray type=\"Float64\" NumberOfComponents=\"3\" "
-         "format=\"ascii\">\n          ";
-  first = true;
-  for (int idx = 0; idx < cap; ++idx) {
-    if (particles.IsDead(idx))
-      continue;
-    if (!first)
-      out << ' ';
-    out << particles.GetX(idx) << ' ' << particles.GetY(idx) << ' ' << 0.0;
-    first = false;
-  }
-  out << "\n        </DataArray>\n      </Points>\n";
-
-  // Verts
-  out << "      <Verts>\n"
+      << "\" NumberOfLines=\"0\" NumberOfStrips=\"0\" NumberOfPolys=\"0\">\n"
+      << "      <PointData Scalars=\"normVelocity\">\n"
+      << "        <DataArray type=\"" << vtkTypeName()
+      << "\" Name=\"normVelocity\" NumberOfComponents=\"1\" format=\"appended\" "
+      << "offset=\"" << normOffset << "\"/>\n"
+      << "      </PointData>\n"
+      << "      <Points>\n"
+      << "        <DataArray type=\"" << vtkTypeName()
+      << "\" NumberOfComponents=\"3\" format=\"appended\" "
+      << "offset=\"" << pointsOffset << "\"/>\n"
+      << "      </Points>\n"
+      << "      <Verts>\n"
       << "        <DataArray type=\"Int32\" Name=\"connectivity\" "
-         "format=\"ascii\">\n          ";
-  for (int k = 0; k < nAlive; ++k) {
-    if (k)
-      out << ' ';
-    out << k;
-  }
-  out << "\n        </DataArray>\n"
+      << "format=\"appended\" offset=\"" << connOffset << "\"/>\n"
       << "        <DataArray type=\"Int32\" Name=\"offsets\" "
-         "format=\"ascii\">\n          ";
-  for (int k = 0; k < nAlive; ++k) {
-    if (k)
-      out << ' ';
-    out << (k + 1);
-  }
-  out << "\n        </DataArray>\n      </Verts>\n";
+      << "format=\"appended\" offset=\"" << offOffset << "\"/>\n"
+      << "      </Verts>\n"
+      << "    </Piece>\n"
+      << "  </PolyData>\n"
+      << "  <AppendedData encoding=\"raw\">\n"
+      << "  _";
 
-  out << "    </Piece>\n  </PolyData>\n</VTKFile>\n";
-  out.close();
+  const std::string xmlStr = xml.str();
+  out.write(xmlStr.data(), static_cast<std::streamsize>(xmlStr.size()));
+
+  auto writeBlock = [&](const std::vector<unsigned char> &payload,
+                        uint32_t rawBytes) {
+#ifdef HAVE_ZLIB
+    writeU32(out, 1);
+    writeU32(out, rawBytes);
+    writeU32(out, rawBytes);
+    writeU32(out, static_cast<uint32_t>(payload.size()));
+#else
+    writeU32(out, rawBytes);
+#endif
+    out.write(reinterpret_cast<const char *>(payload.data()),
+              static_cast<std::streamsize>(payload.size()));
+  };
+
+  writeBlock(normPayload,   normRawBytes);
+  writeBlock(pointsPayload, pointsRawBytes);
+  writeBlock(connPayload,   connRawBytes);
+  writeBlock(offPayload,    offRawBytes);
+
+  out << "\n  </AppendedData>\n"
+      << "</VTKFile>\n";
 
   appendPVDEntry(vtp_name, static_cast<double>(current_step_));
   ++current_step_;

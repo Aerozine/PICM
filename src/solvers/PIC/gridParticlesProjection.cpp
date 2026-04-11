@@ -14,9 +14,7 @@ varType PIC::hat(varType r) {
     return varType(0);
 }
 
-void PIC::ProjectOneParticleOnMAC(varType x, varType y, varType up,
-                                  varType vp) {
-  // u faces: staggered at (i·dx, (j+0.5)·dy)
+void PIC::ProjectParticleOnMAC(varType x, varType y, varType up, varType vp) {
   varType xu = x / dx;
   varType yu = y / dy - varType(0.5);
   int i0 = static_cast<int>(std::floor(xu));
@@ -35,7 +33,6 @@ void PIC::ProjectOneParticleOnMAC(varType x, varType y, varType up,
     }
   }
 
-  // v faces: staggered at ((i+0.5)·dx, j·dy)
   varType xv = x / dx - varType(0.5);
   varType yv = y / dy;
   i0 = static_cast<int>(std::floor(xv));
@@ -61,97 +58,109 @@ void PIC::ProjectParticlesOnGrid(std::string kernel) {
     return;
   }
 
-  // Zero accumulation buffers.
-  for (int j = 0; j < ny; j++)
-    for (int i = 0; i < nx + 1; i++) {
+  // Weights to zero.
+OMP_PRAGMA(omp parallel for collapse(2))
+  for (int j = 0; j < fields->u.ny; j++)
+    for (int i = 0; i < fields->u.nx; i++) {
       fields->u_sum.Set(i, j, varType(0));
       fields->u_weight.Set(i, j, varType(0));
     }
-  for (int j = 0; j < ny + 1; j++)
-    for (int i = 0; i < nx; i++) {
+
+OMP_PRAGMA(omp parallel for collapse(2))
+  for (int j = 0; j < fields->v.ny; j++)
+    for (int i = 0; i < fields->v.nx; i++) {
       fields->v_sum.Set(i, j, varType(0));
       fields->v_weight.Set(i, j, varType(0));
     }
 
-  // Accumulate — iterate flat over all allocated slots.
-  const int cap = particles->capacity;
-  for (int idx = 0; idx < cap; ++idx) {
-    if (particles->IsDead(idx))
-      continue;
-    ProjectOneParticleOnMAC(particles->GetX(idx), particles->GetY(idx),
+OMP_PRAGMA(omp parallel for)
+  for (int idx = 0; idx < particles->size(); ++idx) {
+    ProjectParticleOnMAC(particles->GetX(idx), particles->GetY(idx),
                             particles->GetU(idx), particles->GetV(idx));
   }
 
-  // Normalize and write back, preserving BC and solid faces.
-  // u faces: face (i,j) is between cells (i-1,j) and (i,j).
-  for (int j = 0; j < ny; j++) {
-    for (int i = 0; i < nx + 1; i++) {
-      bool isSolid = false, isBC = false;
-      if (i > 0) {
-        auto l = fields->Label(i - 1, j);
-        if (l & Fields2D::SOLID)
-          isSolid = true;
-        if (l & Fields2D::BC_U)
-          isBC = true;
-      }
-      if (i < nx) {
-        auto l = fields->Label(i, j);
-        if (l & Fields2D::SOLID)
-          isSolid = true;
-        if (l & Fields2D::BC_U)
-          isBC = true;
-      }
+  // Normalize preserving BC and solid faces.
+  // u faces: face (i,j) is between cells (i,j+1) and (i+1,j+1).
+
+OMP_PRAGMA(omp parallel for collapse(2))
+  for (int j = 0; j < fields->u.ny; j++) {
+    for (int i = 0; i < fields->u.nx; i++) {
+      bool isSolid = false, isBC = false; //, isAir = false;
+      
+      auto l = fields->Label(i, j + 1);
+      if (l & Fields2D::SOLID)
+        isSolid = true;
+      if (l & Fields2D::BC_U)
+        isBC = true;
+      // if (l & Fields2D::AIR)
+      //   isAir = true;
+
+      auto r = fields->Label(i + 1, j + 1);
+      if (r & Fields2D::SOLID)
+        isSolid = true;
+      if (r & Fields2D::BC_U)
+        isBC = true;
+      // if (r & Fields2D::AIR)
+      //   isAir = true;
+
       if (isSolid)
         fields->u.Set(i, j, FIELD_USOLID);
       else if (isBC)
-        ; // keep value written by applyToFields
+        ;
+      // else if (isAir)
+      //   fields->u.Set(i, j, varType(0));
       else if (fields->u_weight.Get(i, j) > varType(1e-12))
         fields->u.Set(i, j,
                       fields->u_sum.Get(i, j) / fields->u_weight.Get(i, j));
       else
-        fields->u.Set(i, j, varType(0));
+        continue;
+        // fields->u.Set(i, j, varType(0));
     }
   }
 
-  // v faces: face (i,j) is between cells (i,j-1) and (i,j).
-  for (int j = 0; j < ny + 1; j++) {
-    for (int i = 0; i < nx; i++) {
-      bool isSolid = false, isBC = false;
-      if (j > 0) {
-        auto l = fields->Label(i, j - 1);
-        if (l & Fields2D::SOLID)
-          isSolid = true;
-        if (l & Fields2D::BC_V)
-          isBC = true;
-      }
-      if (j < ny) {
-        auto l = fields->Label(i, j);
-        if (l & Fields2D::SOLID)
-          isSolid = true;
-        if (l & Fields2D::BC_V)
-          isBC = true;
-      }
+  // v faces: face (i,j) is between cells (i+1,j) and (i+1,j+1).
+
+OMP_PRAGMA(omp parallel for collapse(2))
+  for (int j = 0; j < fields->v.ny; j++) {
+    for (int i = 0; i < fields->v.nx; i++) {
+      bool isSolid = false, isBC = false; //, isAir = false;
+      
+      auto b = fields->Label(i + 1, j);
+      if (b & Fields2D::SOLID)
+        isSolid = true;
+      if (b & Fields2D::BC_V)
+        isBC = true;
+      // if (b & Fields2D::AIR)
+      //   isAir = true;
+      
+      auto t = fields->Label(i + 1, j + 1);
+      if (t & Fields2D::SOLID)
+        isSolid = true;
+      if (t & Fields2D::BC_V)
+        isBC = true;
+      // if (t & Fields2D::AIR)
+      //   isAir = true;
+      
       if (isSolid)
         fields->v.Set(i, j,FIELD_USOLID);
       else if (isBC)
         ;
+      // else if (isAir)
+      //   fields->v.Set(i, j, varType(0));
       else if (fields->v_weight.Get(i, j) > varType(1e-12))
         fields->v.Set(i, j,
                       fields->v_sum.Get(i, j) / fields->v_weight.Get(i, j));
       else
-        fields->v.Set(i, j, varType(0));
+        continue;
+        // fields->v.Set(i, j, varType(0));
     }
   }
 }
 
 void PIC::ProjectGridOnParticles() {
-  const int cap = particles->capacity;
-  for (int idx = 0; idx < cap; ++idx) {
-    if (particles->IsDead(idx))
-      continue;
-    particles->SetU(idx,
-                    interpolateU(particles->GetX(idx), particles->GetY(idx)));
-    particles->SetV(idx,
-                    interpolateV(particles->GetX(idx), particles->GetY(idx)));
+OMP_PRAGMA(omp parallel for)
+  for (int idx = 0; idx < particles->size(); ++idx) {
+    particles->SetU(idx, interpolateU(particles->GetX(idx), particles->GetY(idx)));
+    particles->SetV(idx, interpolateV(particles->GetX(idx), particles->GetY(idx)));
   }
 }

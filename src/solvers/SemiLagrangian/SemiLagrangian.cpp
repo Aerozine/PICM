@@ -7,7 +7,7 @@ SemiLagrangian::SemiLagrangian(Parameters &params)
       dx(static_cast<varType>(params.dx)), dy(static_cast<varType>(params.dy)),
       dt(static_cast<varType>(params.dt)),
       density(static_cast<varType>(params.density)),
-      fields(new Fields2D(nx, ny, density, dt, dx, dy, "SL")){
+      fields(new Fields2D(nx, ny, density, dt, dx, dy, "SL", params.freeSurface)){
 
 #ifndef NDEBUG
   std::cout << "Grid dimensions:\n"
@@ -75,12 +75,11 @@ void SemiLagrangian::WriteOutput(int step) const {
 }
 
 void SemiLagrangian::Step() {
-
-  Advect();             // 2. Semi-Lagrangian transport of velocity.
-  AdvectSmoke();
-  MakeIncompressible(params,*fields); // 1. Pressure projection: enforce div u = 0.
-  fields->Div();        // } Update diagnostics used for
+  MakeIncompressible(params,*fields); 
+  fields->Div();      
   fields->VelocityNormCenterGrid();
+  Advect();           
+  AdvectSmoke();
 }
 
 void SemiLagrangian::Run() {
@@ -89,7 +88,7 @@ void SemiLagrangian::Run() {
   WriteOutput(0);
 
   const double start = GET_TIME();
-  const int reportEvery = std::max(1, params.nt / 10);
+  const int reportEvery = std::max(1, params.nt / 20);
 
   for (int t = 1; t <= params.nt; ++t) {
     if (t % reportEvery == 0) {

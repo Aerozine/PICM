@@ -1,22 +1,20 @@
 {
-    "dx": 0.002,
-    "dy": 0.002,
-    "dt": 0.005,
-    "nx": 160,
+    "dx": 1e-3,
+    "dy": 1e-3,
+    "dt": 1e-2,
+    "nx": 150,
     "ny": 80,
-    "nt": 200,
-    "ppcx": 3,
-    "ppcy": 3,
+    "nt": 150,
     "density": 1000,
     "sampling_rate": 1,
-    "write_u": true,
-    "write_v": true,
-    "write_p": true,
-    "write_div": true,
+
+    "write_u":             true,
+    "write_v":             true,
+    "write_p":             true,
+    "write_div":           true,
     "write_norm_velocity": true,
-    "write_smoke": true,
-    "write_particles": true,
-    "folder": "results",
+
+    "folder":   "results",
     "filename": "simulation",
 
     "velocityu": {
@@ -60,10 +58,11 @@
             "y2": "ny+1"
         }
     },
+
     "solver": {
-        "type": "red_black_gauss_seidel",
-        "max_iterations": 1e5,
-        "tolerance": 1e-2
-    },
-    "method": "pic"
+  "type": "red_black_gauss_seidel",
+    "max_iterations": 5e3,
+    "tolerance": 5e-1
 }
+}
+
