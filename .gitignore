@@ -73,6 +73,8 @@ Testing/
 # result folder
 results/
 results*/
+simulations/
+pic-results/
 
 # rm paraview files
 *.pvd 

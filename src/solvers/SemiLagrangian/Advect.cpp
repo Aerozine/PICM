@@ -1,7 +1,10 @@
 #include "SemiLagrangian.hpp"
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 
+// TODO: advect in SOLIDS is useless | add if(SOLID) {skip} ? 
+// is branching worse than looking in each solid ?
 void SemiLagrangian::Advect() const {
   Grid2D uNew(fields->u.nx, fields->u.ny);
   Grid2D vNew(fields->v.nx, fields->v.ny);
@@ -9,6 +12,11 @@ void SemiLagrangian::Advect() const {
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->u.ny; ++j)
     for (int i = 0; i < fields->u.nx; ++i) {
+      if (i == 0) {
+        uNew.Set(i, j, fields->u.Get(i, j));
+        continue;
+      }
+      
       varType x, y;
       traceParticleU(i, j, x, y);
       uNew.Set(i, j, interpolateU(x, y));
@@ -124,8 +132,8 @@ varType SemiLagrangian::interpolateU(const varType x, const varType y) const {
   const varType fx = i_real - static_cast<varType>(i);
   const varType fy = j_real - static_cast<varType>(j);
 
-  i = std::clamp(i, 0, fields->u.nx - 2);
-  j = std::clamp(j, 0, fields->u.ny - 2);
+  i = std::clamp(i, 0, fields->u.nx - 1);
+  j = std::clamp(j, 0, fields->u.ny - 1);
 
   const varType u00 = fields->u.Get(i, j);
   const varType u10 = fields->u.Get(i + 1, j);
@@ -147,8 +155,8 @@ varType SemiLagrangian::interpolateV(const varType x, const varType y) const {
   const varType fx = i_real - static_cast<varType>(i);
   const varType fy = j_real - static_cast<varType>(j);
 
-  i = std::clamp(i, 0, fields->v.nx - 2);
-  j = std::clamp(j, 0, fields->v.ny - 2);
+  i = std::clamp(i, 0, fields->v.nx - 1);
+  j = std::clamp(j, 0, fields->v.ny - 1);
 
   const varType v00 = fields->v.Get(i, j);
   const varType v10 = fields->v.Get(i + 1, j);
@@ -178,8 +186,8 @@ varType SemiLagrangian::interpolateSmoke(const varType x,
   const varType fx = i_real - static_cast<varType>(i);
   const varType fy = j_real - static_cast<varType>(j);
 
-  i = std::clamp(i, 0, fields->smokeMap.nx - 2);
-  j = std::clamp(j, 0, fields->smokeMap.ny - 2);
+  i = std::clamp(i, 0, fields->smokeMap.nx - 1);
+  j = std::clamp(j, 0, fields->smokeMap.ny - 1);
 
   const varType s00 = fields->smokeMap.Get(i, j);
   const varType s10 = fields->smokeMap.Get(i + 1, j);

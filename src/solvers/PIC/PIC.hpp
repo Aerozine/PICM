@@ -31,7 +31,6 @@ private:
   varType density;
   Fields2D *fields;
   Particles *particles;
-  ParticleSlots *deadSlots;
 
   std::unique_ptr<OutputWriter> uWriter;
   std::unique_ptr<OutputWriter> vWriter;
@@ -44,19 +43,10 @@ private:
   void InitializeOutputWriters();
   void WriteOutput(int step) const;
 
-  /**
-   * @brief Build the initial free-list of dead particle slots.
-   *
-   * Kills grid-slot particles whose home cell is solid, and pushes all
-   * extra capacity slots (indices >= nx*ny*ppcx*ppcy) onto the free-list.
-   * Must be called after applyToFields() and InitParticleGrid().
-   */
-  void InitFreeSlots();
-
   // P2G
   varType GetW();
   varType hat(varType r);
-  void ProjectOneParticleOnMAC(varType x, varType y, varType up, varType vp);
+  void ProjectParticleOnMAC(varType x, varType y, varType up, varType vp);
   void ProjectParticlesOnGrid(std::string kernel);
 
   // G2P
@@ -66,10 +56,15 @@ private:
   void AdvectParticles();
   [[nodiscard]] varType interpolateU(varType x, varType y) const;
   [[nodiscard]] varType interpolateV(varType x, varType y) const;
-  void getVelocity(varType x, varType y, varType &u, varType &v) const;
 
   // Reseeding
   void RefillParticles();
   void CountAliveParticles();
   varType rand01();
+
+  // Gravity
+  void ApplyGravity();
+
+  // CellState
+  void UpdateCellState();
 };

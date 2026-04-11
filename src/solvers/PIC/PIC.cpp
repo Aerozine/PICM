@@ -8,11 +8,9 @@ PIC::PIC(const Parameters &params)
       dx(static_cast<varType>(params.dx)), dy(static_cast<varType>(params.dy)),
       dt(static_cast<varType>(params.dt)),
       density(static_cast<varType>(params.density)),
-      fields(new Fields2D(params.nx, params.ny, params.density, params.dt, params.dx, params.dy, "PIC")),
-      particles(new Particles(nx, ny, dx, dy, params.ppcx, params.ppcy,
-                              CAPACITY_FACTOR * params.ppcx * params.ppcy *
-                                  params.nx * params.ny)),
-      deadSlots(new ParticleSlots()) {
+      fields(new Fields2D(params.nx, params.ny, params.density,
+             params.dt, params.dx, params.dy, "PIC", params.freeSurface)),
+      particles(new Particles(nx, ny, dx, dy, params.ppcx, params.ppcy)) {
 
 #ifndef NDEBUG
   std::cout << "Grid dimensions:\n"
@@ -21,68 +19,25 @@ PIC::PIC(const Parameters &params)
             << "  u  (nx+1, ny  ): " << fields->u.nx << " x " << fields->u.ny
             << '\n'
             << "  v  (nx,   ny+1): " << fields->v.nx << " x " << fields->v.ny
-            << '\n'
-            << "  particles capacity: " << particles->capacity << '\n';
+            << '\n';
 #endif
 
   params.applyToFields(*fields);
-  particles->InitParticleGrid();
-
-  // Kill particles inside solid cells and register all extra slots
-  // (solid + overflow capacity) onto the free-list.
-  InitFreeSlots();
+  particles->InitParticleGrid(*fields);
 
   InitializeOutputWriters();
 
 #ifndef NDEBUG
   std::cout << "PIC initialised: " << nx << " x " << ny << " grid, "
-            << params.nt << " time steps.\n"
-            << "  Free slots after init: " << deadSlots->size() << '\n';
+            << params.nt << " time steps.\n" << '\n';
 #endif
 }
 
 PIC::~PIC() {
   delete fields;
   delete particles;
-  delete deadSlots;
 }
 
-// Build the initial free-list.
-//
-// Two sources of free slots:
-//  1. Grid slots whose home cell is solid ,these particles are killed.
-//  2. Extra capacity slots (indices >= nx*ny*ppcx*ppcy) that were never
-//     activated by InitParticleGrid , they are already dead.
-//
-// Having a large free-list from the start means the reseeder can inject
-// particles at an open inlet without waiting for particles to die elsewhere.
-void PIC::InitFreeSlots() {
-  const int ppcx = particles->ppcx;
-  const int ppcy = particles->ppcy;
-  const int gridSlots = nx * ny * ppcx * ppcy;
-
-  // 1. Kill grid slots that landed in solid cells.
-  int idx = 0;
-  for (int icell = 0; icell < nx; icell++) {
-    for (int jcell = 0; jcell < ny; jcell++) {
-      bool solid = (fields->Label(icell, jcell) & Fields2D::SOLID) != 0;
-      for (int a = 0; a < ppcx; a++) {
-        for (int b = 0; b < ppcy; b++) {
-          if (solid) {
-            particles->SetDead(idx, true);
-            deadSlots->push(idx);
-          }
-          ++idx;
-        }
-      }
-    }
-  }
-
-  // 2. All extra capacity slots are already dead; push them onto the list.
-  for (int i = gridSlots; i < particles->capacity; i++) {
-    deadSlots->push(i);
-  }
-}
 
 void PIC::InitializeOutputWriters() {
   if (params.write_u)
@@ -128,13 +83,16 @@ void PIC::WriteOutput(int step) const {
 }
 
 void PIC::Step() {
+  ApplyGravity(); 
   ProjectParticlesOnGrid("hat");
-  MakeIncompressible(params,*fields);
+  MakeIncompressible(params, *fields);
+  ProjectGridOnParticles();
   fields->Div();
   fields->VelocityNormCenterGrid();
-  ProjectGridOnParticles();
   AdvectParticles();
-  RefillParticles();
+  CountAliveParticles();
+  UpdateCellState();
+  // RefillParticles();
 }
 
 void PIC::Run() {
@@ -155,8 +113,7 @@ void PIC::Run() {
 
       std::cout << "\rStep " << t << " / " << params.nt << " ("
                 << (100 * t / params.nt) << "%) "
-                << "max |div| = " << maxDiv
-                << "  free slots: " << deadSlots->size() << std::flush;
+                << "max |div| = " << maxDiv << std::flush;
     }
 
     Step();
