@@ -17,8 +17,8 @@ public:
 
   ~SemiLagrangian();
 
-  //SemiLagrangian(const SemiLagrangian &) = delete;
-  //SemiLagrangian &operator=(const SemiLagrangian &) = delete;
+  // SemiLagrangian(const SemiLagrangian &) = delete;
+  // SemiLagrangian &operator=(const SemiLagrangian &) = delete;
 
   /// @brief Run the full simulation loop (nt steps) and write output.
   void Run();
@@ -26,13 +26,13 @@ public:
   /// @brief Advance the simulation by one time step.
   void Step();
 
-  //Fields2D &GetFields() { return *fields; } ///< Access fields (mutable).
-  //const Fields2D &GetFields() const {
-    //return *fields;
+  // Fields2D &GetFields() { return *fields; } ///< Access fields (mutable).
+  // const Fields2D &GetFields() const {
+  // return *fields;
   //} ///< Access fields (const).
 
 private:
- Parameters &params;
+  Parameters &params;
 
   // Cached scalars from params to avoid pointer chasing in hot loops.
   int nx, ny;
@@ -41,6 +41,7 @@ private:
 
   Fields2D *fields; ///< @todo Replace with std::unique_ptr<Fields2D>?
 
+  // @todo maybe useful to do a solver class , and herit code from it ?
   // Output writers — null if the corresponding write_* flag is false.
   std::unique_ptr<OutputWriter> uWriter;
   std::unique_ptr<OutputWriter> vWriter;
@@ -48,7 +49,8 @@ private:
   std::unique_ptr<OutputWriter> divWriter;
   std::unique_ptr<OutputWriter> normVelocityWriter;
   std::unique_ptr<OutputWriter> smokeWriter;
-
+  // @todo do a IF DEBUG THEN
+  std::unique_ptr<OutputWriter> labelWriter;
   /// @brief Construct the OutputWriters requested in @c params.
   void InitializeOutputWriters();
 

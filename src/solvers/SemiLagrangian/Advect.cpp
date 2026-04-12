@@ -1,10 +1,10 @@
 #include "SemiLagrangian.hpp"
 #include <algorithm>
-#include <cmath>
 #include <cassert>
+#include <cmath>
 #include <iostream>
 
-// TODO: advect in SOLIDS is useless | add if(SOLID) {skip} ? 
+// TODO: advect in SOLIDS is useless | add if(SOLID) {skip} ?
 // is branching worse than looking in each solid ?
 void SemiLagrangian::Advect() const {
   Grid2D uNew(fields->u.nx, fields->u.ny);
@@ -15,12 +15,13 @@ void SemiLagrangian::Advect() const {
     for (int i = 0; i < fields->u.nx; ++i) {
       // if label (i + 1, j + 1) is a BC_U, this means there is a
       // BC on the left boundary of this cell i.e. u(i, j)
-      if(IS_BC_U(fields->Label(i , j +1 ))){
+      if (IS_BC_U(fields->Label(i, j + 1))) {
         uNew.Set(i, j, fields->u.Get(i, j));
         continue;
       }
-      if(IS_SOLID(fields->Label(i, j + 1)) || IS_SOLID(fields->Label(i + 1, j + 1))){
-        uNew.Set(i, j,0.0);
+      if (IS_SOLID(fields->Label(i, j + 1)) ||
+          IS_SOLID(fields->Label(i + 1, j + 1))) {
+        uNew.Set(i, j, 0.0);
         continue;
       }
       varType x, y;
@@ -31,19 +32,20 @@ void SemiLagrangian::Advect() const {
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->v.ny; ++j)
     for (int i = 0; i < fields->v.nx; ++i) {
-      if(IS_BC_V(fields->Label(i+1 , j ))){
-        assert(std::isfinite(fields->v.Get(i, j)) );
+      if (IS_BC_V(fields->Label(i + 1, j))) {
+        assert(std::isfinite(fields->v.Get(i, j)));
         vNew.Set(i, j, fields->v.Get(i, j));
         continue;
       }
-      if(IS_SOLID(fields->Label(i + 1 , j )) || IS_SOLID(fields->Label(i + 1, j + 1))){
+      if (IS_SOLID(fields->Label(i + 1, j)) ||
+          IS_SOLID(fields->Label(i + 1, j + 1))) {
         vNew.Set(i, j, 0.0);
         continue;
       }
 
       varType x, y;
       traceParticleV(i, j, x, y);
-      assert(std::isfinite(interpolateV(x,y) ));
+      assert(std::isfinite(interpolateV(x, y)));
       vNew.Set(i, j, interpolateV(x, y));
     }
 
@@ -57,9 +59,9 @@ void SemiLagrangian::AdvectSmoke() const {
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->smokeMap.ny; ++j) {
     for (int i = 0; i < fields->smokeMap.nx; ++i) {
-     // if (fields->Label(i, j) & Fields2D::BC_S) {
-      if (IS_BC_S(fields->Label(i+1, j+1))) {
-        assert( std::isfinite(fields->smokeMap.Get(i, j)) );
+      // if (fields->Label(i, j) & Fields2D::BC_S) {
+      if (IS_BC_S(fields->Label(i + 1, j + 1))) {
+        assert(std::isfinite(fields->smokeMap.Get(i, j)));
         smokeNew.Set(i, j, fields->smokeMap.Get(i, j));
         continue;
       }
@@ -93,11 +95,10 @@ void SemiLagrangian::AdvectSmoke() const {
   // TODO : pass smokeNew as pointer of fields and avoir copy
   for (int j = 0; j < fields->smokeMap.ny; ++j) {
     for (int i = 0; i < fields->smokeMap.nx; ++i) {
-        assert( std::isfinite(smokeNew.Get(i, j)) );
-        fields->smokeMap.Set(i, j, smokeNew.Get(i, j));
+      assert(std::isfinite(smokeNew.Get(i, j)));
+      fields->smokeMap.Set(i, j, smokeNew.Get(i, j));
     }
   }
-
 }
 
 // RK2 backward particle traces
@@ -116,7 +117,8 @@ void SemiLagrangian::traceParticleU(const int i, const int j, varType &x,
   getVelocity(xMid, yMid, uMid, vMid);
   x = x0 - dt * uMid;
   y = y0 - dt * vMid;
-
+  // @todo for a particle u should not be nx-1,ny-1 the size is not the same
+  // 1 cell is thrown away
   x = std::clamp(x, REAL_LITERAL(0.0), static_cast<varType>(nx - 1) * dx);
   y = std::clamp(y, REAL_LITERAL(0.0), static_cast<varType>(ny - 1) * dy);
 }
@@ -137,6 +139,8 @@ void SemiLagrangian::traceParticleV(const int i, const int j, varType &x,
   x = x0 - dt * uMid;
   y = y0 - dt * vMid;
 
+  // @todo for a particle u should not be nx-1,ny-1 the size is not the same
+  // 1 cell is thrown away
   x = std::clamp(x, REAL_LITERAL(0.0), static_cast<varType>(nx - 1) * dx);
   y = std::clamp(y, REAL_LITERAL(0.0), static_cast<varType>(ny - 1) * dy);
 }
@@ -161,9 +165,6 @@ varType SemiLagrangian::interpolateU(const varType x, const varType y) const {
   const varType u01 = fields->u.Get(i, j + 1);
   const varType u11 = fields->u.Get(i + 1, j + 1);
 
- assert(0.0<=(REAL_LITERAL(1.0) - fy) *
-             ((REAL_LITERAL(1.0) - fx) * u00 + fx * u10) +
-         fy * ((REAL_LITERAL(1.0) - fx) * u01 + fx * u11));
   return (REAL_LITERAL(1.0) - fy) *
              ((REAL_LITERAL(1.0) - fx) * u00 + fx * u10) +
          fy * ((REAL_LITERAL(1.0) - fx) * u01 + fx * u11);
@@ -187,10 +188,9 @@ varType SemiLagrangian::interpolateV(const varType x, const varType y) const {
   const varType v10 = fields->v.Get(i + 1, j);
   const varType v01 = fields->v.Get(i, j + 1);
   const varType v11 = fields->v.Get(i + 1, j + 1);
-  assert( std::isfinite(
-  (REAL_LITERAL(1.0) - fy) *
-           ((REAL_LITERAL(1.0) - fx) * v00 + fx * v10) +
-       fy * ((REAL_LITERAL(1.0) - fx) * v01 + fx * v11)));
+  assert(std::isfinite((REAL_LITERAL(1.0) - fy) *
+                           ((REAL_LITERAL(1.0) - fx) * v00 + fx * v10) +
+                       fy * ((REAL_LITERAL(1.0) - fx) * v01 + fx * v11)));
   return (REAL_LITERAL(1.0) - fy) *
              ((REAL_LITERAL(1.0) - fx) * v00 + fx * v10) +
          fy * ((REAL_LITERAL(1.0) - fx) * v01 + fx * v11);
@@ -214,6 +214,7 @@ varType SemiLagrangian::interpolateSmoke(const varType x,
   const varType fx = i_real - static_cast<varType>(i);
   const varType fy = j_real - static_cast<varType>(j);
 
+  // @todo out-of-bound possible !
   i = std::clamp(i, 0, fields->smokeMap.nx - 1);
   j = std::clamp(j, 0, fields->smokeMap.ny - 1);
 
@@ -221,9 +222,8 @@ varType SemiLagrangian::interpolateSmoke(const varType x,
   const varType s10 = fields->smokeMap.Get(i + 1, j);
   const varType s01 = fields->smokeMap.Get(i, j + 1);
   const varType s11 = fields->smokeMap.Get(i + 1, j + 1);
-  assert( std::isfinite((1.0 - fy) *
-                    ((1.0 - fx) * s00 + fx * s10) +
-                    fy * (1.0 - fx) * s01 + fx * s11) );
+  assert(std::isfinite((1.0 - fy) * ((1.0 - fx) * s00 + fx * s10) +
+                       fy * (1.0 - fx * s01 + fx * s11)));
   return (REAL_LITERAL(1.0) - fy) *
              ((REAL_LITERAL(1.0) - fx) * s00 + fx * s10) +
          fy * ((REAL_LITERAL(1.0) - fx) * s01 + fx * s11);

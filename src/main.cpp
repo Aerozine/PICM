@@ -16,21 +16,21 @@ int main(int argc, char *argv[]) {
   }
   std::cout << params << std::endl;
 
-    if (params.method == "pic") {
+  if (params.method == "pic") {
 
     std::cout << "PIC" << std::endl;
-      PIC solver(params);
-      solver.Run();
-    } else {
-      // Default: "semi_lagrangian"
-      if (params.method != "semi_lagrangian")
-        std::cerr << "[main] Unknown method '" << params.method
-                  << "' – defaulting to semi_lagrangian.\n";
+    PIC solver(params);
+    solver.Run();
+  } else {
+    // Default: "semi_lagrangian"
+    if (params.method != "semi_lagrangian")
+      std::cerr << "[main] Unknown method '" << params.method
+                << "' – defaulting to semi_lagrangian.\n";
 
     std::cout << "SL" << std::endl;
-      SemiLagrangian solver(params);
-      solver.Run();
-    }
-    std::cout << "Simulation completed successfully!\n";
-    return 0;
+    SemiLagrangian solver(params);
+    solver.Run();
   }
+  std::cout << "Simulation completed successfully!\n";
+  return 0;
+}

@@ -8,8 +8,8 @@ PIC::PIC(const Parameters &params)
       dx(static_cast<varType>(params.dx)), dy(static_cast<varType>(params.dy)),
       dt(static_cast<varType>(params.dt)),
       density(static_cast<varType>(params.density)),
-      fields(new Fields2D(params.nx, params.ny, params.density,
-             params.dt, params.dx, params.dy, "PIC", params.freeSurface)),
+      fields(new Fields2D(params.nx, params.ny, params.density, params.dt,
+                          params.dx, params.dy, "PIC", params.freeSurface)),
       particles(new Particles(nx, ny, dx, dy, params.ppcx, params.ppcy)) {
 
 #ifndef NDEBUG
@@ -29,7 +29,8 @@ PIC::PIC(const Parameters &params)
 
 #ifndef NDEBUG
   std::cout << "PIC initialised: " << nx << " x " << ny << " grid, "
-            << params.nt << " time steps.\n" << '\n';
+            << params.nt << " time steps.\n"
+            << '\n';
 #endif
 }
 
@@ -37,7 +38,6 @@ PIC::~PIC() {
   delete fields;
   delete particles;
 }
-
 
 void PIC::InitializeOutputWriters() {
   if (params.write_u)
@@ -56,6 +56,8 @@ void PIC::InitializeOutputWriters() {
   if (params.write_particles)
     particlesWriter =
         std::make_unique<OutputWriter>(params.folder, "particles");
+  // @todo IFDBG
+  labelWriter = std::make_unique<OutputWriter>(params.folder, "label");
 }
 
 void PIC::WriteOutput(int step) const {
@@ -77,22 +79,32 @@ void PIC::WriteOutput(int step) const {
     ok &= smokeWriter->writeGrid2D(fields->smokeMap, "smoke");
   if (params.write_particles && particlesWriter)
     ok &= particlesWriter->writeParticles(*particles, "particles");
+
+  // @todo IFDBG
+  ok &= labelWriter->writeLabels(fields->Labels, fields->nx + 2, fields->ny + 2,
+                                 "label");
   if (!ok)
     std::cerr << "[PIC] Warning: failed to write output at step " << step
               << '\n';
 }
-
+/*
+ *
+ *
+ *
+ */
 void PIC::Step() {
-  ApplyGravity(); 
-  ProjectParticlesOnGrid("hat");
+  //@todo please stop using strings for storing value
+  //@todo we need to be sure about the order here
+  ProjectParticlesOnGrid("hat"); // p2g
+  ApplyGravity();                // apply gravitiy into grid
   MakeIncompressible(params, *fields);
-  ProjectGridOnParticles();
+  ProjectGridOnParticles(); // g2p
   fields->Div();
   fields->VelocityNormCenterGrid();
   AdvectParticles();
   CountAliveParticles();
   UpdateCellState();
-  // RefillParticles();
+  RefillParticles();
 }
 
 void PIC::Run() {
@@ -112,8 +124,8 @@ void PIC::Run() {
           maxDiv = std::max(maxDiv, std::abs(fields->div.Get(i, j)));
 
       std::cout << "\rStep " << t << " / " << params.nt << " ("
-                << (100 * t / params.nt) << "%) "
-                << "max |div| = " << maxDiv << std::flush;
+                << (100 * t / params.nt) << "%) " << "max |div| = " << maxDiv
+                << std::flush;
     }
 
     Step();

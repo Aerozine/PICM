@@ -9,20 +9,20 @@
 struct SceneObject {
   virtual ~SceneObject() = default;
 
-  virtual void applySolid    (Fields2D &f)  { (void)f; }
-  virtual void applyAir      (Fields2D &f)  { (void)f; }
-  virtual void applyFluid     (Fields2D &f)  { (void)f; }
+  virtual void applySolid(Fields2D &f) { (void)f; }
+  virtual void applyAir(Fields2D &f) { (void)f; }
+  virtual void applyFluid(Fields2D &f) { (void)f; }
   virtual void applyVelocityU(Fields2D &f) { (void)f; }
   virtual void applyVelocityV(Fields2D &f) { (void)f; }
-  virtual void applySmoke    (Fields2D &f) { (void)f; }
-  virtual void applyPressure (Fields2D &f) { (void)f; }
+  virtual void applySmoke(Fields2D &f) { (void)f; }
+  virtual void applyPressure(Fields2D &f) { (void)f; }
 };
 
 struct RectangleObject : public SceneObject {
   std::string condition{"boundary"}; ///< "boundary" or "initial".
   varType val{0};                    ///< Value written by apply methods.
-  int x1{0}, y1{0};                 ///< Bottom-left corner (inclusive).
-  int x2{0}, y2{0};                 ///< Top-right  corner (inclusive).
+  int x1{0}, y1{0};                  ///< Bottom-left corner (inclusive).
+  int x2{0}, y2{0};                  ///< Top-right  corner (inclusive).
 
   void applySolid(Fields2D &f);
   void applyAir(Fields2D &f);
@@ -37,8 +37,8 @@ struct CylinderObject : public SceneObject {
   int cx{0}, cy{0}; ///< Centre cell indices.
   int r{0};         ///< Radius in cells.
 
-  void applySolid(Fields2D &f) ;
-  void applyAir(Fields2D &f) ;
+  void applySolid(Fields2D &f);
+  void applyAir(Fields2D &f);
 };
 
 /**

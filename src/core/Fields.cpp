@@ -1,4 +1,6 @@
 #include "Fields.hpp"
+
+#include <cassert>
 #include <cmath>
 
 void Fields2D::Div() {
@@ -7,6 +9,8 @@ void Fields2D::Div() {
     for (int i = 0; i < nx; ++i) {
       const varType dudx = (u.Get(i + 1, j) - u.Get(i, j)) / dx;
       const varType dvdy = (v.Get(i, j + 1) - v.Get(i, j)) / dy;
+      assert(std::isfinite(dudx));
+      assert(std::isfinite(dvdy));
       div.Set(i, j, dudx + dvdy);
     }
 }

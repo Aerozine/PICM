@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 
-
 class OutputWriter {
 public:
   /**
@@ -32,7 +31,8 @@ public:
   bool writeGrid2D(const Grid2D &grid, const std::string &id);
   // may be good to use , but destructor does the same job
   bool writeParticles(const Particles &particles, const std::string &id);
-
+  bool writeLabels(const std::vector<uint16_t> &labels, int nx, int ny,
+                   const std::string &id);
   void finalisePVD();
 
 private:
