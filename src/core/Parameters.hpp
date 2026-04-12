@@ -98,7 +98,6 @@ public:
   friend std::ostream &operator<<(std::ostream &os, const Parameters &p);
 
 private:
-
   nlohmann::json velocityU_json;
   nlohmann::json velocityV_json;
   nlohmann::json pressure_json;

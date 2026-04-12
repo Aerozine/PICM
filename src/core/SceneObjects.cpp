@@ -49,7 +49,8 @@ int resolveInt(const nlohmann::json &val,
 
   std::size_t i = skipSpaces(0);
   if (i >= expr.size())
-    throw std::runtime_error("[resolveInt] empty expression after substitution");
+    throw std::runtime_error(
+        "[resolveInt] empty expression after substitution");
 
   int result = parseNumber(i);
   i = skipSpaces(i);
@@ -61,16 +62,23 @@ int resolveInt(const nlohmann::json &val,
     i = skipSpaces(i);
 
     switch (op) {
-    case '+': result += operand; break;
-    case '-': result -= operand; break;
-    case '*': result *= operand; break;
+    case '+':
+      result += operand;
+      break;
+    case '-':
+      result -= operand;
+      break;
+    case '*':
+      result *= operand;
+      break;
     case '/':
       if (operand == 0)
         throw std::runtime_error("[resolveInt] division by zero");
       result /= operand;
       break;
     default:
-      throw std::runtime_error(std::string("[resolveInt] unknown operator: ") + op);
+      throw std::runtime_error(std::string("[resolveInt] unknown operator: ") +
+                               op);
     }
   }
   return result;
@@ -78,41 +86,47 @@ int resolveInt(const nlohmann::json &val,
 // these small function applies into field the adequate flag
 void RectangleObject::applySolid(Fields2D &f) {
   // @todo handle the case where y2<y1 same for x
-  if (x1 > x2) std::swap(x1, x2);
-  if (y1 > y2) std::swap(y1, y2);
+  if (x1 > x2)
+    std::swap(x1, x2);
+  if (y1 > y2)
+    std::swap(y1, y2);
   const int iMax = std::min(x2, f.p.nx - 1);
   const int jMax = std::min(y2, f.p.ny - 1);
   for (int j = std::max(y1, 0); j <= jMax; ++j)
     for (int i = std::max(x1, 0); i <= iMax; ++i) {
-      f.setSolid(i,j);
-      //f.SetLabel(i, j, Fields2D::SOLID);
+      f.setSolid(i, j);
+      // f.SetLabel(i, j, Fields2D::SOLID);
       f.p.Set(i, j, FIELD_USOLID);
     }
 }
 
 void RectangleObject::applyAir(Fields2D &f) {
   // @todo handle the case where y2<y1 same for x
-  if (x1 > x2) std::swap(x1, x2);
-  if (y1 > y2) std::swap(y1, y2);
+  if (x1 > x2)
+    std::swap(x1, x2);
+  if (y1 > y2)
+    std::swap(y1, y2);
   const int iMax = std::min(x2, f.p.nx - 1);
   const int jMax = std::min(y2, f.p.ny - 1);
   for (int j = std::max(y1, 0); j <= jMax; ++j)
     for (int i = std::max(x1, 0); i <= iMax; ++i) {
-      //f.SetLabel(i, j, Fields2D::AIR);
-      f.setAir(i,j);
+      // f.SetLabel(i, j, Fields2D::AIR);
+      f.setAir(i, j);
       f.p.Set(i, j, 0);
     }
 }
 
 void RectangleObject::applyFluid(Fields2D &f) {
   // @todo handle the case where y2<y1 same for x
-  if (x1 > x2) std::swap(x1, x2);
-  if (y1 > y2) std::swap(y1, y2);
+  if (x1 > x2)
+    std::swap(x1, x2);
+  if (y1 > y2)
+    std::swap(y1, y2);
   const int iMax = std::min(x2, f.p.nx - 1);
   const int jMax = std::min(y2, f.p.ny - 1);
   for (int j = std::max(y1, 0); j <= jMax; ++j)
     for (int i = std::max(x1, 0); i <= iMax; ++i) {
-      f.setFluid(i,j);
+      f.setFluid(i, j);
     }
 }
 
@@ -124,16 +138,20 @@ void RectangleObject::applyVelocityU(Fields2D &f) {
   }
   //@todo for a velocity u we need to check i and i-1 if there is a solid
   // in this case u=0
-  if (x1 > x2) std::swap(x1, x2);
-  if (y1 > y2) std::swap(y1, y2);
+  if (x1 > x2)
+    std::swap(x1, x2);
+  if (y1 > y2)
+    std::swap(y1, y2);
   const int iMax = std::min(x2, f.p.nx - 1);
   const int jMax = std::min(y2, f.p.ny - 1);
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     // not necessary to look at j=0 , u not usefull
     for (int j = std::max(y1, 1); j <= jMax; ++j) {
-      f.u.Set(i, j-1 , val);
-      f.SetLabel(i , j+1, condition == "initial" ? Fields2D::IC_U : Fields2D::BC_U);
-      f.SetLabel(i , j, condition == "initial" ? Fields2D::IC_U : Fields2D::BC_U);
+      f.u.Set(i, j - 1, val);
+      // f.SetLabel(i , j+1, condition == "initial" ? Fields2D::IC_U :
+      // Fields2D::BC_U);
+      f.SetLabel(i, j,
+                 condition == "initial" ? Fields2D::IC_U : Fields2D::BC_U);
     }
 }
 
@@ -143,80 +161,90 @@ void RectangleObject::applyVelocityV(Fields2D &f) {
               << "Available options: initial or boundary.\n";
     return;
   }
-  if (x1 > x2) std::swap(x1, x2);
-  if (y1 > y2) std::swap(y1, y2);
+  if (x1 > x2)
+    std::swap(x1, x2);
+  if (y1 > y2)
+    std::swap(y1, y2);
   const int iMax = std::min(x2, f.p.nx - 1);
   const int jMax = std::min(y2, f.p.ny - 1);
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     for (int j = std::max(y1, 0); j <= jMax; ++j) {
-      if ((IS_SOLID(f.Label(i , j))) || IS_SOLID(f.Label(i, j + 1)))
+      if ((IS_SOLID(f.Label(i, j))) || IS_SOLID(f.Label(i, j + 1)))
         continue;
-      f.v.Set(i-1 , j -1, val);
-      f.SetLabel(i, j-1, condition == "initial" ? Fields2D::IC_V : Fields2D::BC_V);
+      f.v.Set(i - 1, j - 1, val);
+      f.SetLabel(i, j - 1,
+                 condition == "initial" ? Fields2D::IC_V : Fields2D::BC_V);
     }
 }
 
-void RectangleObject::applyPressure(Fields2D &f){
+void RectangleObject::applyPressure(Fields2D &f) {
   if (condition != "initial" && condition != "boundary") {
     std::cout << "Invalid condition for rectangular velocity.\n"
               << "Available options: initial or boundary.\n";
     return;
   }
-  if (x1 > x2) std::swap(x1, x2);
-  if (y1 > y2) std::swap(y1, y2);
+  if (x1 > x2)
+    std::swap(x1, x2);
+  if (y1 > y2)
+    std::swap(y1, y2);
   const int iMax = std::min(x2, f.p.nx - 1);
   const int jMax = std::min(y2, f.p.ny - 1);
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     for (int j = std::max(y1, 0); j <= jMax; ++j) {
-      f.p.Set(i, j, (IS_SOLID(f.Label(i,j)))?FIELD_USOLID:val);
-      f.SetLabel(i, j, condition == "initial" ? Fields2D::IC_P : Fields2D::BC_P);
+      f.p.Set(i, j, (IS_SOLID(f.Label(i, j))) ? FIELD_USOLID : val);
+      f.SetLabel(i, j,
+                 condition == "initial" ? Fields2D::IC_P : Fields2D::BC_P);
     }
 }
 
-void RectangleObject::applySmoke(Fields2D &f){
+void RectangleObject::applySmoke(Fields2D &f) {
   if (condition != "initial" && condition != "boundary") {
     std::cout << "Invalid condition for rectangular velocity.\n"
               << "Available options: initial or boundary.\n";
     return;
   }
   // @todo handle the case where y2<y1 same for x
-  if (x1 > x2) std::swap(x1, x2);
-  if (y1 > y2) std::swap(y1, y2);
+  if (x1 > x2)
+    std::swap(x1, x2);
+  if (y1 > y2)
+    std::swap(y1, y2);
   const int iMax = std::min(x2, f.smokeMap.nx - 1);
   const int jMax = std::min(y2, f.smokeMap.ny - 1);
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     for (int j = std::max(y1, 0); j <= jMax; ++j) {
       // +1,+1 to refer to the label array shifted
-      if (IS_SOLID(f.Label(i+1, j+1))) continue;
-      f.smokeMap.Set(i  , j  , val);
-      f.SetLabel(i+1, j+1, condition == "initial" ? Fields2D::IC_S : Fields2D::BC_S);
+      if (IS_SOLID(f.Label(i + 1, j + 1)))
+        continue;
+      f.smokeMap.Set(i, j, val);
+      f.SetLabel(i + 1, j + 1,
+                 condition == "initial" ? Fields2D::IC_S : Fields2D::BC_S);
     }
 }
 
-void CylinderObject::applySolid(Fields2D &f){
+void CylinderObject::applySolid(Fields2D &f) {
   const int r2 = r * r;
   for (int j = 0; j < f.p.ny; ++j) {
     const int ddy = j - cy;
     for (int i = 0; i < f.p.nx; ++i) {
       const int ddx = i - cx;
       if (ddx * ddx + ddy * ddy <= r2) {
-        f.setSolid(i,j);
-        //f.SetLabel(i, j, Fields2D::SOLID);
+        f.setSolid(i, j);
+        // f.SetLabel(i, j, Fields2D::SOLID);
         f.p.Set(i, j, FIELD_USOLID);
       }
     }
   }
 }
 
-void CylinderObject::applyAir(Fields2D &f){
+void CylinderObject::applyAir(Fields2D &f) {
   const int r2 = r * r;
   for (int j = 0; j < f.ny; ++j) {
     const int ddy = j - cy;
     for (int i = 0; i < f.nx; ++i) {
       const int ddx = i - cx;
       if (ddx * ddx + ddy * ddy <= r2) {
-        f.setAir(i,j);
-        //f.SetLabel(i, j, Fields2D::AIR);
+        f.setAir(i, j);
+        // f.SetLabel(i, j, Fields2D::AIR);
         f.p.Set(i, j, 0.0);
       }
     }
@@ -224,7 +252,8 @@ void CylinderObject::applyAir(Fields2D &f){
 }
 
 static std::unique_ptr<RectangleObject>
-parseRectangle(const nlohmann::json &j, const std::map<std::string, int> &vars) {
+parseRectangle(const nlohmann::json &j,
+               const std::map<std::string, int> &vars) {
   auto obj = std::make_unique<RectangleObject>();
   if (j.contains("condition"))
     obj->condition = j["condition"].get<std::string>();

@@ -61,11 +61,11 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   write_div = j.value("write_div", write_div);
   write_norm_velocity = j.value("write_norm_velocity", write_norm_velocity);
   write_smoke = j.value("write_smoke", write_smoke);
-  ppcy=j.value("ppcy",ppcy);
-  ppcx=j.value("ppcx",ppcx);
-  method=j.value("method","semi_lagrangian");
-  freeSurface=j.value("freeSurface","no");
-  write_particles=j.value("write_particles",write_particles);
+  ppcy = j.value("ppcy", ppcy);
+  ppcx = j.value("ppcx", ppcx);
+  method = j.value("method", "semi_lagrangian");
+  freeSurface = j.value("freeSurface", "no");
+  write_particles = j.value("write_particles", write_particles);
   // Output paths
   folder = j.value("folder", folder);
   // @todo remove the filename ?
@@ -123,7 +123,6 @@ void Parameters::applyToFields(Fields2D &fields) const {
   }
 }
 
-
 bool Parameters::loadFromFile(const std::string &path) {
   try {
     std::ifstream file(path);
@@ -153,32 +152,32 @@ bool Parameters::parseCommandLine(const int argc, char *argv[]) {
   return false;
 }
 
-  void Parameters::printUsage(const char *prog) {
-    // RTFM
-    std::cout << "Usage: " << prog << " -c <config.json>\n";
-  }
-  // allow us to use the << operator to print params
-  std::ostream &operator<<(std::ostream &os, const Parameters &p) {
-    os << "\n=== Simulation Parameters ===\n"
-       << "  Method  : " << p.method << '\n'
-       << "  Grid    : " << p.nx << " x " << p.ny << "  dx=" << p.dx
-       << "  dy=" << p.dy << '\n'
-       << "  Time    : nt=" << p.nt << "  dt=" << p.dt << '\n'
-       << "  Density : " << p.density << '\n'
-       << "  Sampling: every " << p.sampling_rate << " step(s)" << '\n'
-       << "  Solver  : " << p.solver.typeName()
-       << "  maxIter=" << p.solver.maxIters << "  tol=" << p.solver.tolerance
-       << '\n'
-       << "  Output  : folder='" << p.folder << "'\n"
-       << "  Write   : u=" << p.write_u << " v=" << p.write_v
-       << " p=" << p.write_p << " div=" << p.write_div
-       << " norm=" << p.write_norm_velocity << '\n'
-       << "  InitVelU: " << (!p.velocityU_json.is_null() ? "defined" : "none")
-       << '\n'
-       << "  InitVelV: " << (!p.velocityV_json.is_null() ? "defined" : "none")
-       << '\n'
-       << "  smoke: " << (!p.smoke_json.is_null() ? "defined" : "none") << '\n'
-       << "  Solid   : " << (!p.solid_json.is_null() ? "defined" : "none") << '\n'
-       << "=============================\n";
-    return os;
-  }
+void Parameters::printUsage(const char *prog) {
+  // RTFM
+  std::cout << "Usage: " << prog << " -c <config.json>\n";
+}
+// allow us to use the << operator to print params
+std::ostream &operator<<(std::ostream &os, const Parameters &p) {
+  os << "\n=== Simulation Parameters ===\n"
+     << "  Method  : " << p.method << '\n'
+     << "  Grid    : " << p.nx << " x " << p.ny << "  dx=" << p.dx
+     << "  dy=" << p.dy << '\n'
+     << "  Time    : nt=" << p.nt << "  dt=" << p.dt << '\n'
+     << "  Density : " << p.density << '\n'
+     << "  Sampling: every " << p.sampling_rate << " step(s)" << '\n'
+     << "  Solver  : " << p.solver.typeName()
+     << "  maxIter=" << p.solver.maxIters << "  tol=" << p.solver.tolerance
+     << '\n'
+     << "  Output  : folder='" << p.folder << "'\n"
+     << "  Write   : u=" << p.write_u << " v=" << p.write_v
+     << " p=" << p.write_p << " div=" << p.write_div
+     << " norm=" << p.write_norm_velocity << '\n'
+     << "  InitVelU: " << (!p.velocityU_json.is_null() ? "defined" : "none")
+     << '\n'
+     << "  InitVelV: " << (!p.velocityV_json.is_null() ? "defined" : "none")
+     << '\n'
+     << "  smoke: " << (!p.smoke_json.is_null() ? "defined" : "none") << '\n'
+     << "  Solid   : " << (!p.solid_json.is_null() ? "defined" : "none") << '\n'
+     << "=============================\n";
+  return os;
+}

@@ -7,7 +7,8 @@ SemiLagrangian::SemiLagrangian(Parameters &params)
       dx(static_cast<varType>(params.dx)), dy(static_cast<varType>(params.dy)),
       dt(static_cast<varType>(params.dt)),
       density(static_cast<varType>(params.density)),
-      fields(new Fields2D(nx, ny, density, dt, dx, dy, "SL", params.freeSurface)){
+      fields(
+          new Fields2D(nx, ny, density, dt, dx, dy, "SL", params.freeSurface)) {
 
 #ifndef NDEBUG
   std::cout << "Grid dimensions:\n"
@@ -31,7 +32,7 @@ SemiLagrangian::SemiLagrangian(Parameters &params)
 #endif
 }
 
-SemiLagrangian::~SemiLagrangian()   {
+SemiLagrangian::~SemiLagrangian() {
   delete fields;
   fields = nullptr;
 }
@@ -50,6 +51,8 @@ void SemiLagrangian::InitializeOutputWriters() {
         std::make_unique<OutputWriter>(params.folder, "normVelocity");
   if (params.write_smoke)
     smokeWriter = std::make_unique<OutputWriter>(params.folder, "smoke");
+  // @todo IFDBG
+  labelWriter = std::make_unique<OutputWriter>(params.folder, "label");
 }
 
 void SemiLagrangian::WriteOutput(int step) const {
@@ -69,16 +72,19 @@ void SemiLagrangian::WriteOutput(int step) const {
     ok &= normVelocityWriter->writeGrid2D(fields->normVelocity, "normVelocity");
   if (params.write_smoke && smokeWriter)
     ok &= smokeWriter->writeGrid2D(fields->smokeMap, "smoke");
+  // @todo IFDBG
+  ok &= labelWriter->writeLabels(fields->Labels, fields->nx + 2, fields->ny + 2,
+                                 "label");
   if (!ok)
     std::cerr << "[SemiLagrangian] Warning: failed to write output at step "
               << step << '\n';
 }
 
 void SemiLagrangian::Step() {
-  MakeIncompressible(params,*fields); 
-  fields->Div();      
+  MakeIncompressible(params, *fields);
+  fields->Div();
   fields->VelocityNormCenterGrid();
-  Advect();           
+  Advect();
   AdvectSmoke();
   DBG_PRINTF("step");
 }
@@ -99,8 +105,8 @@ void SemiLagrangian::Run() {
           maxDiv = std::max(maxDiv, std::abs(fields->div.Get(i, j)));
 
       std::cout << "\rStep " << t << " / " << params.nt << " ("
-                << (100 * t / params.nt) << "%) "
-                << "max |div| = " << maxDiv << std::flush;
+                << (100 * t / params.nt) << "%) " << "max |div| = " << maxDiv
+                << std::flush;
     }
     Step();
     WriteOutput(t);

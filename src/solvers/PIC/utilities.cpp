@@ -14,8 +14,8 @@ varType PIC::interpolateU(const varType x, const varType y) const {
   int j = static_cast<int>(std::floor(j_real));
   const varType fx = i_real - varType(i);
   const varType fy = j_real - varType(j);
-  i = std::clamp(i, 0, fields->u.nx - 1);
-  j = std::clamp(j, 0, fields->u.ny - 1);
+  i = std::clamp(i, 0, fields->u.nx - 2);
+  j = std::clamp(j, 0, fields->u.ny - 2);
   return (1 - fy) *
              ((1 - fx) * fields->u.Get(i, j) + fx * fields->u.Get(i + 1, j)) +
          fy * ((1 - fx) * fields->u.Get(i, j + 1) +
@@ -29,8 +29,8 @@ varType PIC::interpolateV(const varType x, const varType y) const {
   int j = static_cast<int>(std::floor(j_real));
   const varType fx = i_real - varType(i);
   const varType fy = j_real - varType(j);
-  i = std::clamp(i, 0, fields->v.nx - 1);
-  j = std::clamp(j, 0, fields->v.ny - 1);
+  i = std::clamp(i, 0, fields->v.nx - 2);
+  j = std::clamp(j, 0, fields->v.ny - 2);
   return (1 - fy) *
              ((1 - fx) * fields->v.Get(i, j) + fx * fields->v.Get(i + 1, j)) +
          fy * ((1 - fx) * fields->v.Get(i, j + 1) +

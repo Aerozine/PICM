@@ -12,13 +12,12 @@
  */
 class PIC {
 public:
-
   PIC(const Parameters &params);
 
   ~PIC();
 
-  //PIC(const PIC &) = delete;
-  //PIC &operator=(const PIC &) = delete;
+  // PIC(const PIC &) = delete;
+  // PIC &operator=(const PIC &) = delete;
 
   void Run();
   void Step();
@@ -31,7 +30,7 @@ private:
   varType density;
   Fields2D *fields;
   Particles *particles;
-
+  // @todo maybe useful to do a solver class , and herit code from it ?
   std::unique_ptr<OutputWriter> uWriter;
   std::unique_ptr<OutputWriter> vWriter;
   std::unique_ptr<OutputWriter> pWriter;
@@ -39,6 +38,9 @@ private:
   std::unique_ptr<OutputWriter> normVelocityWriter;
   std::unique_ptr<OutputWriter> smokeWriter;
   std::unique_ptr<OutputWriter> particlesWriter;
+
+  // @todo do a IF DEBUG THEN
+  std::unique_ptr<OutputWriter> labelWriter;
 
   void InitializeOutputWriters();
   void WriteOutput(int step) const;
@@ -67,4 +69,7 @@ private:
 
   // CellState
   void UpdateCellState();
+
+  void ScatterToGrid(varType xg, varType yg, varType val, Grid2D &sum,
+                     Grid2D &weight, int imax, int jmax);
 };

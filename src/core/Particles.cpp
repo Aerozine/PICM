@@ -9,23 +9,22 @@ varType rand01() {
 }
 
 void Particles::InitParticleGrid(Fields2D &fields) {
-    A.clear();
-    // A.reserve(nx * ny * ppcx * ppcy);
-    unsigned id = 0;
+  A.clear();
+  // A.reserve(nx * ny * ppcx * ppcy);
+  unsigned id = 0;
 
-    for (int icell = 0; icell < nx; icell++) {
-        for (int jcell = 0; jcell < ny; jcell++) {
-            if (IS_FLUID(fields.Label(icell + 1, jcell + 1))){
-            for (int a = 0; a < ppcx; a++) {
-                for (int b = 0; b < ppcy; b++) {
-                    varType x = (icell + rand01()) * dx;
-                    varType y = (jcell + rand01()) * dy;
-                    Add(x, y, 0.0, 0.0, id);
-                    ++id;
-                }
-            }
-            }
+  for (int icell = 0; icell < nx; icell++) {
+    for (int jcell = 0; jcell < ny; jcell++) {
+      if (IS_FLUID(fields.Label(icell + 1, jcell + 1))) {
+        for (int a = 0; a < ppcx; a++) {
+          for (int b = 0; b < ppcy; b++) {
+            varType x = (icell + rand01()) * dx;
+            varType y = (jcell + rand01()) * dy;
+            Add(x, y, 0.0, 0.0, id);
+            ++id;
+          }
         }
+      }
     }
+  }
 }
-

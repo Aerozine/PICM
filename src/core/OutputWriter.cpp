@@ -1,9 +1,9 @@
 #include "OutputWriter.hpp"
+#include <cmath>
 #include <filesystem>
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
-#include <cmath>
 
 #ifdef HAVE_ZLIB
 #include <zlib.h>
@@ -84,7 +84,7 @@ bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
   const int nx = grid.nx;
   const int ny = grid.ny;
   const auto rawBytes = static_cast<uint32_t>(static_cast<std::size_t>(nx) *
-                                                  ny * sizeof(varType));
+                                              ny * sizeof(varType));
 
   // Collect grid data in VTK x-fastest (row-major) order.
   // We use grid.Get(i, j) rather than touching grid.A directly so this code
@@ -107,7 +107,7 @@ bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
   if (!out.is_open())
     return false;
 
-  // Write VTK XML header
+    // Write VTK XML header
 #ifdef HAVE_ZLIB
   const char *compressorAttr = " compressor=\"vtkZLibDataCompressor\"";
 #else
@@ -125,15 +125,13 @@ bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
       // corner points, so point indices run 0..nx in x and 0..ny in y.
       // CellData array size = nx*ny, row stride = nx. Consistent with data.
       << "  <ImageData WholeExtent=\"0 " << nx << " 0 " << ny << " 0 0\""
-      << " Origin=\"0.0 0.0 0.0\""
-      << " Spacing=\"1.0 1.0 1.0\">\n"
+      << " Origin=\"0.0 0.0 0.0\"" << " Spacing=\"1.0 1.0 1.0\">\n"
       << "    <Piece Extent=\"0 " << nx << " 0 " << ny
       << " 0 0\">\n"
       // CellData: one value per cell (not per corner point).
       << "      <CellData Scalars=\"" << id << "\">\n"
-      << "        <DataArray type=\"" << vtkTypeName() << "\""
-      << " Name=\"" << id << "\""
-      << " NumberOfComponents=\"1\""
+      << "        <DataArray type=\"" << vtkTypeName() << "\"" << " Name=\""
+      << id << "\"" << " NumberOfComponents=\"1\""
       << " format=\"appended\" offset=\"0\"/>\n"
       << "      </CellData>\n"
       << "    </Piece>\n"
@@ -200,16 +198,17 @@ bool OutputWriter::writeParticles(const Particles &particles,
     offsets.push_back(k + 1);
   }
 
-  const std::vector<unsigned char> normPayload    = preparePayload(normValues);
-  const std::vector<unsigned char> pointsPayload  = preparePayload(pointValues);
+  const std::vector<unsigned char> normPayload = preparePayload(normValues);
+  const std::vector<unsigned char> pointsPayload = preparePayload(pointValues);
 
-  const auto *connRaw = reinterpret_cast<const unsigned char *>(connectivity.data());
-  const auto *offRaw  = reinterpret_cast<const unsigned char *>(offsets.data());
+  const auto *connRaw =
+      reinterpret_cast<const unsigned char *>(connectivity.data());
+  const auto *offRaw = reinterpret_cast<const unsigned char *>(offsets.data());
 
   std::vector<unsigned char> connPayload(
       connRaw, connRaw + connectivity.size() * sizeof(int32_t));
-  std::vector<unsigned char> offPayload(
-      offRaw, offRaw + offsets.size() * sizeof(int32_t));
+  std::vector<unsigned char> offPayload(offRaw, offRaw + offsets.size() *
+                                                             sizeof(int32_t));
 
 #ifdef HAVE_ZLIB
   auto compressRaw = [](const std::vector<unsigned char> &raw) {
@@ -224,7 +223,7 @@ bool OutputWriter::writeParticles(const Particles &particles,
     return buf;
   };
   connPayload = compressRaw(connPayload);
-  offPayload  = compressRaw(offPayload);
+  offPayload = compressRaw(offPayload);
 #endif
 
   const uint32_t normRawBytes =
@@ -259,7 +258,7 @@ bool OutputWriter::writeParticles(const Particles &particles,
   const uint32_t headerSize = sizeof(uint32_t);
 #endif
 
-  const uint32_t normOffset   = offset;
+  const uint32_t normOffset = offset;
   offset += headerSize + static_cast<uint32_t>(normPayload.size());
 
   const uint32_t pointsOffset = offset;
@@ -281,13 +280,14 @@ bool OutputWriter::writeParticles(const Particles &particles,
       << "\" NumberOfLines=\"0\" NumberOfStrips=\"0\" NumberOfPolys=\"0\">\n"
       << "      <PointData Scalars=\"normVelocity\">\n"
       << "        <DataArray type=\"" << vtkTypeName()
-      << "\" Name=\"normVelocity\" NumberOfComponents=\"1\" format=\"appended\" "
+      << "\" Name=\"normVelocity\" NumberOfComponents=\"1\" "
+         "format=\"appended\" "
       << "offset=\"" << normOffset << "\"/>\n"
       << "      </PointData>\n"
       << "      <Points>\n"
       << "        <DataArray type=\"" << vtkTypeName()
-      << "\" NumberOfComponents=\"3\" format=\"appended\" "
-      << "offset=\"" << pointsOffset << "\"/>\n"
+      << "\" NumberOfComponents=\"3\" format=\"appended\" " << "offset=\""
+      << pointsOffset << "\"/>\n"
       << "      </Points>\n"
       << "      <Verts>\n"
       << "        <DataArray type=\"Int32\" Name=\"connectivity\" "
@@ -317,10 +317,10 @@ bool OutputWriter::writeParticles(const Particles &particles,
               static_cast<std::streamsize>(payload.size()));
   };
 
-  writeBlock(normPayload,   normRawBytes);
+  writeBlock(normPayload, normRawBytes);
   writeBlock(pointsPayload, pointsRawBytes);
-  writeBlock(connPayload,   connRawBytes);
-  writeBlock(offPayload,    offRawBytes);
+  writeBlock(connPayload, connRawBytes);
+  writeBlock(offPayload, offRawBytes);
 
   out << "\n  </AppendedData>\n"
       << "</VTKFile>\n";
@@ -348,4 +348,79 @@ void OutputWriter::finalisePVD() {
       << "</VTKFile>\n";
 
   pvd_finalised_ = true;
+}
+bool OutputWriter::writeLabels(const std::vector<uint16_t> &labels, int nx,
+                               int ny, const std::string &id) {
+  if (pvd_finalised_)
+    return false;
+
+  const auto rawBytes = static_cast<uint32_t>(static_cast<std::size_t>(nx) *
+                                              ny * sizeof(uint16_t));
+
+  // Convert directly to bytes (no compression helper needed)
+  const auto *rawPtr = reinterpret_cast<const unsigned char *>(labels.data());
+  std::vector<unsigned char> payload(rawPtr, rawPtr + rawBytes);
+
+#ifdef HAVE_ZLIB
+  uLongf compBound = compressBound(static_cast<uLong>(rawBytes));
+  std::vector<unsigned char> compPayload(compBound);
+  uLongf compLen = compBound;
+  const int ret = compress2(compPayload.data(), &compLen, payload.data(),
+                            static_cast<uLong>(rawBytes), Z_BEST_SPEED);
+  if (ret != Z_OK)
+    throw std::runtime_error("OutputWriter: zlib compress2 failed");
+  compPayload.resize(compLen);
+  payload = std::move(compPayload);
+#endif
+
+  const std::string vti_name = formatFilename(id, current_step_);
+  const std::string vti_path = output_dir_ + "/" + vti_name;
+
+  std::ofstream out(vti_path, std::ios::binary);
+  if (!out.is_open())
+    return false;
+
+#ifdef HAVE_ZLIB
+  const char *compressorAttr = " compressor=\"vtkZLibDataCompressor\"";
+#else
+  const char *compressorAttr = "";
+#endif
+
+  std::ostringstream xml;
+  xml << "<?xml version=\"1.0\"?>\n"
+      << "<VTKFile type=\"ImageData\" version=\"0.1\""
+      << " byte_order=\"LittleEndian\"" << compressorAttr << ">\n"
+      << "  <ImageData WholeExtent=\"0 " << nx << " 0 " << ny << " 0 0\""
+      << " Origin=\"0.0 0.0 0.0\" Spacing=\"1.0 1.0 1.0\">\n"
+      << "    <Piece Extent=\"0 " << nx << " 0 " << ny << " 0 0\">\n"
+      << "      <CellData Scalars=\"" << id << "\">\n"
+      << "        <DataArray type=\"UInt16\" Name=\"" << id
+      << "\" NumberOfComponents=\"1\" format=\"appended\" offset=\"0\"/>\n"
+      << "      </CellData>\n"
+      << "    </Piece>\n"
+      << "  </ImageData>\n"
+      << "  <AppendedData encoding=\"raw\">\n"
+      << "  _";
+
+  const std::string xmlStr = xml.str();
+  out.write(xmlStr.data(), static_cast<std::streamsize>(xmlStr.size()));
+
+#ifdef HAVE_ZLIB
+  writeU32(out, 1);
+  writeU32(out, rawBytes);
+  writeU32(out, rawBytes);
+  writeU32(out, static_cast<uint32_t>(payload.size()));
+#else
+  writeU32(out, rawBytes);
+#endif
+
+  out.write(reinterpret_cast<const char *>(payload.data()),
+            static_cast<std::streamsize>(payload.size()));
+
+  out << "\n  </AppendedData>\n"
+      << "</VTKFile>\n";
+
+  appendPVDEntry(vti_name, static_cast<double>(current_step_));
+  ++current_step_;
+  return true;
 }
