@@ -80,7 +80,7 @@ void SemiLagrangian::Step() {
   fields->VelocityNormCenterGrid();
   Advect();           
   AdvectSmoke();
-  DBG_PRINTF("STEP");
+  DBG_PRINTF("step");
 }
 
 void SemiLagrangian::Run() {

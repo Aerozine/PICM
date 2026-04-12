@@ -15,12 +15,12 @@ void SemiLagrangian::Advect() const {
     for (int i = 0; i < fields->u.nx; ++i) {
       // if label (i + 1, j + 1) is a BC_U, this means there is a
       // BC on the left boundary of this cell i.e. u(i, j)
-      if(fields->Label(i + 1, j + 1) & Fields2D::BC_U){
+      if(IS_BC_U(fields->Label(i , j +1 ))){
         uNew.Set(i, j, fields->u.Get(i, j));
         continue;
       }
       if(IS_SOLID(fields->Label(i, j + 1)) || IS_SOLID(fields->Label(i + 1, j + 1))){
-        uNew.Set(i, j, FIELD_USOLID);
+        uNew.Set(i, j,0.0);
         continue;
       }
       varType x, y;
@@ -31,17 +31,19 @@ void SemiLagrangian::Advect() const {
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->v.ny; ++j)
     for (int i = 0; i < fields->v.nx; ++i) {
-      if(fields->Label(i + 1, j + 1) & Fields2D::BC_V){
+      if(IS_BC_V(fields->Label(i+1 , j ))){
+        assert(std::isfinite(fields->v.Get(i, j)) );
         vNew.Set(i, j, fields->v.Get(i, j));
         continue;
       }
-      if(IS_SOLID(fields->Label(i + 1, j)) || IS_SOLID(fields->Label(i + 1, j + 1))){
-        vNew.Set(i, j, FIELD_USOLID);
+      if(IS_SOLID(fields->Label(i + 1 , j )) || IS_SOLID(fields->Label(i + 1, j + 1))){
+        vNew.Set(i, j, 0.0);
         continue;
       }
 
       varType x, y;
       traceParticleV(i, j, x, y);
+      assert(std::isfinite(interpolateV(x,y) ));
       vNew.Set(i, j, interpolateV(x, y));
     }
 
@@ -55,7 +57,8 @@ void SemiLagrangian::AdvectSmoke() const {
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->smokeMap.ny; ++j) {
     for (int i = 0; i < fields->smokeMap.nx; ++i) {
-      if (fields->Label(i, j) & Fields2D::BC_S) {
+     // if (fields->Label(i, j) & Fields2D::BC_S) {
+      if (IS_BC_S(fields->Label(i+1, j+1))) {
         assert( std::isfinite(fields->smokeMap.Get(i, j)) );
         smokeNew.Set(i, j, fields->smokeMap.Get(i, j));
         continue;
@@ -149,15 +152,18 @@ varType SemiLagrangian::interpolateU(const varType x, const varType y) const {
 
   const varType fx = i_real - static_cast<varType>(i);
   const varType fy = j_real - static_cast<varType>(j);
-
-  i = std::clamp(i, 0, fields->u.nx - 1);
-  j = std::clamp(j, 0, fields->u.ny - 1);
+  // @todo check if it is correct to do -1 bc we are looking for +1
+  i = std::clamp(i, 0, fields->u.nx - 2);
+  j = std::clamp(j, 0, fields->u.ny - 2);
 
   const varType u00 = fields->u.Get(i, j);
   const varType u10 = fields->u.Get(i + 1, j);
   const varType u01 = fields->u.Get(i, j + 1);
   const varType u11 = fields->u.Get(i + 1, j + 1);
 
+ assert(0.0<=(REAL_LITERAL(1.0) - fy) *
+             ((REAL_LITERAL(1.0) - fx) * u00 + fx * u10) +
+         fy * ((REAL_LITERAL(1.0) - fx) * u01 + fx * u11));
   return (REAL_LITERAL(1.0) - fy) *
              ((REAL_LITERAL(1.0) - fx) * u00 + fx * u10) +
          fy * ((REAL_LITERAL(1.0) - fx) * u01 + fx * u11);
@@ -173,8 +179,9 @@ varType SemiLagrangian::interpolateV(const varType x, const varType y) const {
   const varType fx = i_real - static_cast<varType>(i);
   const varType fy = j_real - static_cast<varType>(j);
 
-  i = std::clamp(i, 0, fields->v.nx - 1);
-  j = std::clamp(j, 0, fields->v.ny - 1);
+  // @todo check if it is correct to do -1 bc we are looking for +1
+  i = std::clamp(i, 0, fields->v.nx - 2);
+  j = std::clamp(j, 0, fields->v.ny - 2);
 
   const varType v00 = fields->v.Get(i, j);
   const varType v10 = fields->v.Get(i + 1, j);

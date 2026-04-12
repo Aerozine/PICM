@@ -1,0 +1,79 @@
+{
+  "dx": 2e-2,
+  "dy": 2e-2,
+  "dt": 1e-2,
+  "nx": 5,
+  "ny": 6,
+  "nt": 10,
+  "density": 1000,
+  "sampling_rate": 1,
+
+  "write_u":             true,
+  "write_v":             true,
+  "write_p":             true,
+  "write_div":           true,
+  "write_norm_velocity": true,
+  "write_smoke":         true,
+
+  "folder":   "results/SL/smol",
+  "filename": "simulation",
+  "velocityu": {
+    "rectangle": {
+      "condition": "boundary",
+      "val": 1,
+      "x1": "0",
+      "y1": "0",
+      "x2": "0",
+      "y2": "ny"
+    }
+  },
+
+  "air": {
+    "rectangle": {
+      "condition": "boundary",
+      "val": 0,
+      "x1": "nx+1",
+      "y1": "0",
+      "x2": "nx+1",
+      "y2": "ny+1"
+    }
+  },
+
+  "solid": {
+    "cylinder": {
+      "x": "nx/6",
+      "y": "ny/2",
+      "r": "ny/10"
+    },
+
+    "rectangle":[{
+      "x1": "0",
+      "y1": "ny+1",
+      "x2": "nx+1",
+      "y2": "ny+1"
+    },
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "0"
+      }]
+  },
+
+  "smoke": {
+    "rectangle": {
+      "condition": "boundary",
+      "val": 1,
+      "x1": "0",
+      "y1": "0",
+      "x2": "0",
+      "y2": "ny"
+    }
+  },
+
+  "solver": {
+    "type": "red_black_gauss_seidel",
+    "max_iterations": 1e8,
+    "tolerance": 1e-4
+  }
+}

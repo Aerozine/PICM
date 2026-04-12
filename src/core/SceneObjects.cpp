@@ -83,9 +83,10 @@ void RectangleObject::applySolid(Fields2D &f) {
   const int iMax = std::min(x2, f.p.nx - 1);
   const int jMax = std::min(y2, f.p.ny - 1);
   for (int j = std::max(y1, 0); j <= jMax; ++j)
-    for (int i = std::max(x1, 0); i <= iMax; ++i) { 
-      f.SetLabel(i, j, Fields2D::SOLID);
-      f.p.Set(i, j, 0.0);
+    for (int i = std::max(x1, 0); i <= iMax; ++i) {
+      f.setSolid(i,j);
+      //f.SetLabel(i, j, Fields2D::SOLID);
+      f.p.Set(i, j, FIELD_USOLID);
     }
 }
 
@@ -97,8 +98,9 @@ void RectangleObject::applyAir(Fields2D &f) {
   const int jMax = std::min(y2, f.p.ny - 1);
   for (int j = std::max(y1, 0); j <= jMax; ++j)
     for (int i = std::max(x1, 0); i <= iMax; ++i) {
-      f.SetLabel(i, j, Fields2D::AIR);
-      f.p.Set(i, j, 0.0);
+      //f.SetLabel(i, j, Fields2D::AIR);
+      f.setAir(i,j);
+      f.p.Set(i, j, 0);
     }
 }
 
@@ -127,8 +129,10 @@ void RectangleObject::applyVelocityU(Fields2D &f) {
   const int iMax = std::min(x2, f.p.nx - 1);
   const int jMax = std::min(y2, f.p.ny - 1);
   for (int i = std::max(x1, 0); i <= iMax; ++i)
-    for (int j = std::max(y1, 0); j <= jMax; ++j) {
-      f.u.Set(i - 1, j - 1, val);
+    // not necessary to look at j=0 , u not usefull
+    for (int j = std::max(y1, 1); j <= jMax; ++j) {
+      f.u.Set(i, j-1 , val);
+      f.SetLabel(i , j+1, condition == "initial" ? Fields2D::IC_U : Fields2D::BC_U);
       f.SetLabel(i , j, condition == "initial" ? Fields2D::IC_U : Fields2D::BC_U);
     }
 }
@@ -147,8 +151,8 @@ void RectangleObject::applyVelocityV(Fields2D &f) {
     for (int j = std::max(y1, 0); j <= jMax; ++j) {
       if ((IS_SOLID(f.Label(i , j))) || IS_SOLID(f.Label(i, j + 1)))
         continue;
-      f.v.Set(i - 1, j - 1, val);
-      f.SetLabel(i, j, condition == "initial" ? Fields2D::IC_V : Fields2D::BC_V);
+      f.v.Set(i-1 , j -1, val);
+      f.SetLabel(i, j-1, condition == "initial" ? Fields2D::IC_V : Fields2D::BC_V);
     }
 }
 
@@ -164,7 +168,7 @@ void RectangleObject::applyPressure(Fields2D &f){
   const int jMax = std::min(y2, f.p.ny - 1);
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     for (int j = std::max(y1, 0); j <= jMax; ++j) {
-      f.p.Set(i, j, (IS_SOLID(f.Label(i,j)))?0.0:val);
+      f.p.Set(i, j, (IS_SOLID(f.Label(i,j)))?FIELD_USOLID:val);
       f.SetLabel(i, j, condition == "initial" ? Fields2D::IC_P : Fields2D::BC_P);
     }
 }
@@ -182,21 +186,23 @@ void RectangleObject::applySmoke(Fields2D &f){
   const int jMax = std::min(y2, f.smokeMap.ny - 1);
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     for (int j = std::max(y1, 0); j <= jMax; ++j) {
-      if (IS_SOLID(f.Label(i, j))) continue;
-      f.smokeMap.Set(i - 1, j - 1, val);
-      f.SetLabel(i, j, condition == "initial" ? Fields2D::IC_S : Fields2D::BC_S);
+      // +1,+1 to refer to the label array shifted
+      if (IS_SOLID(f.Label(i+1, j+1))) continue;
+      f.smokeMap.Set(i  , j  , val);
+      f.SetLabel(i+1, j+1, condition == "initial" ? Fields2D::IC_S : Fields2D::BC_S);
     }
 }
 
 void CylinderObject::applySolid(Fields2D &f){
   const int r2 = r * r;
-  for (int j = 0; j < f.ny; ++j) {
+  for (int j = 0; j < f.p.ny; ++j) {
     const int ddy = j - cy;
-    for (int i = 0; i < f.nx; ++i) {
+    for (int i = 0; i < f.p.nx; ++i) {
       const int ddx = i - cx;
       if (ddx * ddx + ddy * ddy <= r2) {
-        f.SetLabel(i, j, Fields2D::SOLID);
-        f.p.Set(i, j, 0.0);
+        f.setSolid(i,j);
+        //f.SetLabel(i, j, Fields2D::SOLID);
+        f.p.Set(i, j, FIELD_USOLID);
       }
     }
   }
@@ -209,7 +215,8 @@ void CylinderObject::applyAir(Fields2D &f){
     for (int i = 0; i < f.nx; ++i) {
       const int ddx = i - cx;
       if (ddx * ddx + ddy * ddy <= r2) {
-        f.SetLabel(i, j, Fields2D::AIR);
+        f.setAir(i,j);
+        //f.SetLabel(i, j, Fields2D::AIR);
         f.p.Set(i, j, 0.0);
       }
     }

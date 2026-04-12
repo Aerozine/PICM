@@ -47,7 +47,8 @@ void updateVelocities(const Parameters & params,Fields2D & fields) {
   OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
   for (int j = 0; j < fields.u.ny; ++j) {
     for (int i = 0; i < fields.u.nx; ++i) {
-      if (fields.Label(i + 1, j + 1)& Fields2D::BC_U) {
+      // boundary is applied on p0,1 for u0,0
+      if (IS_BC_U(fields.Label(i , j + 1))) {
         continue;
       } else if (IS_SOLID(fields.Label(i + 1, j + 1)) || IS_SOLID(fields.Label(i, j + 1))) {
         fields.u.Set(i, j, 0.0);
@@ -57,6 +58,10 @@ void updateVelocities(const Parameters & params,Fields2D & fields) {
       //   fields.u.Set(i, j, FIELD_USOLID);
       //   continue;
       }
+
+      assert(0.0<=fields.u.Get(i, j) -
+                        coef * (fields.p.Get(i + 1, j + 1) - fields.p.Get(i, j + 1)));
+
       fields.u.Set(i, j,fields.u.Get(i, j) -
                         coef * (fields.p.Get(i + 1, j + 1) - fields.p.Get(i, j + 1)));
     }
@@ -65,17 +70,19 @@ void updateVelocities(const Parameters & params,Fields2D & fields) {
   OMP_PRAGMA( omp parallel for collapse(2) schedule(static))
   for (int j = 0; j < fields.v.ny; ++j) {
     for (int i = 0; i < fields.v.nx; ++i) {
-      if (fields.Label(i + 1, j + 1) & Fields2D::BC_V) {
+      // bc is applied on p1,0 for v0,0
+      if (IS_BC_V(fields.Label(i + 1, j ))) {
         continue;
       } else if (IS_SOLID(fields.Label(i + 1, j + 1)) ||
                  IS_SOLID(fields.Label(i + 1, j))) {
-        fields.v.Set(i, j, FIELD_USOLID);
+        fields.v.Set(i, j,0.0);
         continue;
       // } else if (is_air(fields.label(i + 1, j + 1)) &&
       //            is_air(fields.label(i + 1, j))) {
       //   fields.v.set(i, j, 0.0);
       //   continue;
       }
+      assert(std::isfinite(fields.v.Get(i, j) -coef * (fields.p.Get(i + 1, j + 1) - fields.p.Get(i + 1, j))));
       fields.v.Set(i, j, fields.v.Get(i, j) -
                         coef * (fields.p.Get(i + 1, j + 1) - fields.p.Get(i + 1, j)));
     }

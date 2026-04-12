@@ -3,13 +3,18 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#define FIELD_USOLID 0.0
+// yes i know it should be illegal but useful for dbg
+#define FIELD_USOLID NAN
+
+//#define FIELD_USOLID 0.0
 
 #define IS_SOLID(cell) ((((cell)) & Fields2D::SOLID) != 0)
 #define IS_AIR(cell)   ((((cell)) & Fields2D::AIR)   != 0)
 #define IS_FLUID(cell) (!IS_SOLID(cell) && !IS_AIR(cell))
 #define IS_BC(cell)    ((((cell)) & (Fields2D::BC_U | Fields2D::BC_V | Fields2D::BC_P | Fields2D::BC_S)) != 0)
-
+#define IS_BC_U(cell)   ((((cell)) & Fields2D::BC_U) != 0)
+#define IS_BC_V(cell)   ((((cell)) & Fields2D::BC_V) != 0)
+#define IS_BC_S(cell)   ((((cell)) & Fields2D::BC_S) != 0)
 //#define CELL_TYPE_MASK (Fields2D::SOLID | Fields2D::AIR)
 //
 //#define SET_SOLID(cell) ((cell) = (((cell) & ~CELL_TYPE_MASK) | Fields2D::SOLID))
@@ -78,7 +83,7 @@ public:
 
   std::vector<uint16_t> Labels; ///< Flat cell-type array, same layout as p.
 
-  [[nodiscard]] inline int idx(int i, int j) const noexcept { return nx * j + i; }
+  [[nodiscard]] inline int idx(int i, int j) const noexcept { return (nx+2) * j + i; }
 
   ///@brief Compute the divergence to div
   void Div();
@@ -94,22 +99,6 @@ inline void setAir(int i, int j) {
 inline void setFluid(int i, int j) {
   Labels[idx(i, j)] = Labels[idx(i, j)] & ~CELL_TYPE_MASK;
 }
-
-  static inline bool isSolid(uint16_t cell) {
-    return (cell & SOLID) != 0;
-  }
-
-  static inline bool isAir(uint16_t cell) {
-    return (cell & AIR) != 0;
-  }
-
-  static inline bool isFluid(uint16_t cell) {
-    return !isSolid(cell) && !isAir(cell);
-  }
-
-  static inline bool isBC(uint16_t cell) {
-    return (cell & (BC_U | BC_V | BC_P | BC_S)) != 0;
-  }
 
 
   /// @brief interpolate the velocity magnitude per cell to @c normVelocity
