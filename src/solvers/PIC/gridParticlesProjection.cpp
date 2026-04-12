@@ -142,7 +142,7 @@ OMP_PRAGMA(omp parallel for collapse(2))
       //   isAir = true;
       
       if (isSolid)
-        fields->v.Set(i, j,FIELD_USOLID);
+        fields->v.Set(i, j,0.0);
       else if (isBC)
         ;
       // else if (isAir)

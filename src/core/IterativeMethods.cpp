@@ -6,52 +6,71 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
+#include <cassert>
 
 [[nodiscard]] inline varType neighbourSum(const Fields2D &f,
                      int nx, int ny, int i, int j, double beta) {
   varType sumP = 0.0;
   const varType pC = f.p.Get(i + 1, j + 1);
 
-
+  assert(std::isfinite(pC));
+  assert(i >= 0 && i < nx);
+  assert(j >= 0 && j < ny);
   // Left neighbour
-  if (i == 1 && f.Label(i + 1, j + 1) & Fields2D::BC_U) {
+  // BC info is at -1,0 same for cell state
+    if (IS_SOLID(f.Label(i, j + 1))) {
+      sumP += pC; //- beta * f.u.Get(i, j);
+      assert(std::isfinite(sumP));
+  } else if (IS_BC_U(f.Label(i, j + 1))) {
       sumP += pC;
-  } else if (f.Label(i, j + 1) & Fields2D::SOLID) {
-      sumP += pC - beta * f.u.Get(i, j);
-  } else if (f.Label(i, j + 1) & Fields2D::AIR){ 
-      sumP += 0.0;
+    } else  if (IS_AIR(f.Label(i, j + 1))){
+      //sumP += 0.0;
   } else {
       sumP += f.p.Get(i, j + 1);
   }
 
   // Right neighbour
-  if (i == nx - 2 && f.Label(i + 1, j + 1) & Fields2D::BC_U) {
+  //BC is hold at 0,0
+  // cellstate is at 1,0
+  if (IS_BC_U( f.Label(i+1, j+1 ))) {
       sumP += pC;
-  } else if (f.Label(i + 2, j + 1) & Fields2D::SOLID) {
-      sumP += pC + beta * f.u.Get(i + 1, j);
-  } else if (f.Label(i + 2, j + 1) & Fields2D::AIR){ 
+  } else if (IS_SOLID(f.Label(i + 2, j + 1))) {
+      // todo  ?
+      //sumP += pC + beta * f.u.Get(i + 1, j);
+      sumP += pC; //+ beta * f.u.Get(i , j);
+  } else if (IS_AIR(f.Label(i + 2, j + 1))){
       sumP += 0.0;
   } else {
       sumP += f.p.Get(i + 2, j + 1);
   }
 
   // Bottom neighbour
-  if (j == 1 && f.Label(i + 1, j + 1) & Fields2D::BC_V) {
-      sumP += pC;
-  } else if (f.Label(i + 1, j) & Fields2D::SOLID) {
-      sumP += pC - beta * f.v.Get(i, j);
-  } else if (f.Label(i + 1, j) & Fields2D::AIR){ 
+  // BC is at 0,-1 and same for cell state
+  if (IS_SOLID(f.Label(i + 1, j))) {
+    // todo why ?
+      //sumP += pC - beta * f.v.Get(i, j);
+      //if (j>=1)
+      sumP += pC; //- beta * f.v.Get(i, j-1);
+    assert(std::isfinite(sumP));
+  }else if (IS_BC_V(f.Label(i + 1, j ))) {
+    sumP += pC;
+  }
+  else if (IS_AIR(f.Label(i + 1, j))){
       sumP += 0.0;
   } else {
       sumP += f.p.Get(i + 1, j);
   }
 
   // Top neighbour
-  if (j == ny - 2 && f.Label(i + 1, j + 1) & Fields2D::BC_V) {
+  // BC is at 0,0
+  // cellstate is at 0,1
+  if (IS_BC_V(f.Label(i+1 , j+1))) {
       sumP += pC;
-  } else if (f.Label(i + 1, j + 2) & Fields2D::SOLID) {
+  } else if (IS_SOLID(f.Label(i + 1, j + 2))) {
+      //sumP += pC + beta * f.v.Get(i, j + 1);
       sumP += pC + beta * f.v.Get(i, j + 1);
-  } else if (f.Label(i + 1, j + 2) & Fields2D::AIR){ 
+    assert(std::isfinite(sumP));
+  } else if (IS_AIR(f.Label(i + 1, j + 2))){
       sumP += 0.0;
   } else {
       sumP += f.p.Get(i + 1, j + 2);
@@ -81,7 +100,7 @@ void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
   for (int it = 0; it < maxIters; ++it) {
     double sumSq = 0.0;
     int count = 0;
-
+  // inner domain nx ny from fields
     for (int color = 0; color < 2; ++color) {
 OMP_PRAGMA(omp parallel for collapse(2) reduction(+:sumSq) reduction(+:count))
       for (int j = 0; j < ny; ++j) {
@@ -112,6 +131,7 @@ OMP_PRAGMA(omp parallel for collapse(2) reduction(+:sumSq) reduction(+:count))
 // #ifndef NDEBUG
       std::cout << "  RedBlackGS converged in " << it + 1
                 << " iters, rel.res = " << res / res0 << '\n';
+      //assert(std::isfinite(res/res0));
 // #endif
       return;
     }
@@ -132,7 +152,7 @@ OMP_PRAGMA(omp parallel for collapse(2) reduction(+:sumSq) reduction(+:count))
 
 
 
-
+// @todo update cell i j according to gauss cell
 void solveJacobi(Fields2D &fields, int nx, int ny, double coef, int maxIters,
                  double tol, double beta) {
   fields.Div();

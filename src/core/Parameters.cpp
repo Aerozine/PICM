@@ -92,10 +92,6 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
 void Parameters::applyToFields(Fields2D &fields) const {
   const std::map<std::string, int> vars = {{"nx", nx}, {"ny", ny}};
 
-  if (!solid_json.is_null()) {
-    for (const auto &obj : parseSceneObjects(solid_json, vars))
-      obj->applySolid(fields);
-  }
   if (!air_json.is_null()) {
     for (const auto &obj : parseSceneObjects(air_json, vars))
       obj->applyAir(fields);
@@ -104,6 +100,15 @@ void Parameters::applyToFields(Fields2D &fields) const {
     for (const auto &obj : parseSceneObjects(fluid_json, vars))
       obj->applyFluid(fields);
   }
+  if (!smoke_json.is_null()) {
+    for (const auto &obj : parseSceneObjects(smoke_json, vars))
+      obj->applySmoke(fields);
+  }
+  if (!solid_json.is_null()) {
+    for (const auto &obj : parseSceneObjects(solid_json, vars))
+      obj->applySolid(fields);
+  }
+
   if (!velocityU_json.is_null()) {
     for (const auto &obj : parseSceneObjects(velocityU_json, vars))
       obj->applyVelocityU(fields);
@@ -115,10 +120,6 @@ void Parameters::applyToFields(Fields2D &fields) const {
   if (!pressure_json.is_null()) {
     for (const auto &obj : parseSceneObjects(pressure_json, vars))
       obj->applyPressure(fields);
-  }
-  if (!smoke_json.is_null()) {
-    for (const auto &obj : parseSceneObjects(smoke_json, vars))
-      obj->applySmoke(fields);
   }
 }
 

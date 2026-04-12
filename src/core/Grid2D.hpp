@@ -6,6 +6,12 @@ class Grid2D {
 public:
   int nx;
   int ny;
+  /* for debuging purpose
+  //  varType * A;
+  //Grid2D(int nx, int ny) : nx(nx), ny(ny) {
+  //  A = new varType[nx * ny];
+  //}
+  */
   std::vector<varType> A; ///< Flat cell data, row-major: A[nx*j + i].
   Grid2D(int nx, int ny) : nx(nx), ny(ny), A(nx * ny, varType{0}) {}
 
