@@ -14,7 +14,7 @@
 
 
   // Left neighbour
-  if (i == 1 && f.Label(i + 1, j + 1) & Fields2D::BC_U) {
+  if (f.Label(i + 1, j + 1) & Fields2D::BC_U) {
       sumP += pC;
   } else if (f.Label(i, j + 1) & Fields2D::SOLID) {
       sumP += pC - beta * f.u.Get(i, j);
@@ -25,7 +25,7 @@
   }
 
   // Right neighbour
-  if (i == nx - 2 && f.Label(i + 1, j + 1) & Fields2D::BC_U) {
+  if (f.Label(i + 1, j + 1) & Fields2D::BC_U) {
       sumP += pC;
   } else if (f.Label(i + 2, j + 1) & Fields2D::SOLID) {
       sumP += pC + beta * f.u.Get(i + 1, j);
@@ -36,7 +36,7 @@
   }
 
   // Bottom neighbour
-  if (j == 1 && f.Label(i + 1, j + 1) & Fields2D::BC_V) {
+  if (f.Label(i + 1, j + 1) & Fields2D::BC_V) {
       sumP += pC;
   } else if (f.Label(i + 1, j) & Fields2D::SOLID) {
       sumP += pC - beta * f.v.Get(i, j);
@@ -47,7 +47,7 @@
   }
 
   // Top neighbour
-  if (j == ny - 2 && f.Label(i + 1, j + 1) & Fields2D::BC_V) {
+  if (f.Label(i + 1, j + 1) & Fields2D::BC_V) {
       sumP += pC;
   } else if (f.Label(i + 1, j + 2) & Fields2D::SOLID) {
       sumP += pC + beta * f.v.Get(i, j + 1);

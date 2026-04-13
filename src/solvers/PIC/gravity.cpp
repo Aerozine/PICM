@@ -17,7 +17,6 @@
 //   }
 // }
 
-
 // gravity through particles -> change order of functions in Step() in PIC.cpp
 void PIC::ApplyGravity() {
 varType g = 9.81;
