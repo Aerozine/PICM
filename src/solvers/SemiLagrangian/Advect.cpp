@@ -12,11 +12,16 @@ void SemiLagrangian::Advect() const {
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->u.ny; ++j)
     for (int i = 0; i < fields->u.nx; ++i) {
-      if (i == 0) {
+      // if label (i + 1, j + 1) is a BC_U, this means there is a 
+      // BC on the left boundary of this cell i.e. u(i, j)
+      if(fields->Label(i + 1, j + 1) & Fields2D::BC_U){
         uNew.Set(i, j, fields->u.Get(i, j));
         continue;
       }
-      
+      if(IS_SOLID(fields->Label(i, j + 1)) || IS_SOLID(fields->Label(i + 1, j + 1))){
+        uNew.Set(i, j, FIELD_USOLID);
+        continue;
+      }
       varType x, y;
       traceParticleU(i, j, x, y);
       uNew.Set(i, j, interpolateU(x, y));
@@ -25,6 +30,15 @@ void SemiLagrangian::Advect() const {
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->v.ny; ++j)
     for (int i = 0; i < fields->v.nx; ++i) {
+      if(fields->Label(i + 1, j + 1) & Fields2D::BC_V){
+        vNew.Set(i, j, fields->v.Get(i, j));
+        continue;
+      }
+      if(IS_SOLID(fields->Label(i + 1, j)) || IS_SOLID(fields->Label(i + 1, j + 1))){
+        vNew.Set(i, j, FIELD_USOLID);
+        continue;
+      }
+ 
       varType x, y;
       traceParticleV(i, j, x, y);
       vNew.Set(i, j, interpolateV(x, y));
@@ -41,7 +55,7 @@ void SemiLagrangian::AdvectSmoke() const {
   for (int j = 0; j < fields->smokeMap.ny; ++j) {
     for (int i = 0; i < fields->smokeMap.nx; ++i) {
 
-      if (fields->Label(i, j) & Fields2D::BC_S) {
+      if (fields->Label(i + 1, j + 1) & Fields2D::BC_S) {
         smokeNew.Set(i, j, fields->smokeMap.Get(i, j));
         continue;
       }
