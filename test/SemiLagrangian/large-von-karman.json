@@ -28,16 +28,6 @@
     }
   },
 
-    "air": {
-        "rectangle": {
-            "condition": "boundary",
-            "val": 0,
-            "x1": "nx+1",
-            "y1": "0",
-            "x2": "nx+1",
-            "y2": "ny+1"
-        }
-    },
 
     "solid": {
         "cylinder": {
@@ -74,6 +64,6 @@
     "solver": {
   "type": "red_black_gauss_seidel",
     "max_iterations": 1e8,
-    "tolerance": 1e-2
+    "tolerance": 1e-4
 }
 }

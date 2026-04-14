@@ -79,7 +79,7 @@
   if (IS_SOLID(top_cell)) {
     sumP += pC;
   } else if (IS_BC_V(current_cell)) {
-    sumP += pC + beta * f.v.Get(i - 1, j);
+    sumP += pC - beta * f.v.Get(i - 1, j);
   } else if (!IS_AIR(top_cell))
     sumP += f.p.Get(i, j + 1);
 

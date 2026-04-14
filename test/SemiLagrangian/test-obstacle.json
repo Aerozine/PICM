@@ -1,0 +1,69 @@
+{
+    "dx": 1e-3,
+    "dy": 1e-3,
+    "dt": 1e-4,
+    "nx": 60,
+    "ny": 20,
+    "nt": 700,
+    "density": 1000,
+    "sampling_rate": 5,
+
+    "write_u":             true,
+    "write_v":             true,
+    "write_p":             true,
+    "write_div":           true,
+    "write_norm_velocity": true,
+    "write_smoke":         true,
+
+    "folder":   "results/SL/uniform",
+    "filename": "simulation",
+
+
+    "velocityu": {
+        "rectangle": {
+            "condition": "boundary",
+            "val": 0.5,
+            "x1": "0",
+            "y1": "0",
+            "x2": "0",
+            "y2": "ny"
+        }
+    },
+
+    "solid": {
+       "rectangle":[{
+            "x1": "0",
+            "y1": "0",
+            "x2": "nx+1",
+            "y2": "0"
+        },
+        {
+            "x1": "0",
+            "y1": "ny+1",
+            "x2": "nx+1",
+            "y2": "ny+1"
+        }],
+
+      "cylinder": {
+        "x": "13",
+        "y": "ny/2+1",
+        "r": "2"
+      }
+    },
+   "smoke": {
+        "rectangle": {
+            "condition": "initial",
+            "val": 1.0,
+            "x1": "2",
+            "y1": "ny/2-3",
+            "x2": "3",
+            "y2": "ny/2+3"
+        }
+   },
+    
+   "solver": {
+        "type": "red_black_gauss_seidel",
+        "max_iterations": 5000,
+        "tolerance": 1e-1
+}
+}
