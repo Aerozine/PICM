@@ -15,8 +15,7 @@ void PIC::ApplyGravity() {
         continue;
       // Apply to any fluid-adjacent face, including free-surface faces
       // (original code required both FLUID, starving surface faces of gravity)
-      if (IS_FLUID(top))
-        fields->v.Set(i, j, fields->v.Get(i, j) - dt * g);
+      fields->v.Set(i, j, fields->v.Get(i, j) - dt * g);
     }
   }
 }

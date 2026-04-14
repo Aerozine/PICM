@@ -63,7 +63,7 @@
 
     "solver": {
   "type": "red_black_gauss_seidel",
-    "max_iterations": 1e8,
-    "tolerance": 1e-4
+    "max_iterations": 1e5,
+    "tolerance": 1e-2
 }
 }

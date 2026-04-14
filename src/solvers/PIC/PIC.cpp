@@ -97,7 +97,7 @@ void PIC::Step() {
   //@todo we need to be sure about the order here
   ProjectParticlesOnGrid("hat"); // p2g
   ApplyGravity();                // apply gravitiy into grid
-  MakeIncompressible(params, *fields);
+  // MakeIncompressible(params, *fields);
   ProjectGridOnParticles(); // g2p
   fields->Div();
   fields->VelocityNormCenterGrid();

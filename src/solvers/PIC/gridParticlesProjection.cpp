@@ -119,9 +119,14 @@ for (int idx = 0; idx < particles->size(); ++idx) {
         // Boundary value already set — do not overwrite
         continue;
       }
-      if (fields->v_weight.Get(i, j) > varType(1e-12))
-        fields->v.Set(i, j,
-                      fields->v_sum.Get(i, j) / fields->v_weight.Get(i, j));
+      if (fields->v_weight.Get(i, j) > varType(1e-12)){
+        varType newV = fields->v_sum.Get(i, j) / fields->v_weight.Get(i, j);
+        varType oldV = fields->v.Get(i, j);
+        //assert(oldV - 9.81*fields->dt - 0.0001 < newV && newV < oldV - 9.81*fields->dt + 0.0001);
+        if(!(oldV - 9.81*fields->dt - 0.001 < newV && newV < oldV - 9.81*fields->dt + 0.001))
+          printf("new :%f \t old: %f \t  exact :%f \n",newV, oldV,- 9.81*fields->dt );
+        fields->v.Set(i, j,newV);
+      }
       else if (!IS_BC_V(bottom))
         fields->v.Set(i, j, varType(0));
     }
