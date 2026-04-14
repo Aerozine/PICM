@@ -117,10 +117,15 @@ void SemiLagrangian::traceParticleU(const int i, const int j, varType &x,
   getVelocity(xMid, yMid, uMid, vMid);
   x = x0 - dt * uMid;
   y = y0 - dt * vMid;
+  /*
+  int l=std::floor(x/dt);
+  int n=std::floor(y/dt);
+  assert(IS_SOLID(fields->Label(l+1,n+1)));
+  */
   // @todo for a particle u should not be nx-1,ny-1 the size is not the same
   // 1 cell is thrown away
-  x = std::clamp(x, REAL_LITERAL(0.0), static_cast<varType>(nx - 1) * dx);
-  y = std::clamp(y, REAL_LITERAL(0.0), static_cast<varType>(ny - 1) * dy);
+  x = std::clamp(x, REAL_LITERAL(0.0), static_cast<varType>(fields->u.nx) * dx);
+  y = std::clamp(y, REAL_LITERAL(0.0), static_cast<varType>(fields->u.ny) * dy);
 }
 
 void SemiLagrangian::traceParticleV(const int i, const int j, varType &x,
@@ -141,8 +146,8 @@ void SemiLagrangian::traceParticleV(const int i, const int j, varType &x,
 
   // @todo for a particle u should not be nx-1,ny-1 the size is not the same
   // 1 cell is thrown away
-  x = std::clamp(x, REAL_LITERAL(0.0), static_cast<varType>(nx - 1) * dx);
-  y = std::clamp(y, REAL_LITERAL(0.0), static_cast<varType>(ny - 1) * dy);
+  x = std::clamp(x, REAL_LITERAL(0.0), static_cast<varType>(nx ) * dx);
+  y = std::clamp(y, REAL_LITERAL(0.0), static_cast<varType>(ny ) * dy);
 }
 
 // Bilinear interpolation
