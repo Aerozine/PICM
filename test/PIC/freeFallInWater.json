@@ -24,7 +24,7 @@
             "x1": "nx/2-19",
             "y1": "ny-40",
             "x2": "nx/2+19",
-            "y2": "ny"
+            "y2": "ny-10"
         },
         {
             "x1": "1",
@@ -64,7 +64,7 @@
 
     "solver": {
         "type": "red_black_gauss_seidel",
-        "max_iterations": 1e5,
+        "max_iterations": 1e3,
         "tolerance": 5e-2
     },
     "method": "pic",
