@@ -121,11 +121,7 @@ for (int idx = 0; idx < particles->size(); ++idx) {
       }
       if (fields->v_weight.Get(i, j) > varType(1e-12)){
         varType newV = fields->v_sum.Get(i, j) / fields->v_weight.Get(i, j);
-        varType oldV = fields->v.Get(i, j);
-        //assert(oldV - 9.81*fields->dt - 0.0001 < newV && newV < oldV - 9.81*fields->dt + 0.0001);
-        if(!(oldV - 9.81*fields->dt - 0.001 < newV && newV < oldV - 9.81*fields->dt + 0.001))
-          printf("new :%f \t old: %f \t  exact :%f \n",newV, oldV,- 9.81*fields->dt );
-        fields->v.Set(i, j,newV);
+        fields->v.Set(i, j, newV);
       }
       else if (!IS_BC_V(bottom))
         fields->v.Set(i, j, varType(0));
@@ -135,9 +131,17 @@ for (int idx = 0; idx < particles->size(); ++idx) {
 void PIC::ProjectGridOnParticles() {
 OMP_PRAGMA(omp parallel for)
 for (int idx = 0; idx < particles->size(); ++idx) {
-  particles->SetU(idx,
-                  interpolateU(particles->GetX(idx), particles->GetY(idx)));
-  particles->SetV(idx,
-                  interpolateV(particles->GetX(idx), particles->GetY(idx)));
+  particles->SetU(idx, interpolateU(fields->u, particles->GetX(idx), particles->GetY(idx)));
+  particles->SetV(idx, interpolateV(fields->v, particles->GetX(idx), particles->GetY(idx)));
+}
+}
+
+// same function as above in PIC but needed for FLIP
+// because ProjectGridOnParticles is virtual (rewritten for FLIP)
+void PIC::ProjectBCOnParticles() { 
+OMP_PRAGMA(omp parallel for)      
+for (int idx = 0; idx < particles->size(); ++idx) {
+  particles->SetU(idx, interpolateU(fields->u, particles->GetX(idx), particles->GetY(idx)));
+  particles->SetV(idx, interpolateV(fields->v, particles->GetX(idx), particles->GetY(idx)));
 }
 }

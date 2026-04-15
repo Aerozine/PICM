@@ -66,6 +66,7 @@ public:
 
   std::string method = "semi_lagrangian";
   std::string freeSurface = "no";
+  std::string particleMethod = "vanilla_pic";
   SolverConfig solver;
 
   Parameters() = default;
