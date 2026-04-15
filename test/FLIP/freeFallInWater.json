@@ -16,7 +16,7 @@
     "write_norm_velocity": true,
     "write_smoke": true,
     "write_particles": true,
-    "folder": "results/PIC/freeFallInWater",
+    "folder": "results/FLIP/freeFallInWater",
     "filename": "simulation",
 
     "fluid": {
@@ -68,7 +68,8 @@
         "tolerance": 5e-2
     },
     "method": "pic",
-    "freeSurface": "yes"
+    "freeSurface": "yes",
+    "particleMethod": "flip"
 }
 
 

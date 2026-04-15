@@ -22,8 +22,8 @@ for (int idx = 0; idx < np; ++idx) {
   varType ymid = std::clamp(y0 + varType(0.5) * dt * v0, varType(0),
                             std::nextafter(yMax, varType(0)));
   //@todo CFL and adapt timestep
-  varType umid = interpolateU(xmid, ymid);
-  varType vmid = interpolateV(xmid, ymid);
+  varType umid = interpolateU(fields->u, xmid, ymid);
+  varType vmid = interpolateV(fields->v, xmid, ymid);
 
   varType x1 = x0 + dt * umid;
   varType y1 = y0 + dt * vmid;

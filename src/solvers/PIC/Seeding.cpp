@@ -45,8 +45,8 @@ void PIC::RefillParticles() {
 
           // assign inflow velocity from the BC face, interpolate the other
           // component
-          varType u = isInflowU ? fields->u.Get(ci, cj) : interpolateU(x, y);
-          varType v = isInflowV ? fields->v.Get(ci, cj) : interpolateV(x, y);
+          varType u = isInflowU ? fields->u.Get(ci, cj) : interpolateU(fields->u, x, y);
+          varType v = isInflowV ? fields->v.Get(ci, cj) : interpolateV(fields->v, x, y);
 
           // random birth time + partial advection CH7 p 115
           varType tau = rand01() * dt;
@@ -62,8 +62,8 @@ void PIC::RefillParticles() {
           varType ya = std::clamp(y + remaining * v, varType(0),
                                   std::nextafter(yMax, varType(0)));
 
-          varType ua = interpolateU(xa, ya);
-          varType va = interpolateV(xa, ya);
+          varType ua = interpolateU(fields->u, xa, ya);
+          varType va = interpolateV(fields->v, xa, ya);
 
           // In bounds verification
           int fi = std::clamp(static_cast<int>(std::floor(xa / dx)), 0, nx - 1);
@@ -103,13 +103,13 @@ void PIC::RefillParticles() {
 
           // if (fields->Label(i + 1, j) & Fields2D::SOLID) {
           //   u = 0.0;
-          //   v = interpolateV(x, y);
+          //   v = interpolateV(fields->v, x, y);
           // } else if (fields->Label(i - 1, j) & Fields2D::SOLID) {
-          //   u = interpolateU(x, y);
+          //   u = interpolateU(fields->u, x, y);
           //   v = 0.0;
           // } else {
-          varType u = interpolateU(x, y);
-          varType v = interpolateV(x, y);
+          varType u = interpolateU(fields->u, nx, y);
+          varType v = interpolateV(fields->v, x, y);
           // }
 
           particles->Add(x, y, u, v, static_cast<unsigned>(particles->size()));
