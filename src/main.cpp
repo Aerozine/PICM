@@ -1,6 +1,7 @@
 #include "core/Parameters.hpp"
 #include "solvers/PIC/PIC.hpp"
 #include "solvers/PIC/FLIP.hpp"
+#include "solvers/PIC/APIC.hpp"
 #include "solvers/SemiLagrangian/SemiLagrangian.hpp"
 
 #include <iostream>
@@ -28,6 +29,10 @@ int main(int argc, char *argv[]) {
     } if (params.particleMethod == "flip"){
       FLIP solver(params);
       std::cout << "variant of the method: flip \n" << std::endl;
+      solver.Run();
+    } if (params.particleMethod == "apic"){
+      APIC solver(params);
+      std::cout << "variant of the method: apic \n" << std::endl;
       solver.Run();
     } else{
       std::cerr << "[main] Unknown PIC variant '" << params.particleMethod
