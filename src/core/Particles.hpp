@@ -61,10 +61,8 @@ public:
   void SetY(int i, varType v) { A[i].pos.y = v; }
   void SetU(int i, varType v) { A[i].vel.x = v; }
   void SetV(int i, varType v) { A[i].vel.y = v; }
-  void GetCuX(int i, varType v) { A[i].cu.x = v; } 
-  void GetCuY(int i, varType v) { A[i].cu.y = v; }
-  void GetCvX(int i, varType v) { A[i].cv.x = v; }
-  void GetCvY(int i, varType v) { A[i].cv.y = v; }
+  void SetCu(int i, varType cx, varType cy) { A[i].cu.x = cx; A[i].cu.y = cy; } 
+  void SetCv(int i, varType cx, varType cy) { A[i].cv.x = cx; A[i].cv.y = cy; } 
 
   void InitParticleGrid(Fields2D &fields);
 };

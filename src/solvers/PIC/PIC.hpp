@@ -24,8 +24,8 @@ protected:
 
   // particles to grid projection
   varType GetW();
-  varType hat(varType r);
-  void ProjectParticleOnMAC(varType x, varType y, varType up, varType vp);
+  varType hat(varType r) const;
+  virtual void ProjectParticleOnMAC(int idx);
   void ProjectParticlesOnGrid(std::string kernel);
   void ProjectBCOnParticles();
 
