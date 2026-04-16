@@ -20,7 +20,7 @@ void Particles::InitParticleGrid(Fields2D &fields) {
           for (int b = 0; b < ppcy; b++) {
             varType x = (icell + rand01()) * dx;
             varType y = (jcell + rand01()) * dy;
-            Add(x, y, 0.0, 0.0, id);
+            Add(x, y, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, id);
             ++id;
           }
         }
