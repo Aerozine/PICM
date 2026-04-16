@@ -26,11 +26,11 @@ int main(int argc, char *argv[]) {
       PIC solver(params);
       std::cout << "variant of the method: vanilla pic \n" << std::endl;
       solver.Run();
-    } if (params.particleMethod == "flip"){
+    } else if (params.particleMethod == "flip"){
       FLIP solver(params);
       std::cout << "variant of the method: flip \n" << std::endl;
       solver.Run();
-    } if (params.particleMethod == "apic"){
+    } else if (params.particleMethod == "apic"){
       APIC solver(params);
       std::cout << "variant of the method: apic \n" << std::endl;
       solver.Run();

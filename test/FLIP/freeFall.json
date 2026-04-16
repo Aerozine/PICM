@@ -16,7 +16,7 @@
     "write_norm_velocity": true,
     "write_smoke": true,
     "write_particles": true,
-    "folder": "results/PIC/freeFallInWater",
+    "folder": "results/FLIP/freeFall",
     "filename": "simulation",
 
     "fluid": {
@@ -25,12 +25,6 @@
             "y1": "ny-40",
             "x2": "nx/2+19",
             "y2": "ny-10"
-        },
-        {
-            "x1": "1",
-            "y1": "1",
-            "x2": "nx",
-            "y2": "30"
         }]
     },
 
@@ -64,11 +58,10 @@
 
     "solver": {
         "type": "red_black_gauss_seidel",
-        "max_iterations": 1e3,
-        "tolerance": 1e-2
+        "max_iterations": 1e5,
+        "tolerance": 1e-3
     },
     "method": "pic",
-    "freeSurface": "yes"
+    "freeSurface": "yes",
+    "particleMethod": "flip"
 }
-
-
