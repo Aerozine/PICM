@@ -104,7 +104,7 @@ void PIC::Step() {
   AdvectParticles();
   CountAliveParticles();
   UpdateCellState();
-  RefillParticles();
+  // RefillParticles();
 }
 
 void PIC::Run() {
