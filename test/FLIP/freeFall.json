@@ -63,5 +63,7 @@
     },
     "method": "pic",
     "freeSurface": "yes",
+    "gravity": 9.81,
+    "refill": false,
     "particleMethod": "flip"
 }

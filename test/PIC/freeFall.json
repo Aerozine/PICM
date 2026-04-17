@@ -62,5 +62,7 @@
         "tolerance": 1e-4
     },
     "method": "pic",
-    "freeSurface": "yes"
+    "freeSurface": "yes",
+    "gravity": 0.0,
+    "refill": false 
 }
