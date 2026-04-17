@@ -58,5 +58,7 @@
         "tolerance": 1e-2
     },
     "method": "pic",
+    "gravity": 9.81,
+    "refill": false,
     "particleMethod": "apic"
 }

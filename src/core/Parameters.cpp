@@ -66,6 +66,8 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   method = j.value("method", "semi_lagrangian");
   freeSurface = j.value("freeSurface", "no");
   particleMethod = j.value("particleMethod", "vanilla_pic");
+  gravity = j.value("gravity", gravity);
+  refill = j.value("refill", refill);
   write_particles = j.value("write_particles", write_particles);
   // Output paths
   folder = j.value("folder", folder);
