@@ -21,7 +21,8 @@ void FLIP::SaveOldVelocities() {
 void FLIP::Step() {
     ProjectParticlesOnGrid("hat"); 
     SaveOldVelocities(); // save old veloctiy (!= PIC)
-    ApplyGravity();             
+    if (params.gravity != 0.0)
+        ApplyGravity();    
     MakeIncompressible(params, *fields);
     ProjectGridOnParticles(); // based on u_old and u_new (!= PIC) 
     fields->Div();
@@ -29,7 +30,8 @@ void FLIP::Step() {
     AdvectParticles();
     CountAliveParticles();
     UpdateCellState();
-    RefillParticles();
+    if (params.refill == true)
+        RefillParticles();
 }
 
 void FLIP::ProjectGridOnParticles() {

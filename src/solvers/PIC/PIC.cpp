@@ -95,9 +95,9 @@ void PIC::WriteOutput(int step) const {
 void PIC::Step() {
   //@todo please stop using strings for storing value
   //@todo we need to be sure about the order here
-  ProjectParticlesOnGrid("hat"); // p2g
   if (params.gravity != 0.0)
-    ApplyGravity();                // apply gravitiy into grid
+    ApplyGravity();     
+  ProjectParticlesOnGrid("hat"); // p2g
   MakeIncompressible(params, *fields);
   ProjectGridOnParticles(); // g2p
   fields->Div();

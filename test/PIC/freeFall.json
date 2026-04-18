@@ -63,6 +63,6 @@
     },
     "method": "pic",
     "freeSurface": "yes",
-    "gravity": 0.0,
+    "gravity": 9.81,
     "refill": false 
 }

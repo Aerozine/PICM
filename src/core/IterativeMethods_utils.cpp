@@ -49,7 +49,7 @@
   } else if (IS_BC_U(left_cell)) {
     // in ghost = pC- beta*(-u_BC)
     //  u_bc is j-1 and left i-1
-    sumP += pC + beta * f.u.Get(i - 1, j - 1);
+    sumP += pC;
   } else if (!IS_AIR(left_cell))
     sumP += f.p.Get(i - 1, j);
 
@@ -60,7 +60,7 @@
   } else if (IS_BC_U(current_cell)) {
     // out ghost= pC - beta*u_bc
     //  curent cell is i,j-1
-    sumP += pC - beta * f.u.Get(i, j - 1);
+    sumP += pC;
   } else if (!IS_AIR(right_cell))
     sumP += f.p.Get(i + 1, j);
 
@@ -70,7 +70,7 @@
     sumP += pC;
   } else if (IS_BC_V(bottom_cell)) {
     // in -> +
-    sumP += pC + beta * f.v.Get(i - 1, j - 1);
+    sumP += pC;
   } else if (!IS_AIR(bottom_cell))
     sumP += f.p.Get(i, j - 1);
 
@@ -79,7 +79,7 @@
   if (IS_SOLID(top_cell)) {
     sumP += pC;
   } else if (IS_BC_V(current_cell)) {
-    sumP += pC - beta * f.v.Get(i - 1, j);
+    sumP += pC;
   } else if (!IS_AIR(top_cell))
     sumP += f.p.Get(i, j + 1);
 
