@@ -20,8 +20,11 @@ void FLIP::SaveOldVelocities() {
 
 void FLIP::Step() {
     ProjectParticlesOnGrid();
+    // basically a if !0 and not a inf or NAN
+    if (std::isnormal(params.gravity))
+        ApplyGravity();
+    ProjectParticlesOnGrid();
     SaveOldVelocities(); // save old veloctiy (!= PIC)
-    ApplyGravity();             
     MakeIncompressible(params, *fields);
     ProjectGridOnParticles(); // based on u_old and u_new (!= PIC) 
     fields->Div();
@@ -29,6 +32,7 @@ void FLIP::Step() {
     Advect();
     CountAliveParticles();
     UpdateCellState();
+    if (params.refill)
     RefillParticles();
 }
 

@@ -3,6 +3,7 @@
 #include "Fields.hpp"
 #include "Grid2D.hpp"
 #include "Precision.hpp"
+// @todo should not include cpp file
 // should be statitced
 /* small reminder about the geometry
  *           +----------+
@@ -27,14 +28,14 @@
  */
 
 // IN P SPACE PLEASE
-[[nodiscard]] inline varType neighbourSum(const Fields2D &f, int nx, int ny,
-                                          int i, int j, double beta) {
+[[nodiscard]] inline varType neighbourSum(const Fields2D &f,
+                                          const int i, const int j, [[maybe_unused]] double beta) {
   // i j in terms of pressure cells
   varType sumP = 0.0;
   const varType pC = f.p.Get(i, j);
   assert(std::isfinite(pC));
-  assert(i >= 0 && i < nx);
-  assert(j >= 0 && j < ny);
+  assert(i >= 0 && i < f.p.nx);
+  assert(j >= 0 && j < f.p.ny);
 
   labeltype current_cell = f.Label(i, j);
   // Left neighbour
@@ -45,7 +46,7 @@
   } else if (IS_BC_U(left_cell)) {
     // in ghost = pC- beta*(-u_BC)
     //  u_bc is j-1 and left i-1
-    sumP += pC + beta * f.u.Get(i - 1, j - 1);
+    sumP += pC;
   } else if (!IS_AIR(left_cell))
     sumP += f.p.Get(i - 1, j);
 
@@ -56,7 +57,7 @@
   } else if (IS_BC_U(current_cell)) {
     // out ghost= pC - beta*u_bc
     //  curent cell is i,j-1
-    sumP += pC - beta * f.u.Get(i, j - 1);
+    sumP += pC;
   } else if (!IS_AIR(right_cell))
     sumP += f.p.Get(i + 1, j);
 
@@ -66,7 +67,7 @@
     sumP += pC;
   } else if (IS_BC_V(bottom_cell)) {
     // in -> +
-    sumP += pC + beta * f.v.Get(i - 1, j - 1);
+    sumP += pC;
   } else if (!IS_AIR(bottom_cell))
     sumP += f.p.Get(i, j - 1);
 
@@ -75,7 +76,7 @@
   if (IS_SOLID(top_cell)) {
     sumP += pC;
   } else if (IS_BC_V(current_cell)) {
-    sumP += pC - beta * f.v.Get(i - 1, j);
+    sumP += pC;
   } else if (!IS_AIR(top_cell))
     sumP += f.p.Get(i, j + 1);
 
@@ -92,8 +93,8 @@ inline bool checkConvergence(double res, double &res0, int it, double tol) {
 }
 // Gauss-Seidel update for a single FLUID cell.
 //  p_new = ( -coef * div_{ij} + sum p_nb ) / N_nb
-[[nodiscard]] inline double gsUpdate(const Fields2D &f, int nx, int ny, int i,
-                                     int j, double coef, double beta) {
-  const auto sumP = neighbourSum(f, nx, ny, i, j, beta);
+[[nodiscard]] inline double gsUpdate(const Fields2D &f, const int i,
+                                     const int j, const double coef, const double beta) {
+  const auto sumP = neighbourSum(f, i, j, beta);
   return (-coef * f.div.Get(i, j) + sumP) / 4.0;
 }

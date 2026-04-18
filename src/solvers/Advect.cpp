@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <iostream>
 
 // TODO: advect in SOLIDS is useless | add if(SOLID) {skip} ?
 // is branching worse than looking in each solid ?

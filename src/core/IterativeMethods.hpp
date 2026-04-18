@@ -52,3 +52,19 @@ void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
  * @return          @c true if converged within @p maxIters.
  */
 bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol);
+/**
+ * @brief Unpreconditioned Conjugate Gradient pressure solver.
+ *
+ * Derives A from the same RBGS stencil:
+ *   (Ap)(i,j) = 4*p(i,j) - neighbourSum(i,j)
+ *   b(i,j)    = -coef * div(i-1, j-1)
+ *
+ * @param fields   div read, p overwritten (fluid cells only).
+ * @param coef     rho * dx² / dt   (same as RBGS).
+ * @param beta     rho * dx  / dt   (kept for API consistency, unused).
+ * @param maxIters Maximum CG iterations.
+ * @param tol      Convergence: ||r||_inf / ||b||_inf < tol.
+ * @return         true if converged within maxIters.
+ */
+//bool solveCG(Fields2D &fields, double coef, double beta,
+             //int maxIters, double tol);

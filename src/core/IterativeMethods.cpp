@@ -24,7 +24,7 @@ void solveJacobi(Fields2D &fields, int nx, int ny, double coef, int maxIters,
 OMP_PRAGMA(omp parallel for collapse(2))
 for (int j = 0; j < ny; ++j)
   for (int i = 0; i < nx; ++i)
-    pNew.Set(i, j, gsUpdate(fields, nx, ny, i, j, coef, beta));
+    pNew.Set(i, j, gsUpdate(fields, i, j, coef, beta));
 
 double sumSq = 0.0;
 int count = 0;
@@ -66,7 +66,7 @@ void solveGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
         if (IS_SOLID(fields.Label(i, j)))
           continue;
         const double p_old = fields.p.Get(i + 1, j + 1);
-        const double p_new = gsUpdate(fields, nx, ny, i, j, coef, beta);
+        const double p_new = gsUpdate(fields, i, j, coef, beta);
         fields.p.Set(i + 1, j + 1, p_new);
         const double r = p_new - p_old;
         sumSq += r * r;

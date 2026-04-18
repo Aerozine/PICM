@@ -63,6 +63,6 @@
         "tolerance": 1e-4
     },
     "freeSurface": "yes",
-    "gravity": -9.0,
+    "gravity": 9.81,
     "refill": false 
 }
