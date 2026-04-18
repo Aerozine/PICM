@@ -6,23 +6,14 @@
 #include "../../solvers/SemiLagrangian/Project.hpp"
 #include <memory>
 
-/**
- * @file PIC.hpp
- * @brief Particle-In-Cell solver for 2-D incompressible flow.
- */
 class PIC {
 public:
   PIC(const Parameters &params);
-
-  ~PIC();
-
-  // PIC(const PIC &) = delete;
-  // PIC &operator=(const PIC &) = delete;
-
+  virtual ~PIC();
   void Run();
-  void Step();
+  virtual void Step();
 
-private:
+protected:
   const Parameters &params;
 
   int nx, ny;
@@ -30,7 +21,37 @@ private:
   varType density;
   Fields2D *fields;
   Particles *particles;
-  // @todo maybe useful to do a solver class , and herit code from it ?
+
+  // particles to grid projection
+  varType GetW();
+  varType hat(varType r) const;
+  virtual void ProjectParticleOnMAC(int idx);
+  void ProjectParticlesOnGrid(std::string kernel);
+  void ProjectBCOnParticles();
+
+  // grid to particles projection
+  virtual void ProjectGridOnParticles();
+
+  // advection
+  void AdvectParticles();
+  [[nodiscard]] varType interpolateU(const Grid2D& g, varType x, varType y) const;
+  [[nodiscard]] varType interpolateV(const Grid2D& g, varType x, varType y) const;
+
+  // reseeding
+  void RefillParticles();
+  void CountAliveParticles();
+  varType rand01();
+
+  // gravity
+  void ApplyGravity();
+
+  // cellstate
+  void UpdateCellState();
+
+  void ScatterToGrid(varType xg, varType yg, varType val, Grid2D &sum,
+                        Grid2D &weight, int imax, int jmax);
+
+private:
   std::unique_ptr<OutputWriter> uWriter;
   std::unique_ptr<OutputWriter> vWriter;
   std::unique_ptr<OutputWriter> pWriter;
@@ -39,37 +60,8 @@ private:
   std::unique_ptr<OutputWriter> smokeWriter;
   std::unique_ptr<OutputWriter> particlesWriter;
 
-  // @todo do a IF DEBUG THEN
   std::unique_ptr<OutputWriter> labelWriter;
 
   void InitializeOutputWriters();
   void WriteOutput(int step) const;
-
-  // P2G
-  varType GetW();
-  varType hat(varType r);
-  void ProjectParticleOnMAC(varType x, varType y, varType up, varType vp);
-  void ProjectParticlesOnGrid(std::string kernel);
-
-  // G2P
-  void ProjectGridOnParticles();
-
-  // Advection
-  void AdvectParticles();
-  [[nodiscard]] varType interpolateU(varType x, varType y) const;
-  [[nodiscard]] varType interpolateV(varType x, varType y) const;
-
-  // Reseeding
-  void RefillParticles();
-  void CountAliveParticles();
-  varType rand01();
-
-  // Gravity
-  void ApplyGravity();
-
-  // CellState
-  void UpdateCellState();
-
-  void ScatterToGrid(varType xg, varType yg, varType val, Grid2D &sum,
-                     Grid2D &weight, int imax, int jmax);
 };

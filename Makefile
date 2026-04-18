@@ -1,8 +1,8 @@
-build:
+dbg:
 	cmake -B build-dbg -G Ninja -DCMAKE_BUILD_TYPE=Debug; cmake --build build-dbg
 
-build-fast:
-	cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release; cmake --build build 
+release:
+	cmake -B build-release -G Ninja -DCMAKE_BUILD_TYPE=Release; cmake --build build-release 
 
 sl-square:
 	./build/bin/PIC -c test/SemiLagrangian/test-square.json

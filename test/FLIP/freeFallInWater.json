@@ -2,13 +2,13 @@
     "dx": 0.05,
     "dy": 0.05,
     "dt": 0.01,
-    "nx": 200,
-    "ny": 200,
-    "nt": 1000,
-    "ppcx": 4,
-    "ppcy": 4,
+    "nx": 100,
+    "ny": 190,
+    "nt": 200,
+    "ppcx": 5,
+    "ppcy": 5,
     "density": 1000,
-    "sampling_rate": 5,
+    "sampling_rate": 1,
     "write_u": true,
     "write_v": true,
     "write_p": true,
@@ -16,56 +16,45 @@
     "write_norm_velocity": true,
     "write_smoke": true,
     "write_particles": true,
-    "folder": "results/PIC/free",
+    "folder": "results/FLIP/freeFallInWater",
     "filename": "simulation",
 
-    "air": {
+    "fluid": {
         "rectangle": [{
-            "x1": "3",
-            "y1": "151",
-            "x2": "nx-2",
-            "y2": "ny-2"
+            "x1": "nx/2-19",
+            "y1": "ny-40",
+            "x2": "nx/2+19",
+            "y2": "ny-10"
         },
         {
-            "x1": "101",
-            "y1": "3",
-            "x2": "nx-2",
-            "y2": "150"
+            "x1": "1",
+            "y1": "1",
+            "x2": "nx",
+            "y2": "30"
         }]
     },
 
     "solid": {
-        "cylinder": [{
-            "x": "50",
-            "y": "50",
-            "r": "20"
-        },
-        {
-            "x": "150",
-            "y": "50",
-            "r": "20"
-        }],
-
         "rectangle":[{
             "x1": "0",
             "y1": "0",
             "x2": "nx+1",
-            "y2": "2"
+            "y2": "0"
         },
         {
             "x1": "0",
-            "y1": "ny-1",
+            "y1": "ny+1",
             "x2": "nx+1",
             "y2": "ny+1"
         },
         {
             "x1": "0",
             "y1": "0",
-            "x2": "2",
+            "x2": "0",
             "y2": "ny+1"
         },
         {
-            "x1": "nx-1",
+            "x1": "nx+1",
             "y1": "0",
             "x2": "nx+1",
             "y2": "ny+1"
@@ -75,11 +64,15 @@
 
     "solver": {
         "type": "red_black_gauss_seidel",
-        "max_iterations": 1e5,
+        "max_iterations": 1e3,
+
         "tolerance": 1e-3
     },
     "method": "pic",
-    "freeSurface": "no",
+    "freeSurface": "yes",
     "gravity": 9.81,
-    "refill": false
+    "refill": false,
+    "particleMethod": "flip"
 }
+
+

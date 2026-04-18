@@ -14,7 +14,7 @@ varType hat1(varType r) {
     return varType(0);
 }
 // h2
-varType PIC::hat(varType r) {
+varType PIC::hat(varType r) const {
   if (varType(-1.5) <= r && r < varType(-0.5))
     return varType(0.5) * (r + varType(3.0 / 2.0)) * (r + varType(3.0 / 2.0));
   if (varType(-0.5) <= r && r < varType(0.5))
@@ -41,7 +41,12 @@ void PIC::ScatterToGrid(varType xg, varType yg, varType val, Grid2D &sum,
     }
   }
 }
-void PIC::ProjectParticleOnMAC(varType x, varType y, varType up, varType vp) {
+void PIC::ProjectParticleOnMAC(int idx) {
+  varType x = particles->GetX(idx);
+  varType y = particles->GetY(idx);
+  varType up = particles->GetU(idx);
+  varType vp = particles->GetV(idx);
+
   ScatterToGrid(x / dx, y / dy - varType(0.5), up, fields->u_sum,
                 fields->u_weight, nx + 1, ny);
   ScatterToGrid(x / dx - varType(0.5), y / dy, vp, fields->v_sum,
@@ -72,8 +77,7 @@ for (int j = 0; j < fields->v.ny; j++)
 // @todo must be implemented directly inside the project particle on MAC
 // OMP_PRAGMA(omp parallel for)
 for (int idx = 0; idx < particles->size(); ++idx) {
-  ProjectParticleOnMAC(particles->GetX(idx), particles->GetY(idx),
-                       particles->GetU(idx), particles->GetV(idx));
+  ProjectParticleOnMAC(idx);
 }
 
 // Normalize u faces.
@@ -119,9 +123,10 @@ for (int idx = 0; idx < particles->size(); ++idx) {
         // Boundary value already set — do not overwrite
         continue;
       }
-      if (fields->v_weight.Get(i, j) > varType(1e-12))
-        fields->v.Set(i, j,
-                      fields->v_sum.Get(i, j) / fields->v_weight.Get(i, j));
+      if (fields->v_weight.Get(i, j) > varType(1e-12)){
+        varType newV = fields->v_sum.Get(i, j) / fields->v_weight.Get(i, j);
+        fields->v.Set(i, j, newV);
+      }
       else if (!IS_BC_V(bottom))
         fields->v.Set(i, j, varType(0));
     }
@@ -130,9 +135,17 @@ for (int idx = 0; idx < particles->size(); ++idx) {
 void PIC::ProjectGridOnParticles() {
 OMP_PRAGMA(omp parallel for)
 for (int idx = 0; idx < particles->size(); ++idx) {
-  particles->SetU(idx,
-                  interpolateU(particles->GetX(idx), particles->GetY(idx)));
-  particles->SetV(idx,
-                  interpolateV(particles->GetX(idx), particles->GetY(idx)));
+  particles->SetU(idx, interpolateU(fields->u, particles->GetX(idx), particles->GetY(idx)));
+  particles->SetV(idx, interpolateV(fields->v, particles->GetX(idx), particles->GetY(idx)));
+}
+}
+
+// same function as above in PIC but needed for FLIP
+// because ProjectGridOnParticles is virtual (rewritten for FLIP)
+void PIC::ProjectBCOnParticles() { 
+OMP_PRAGMA(omp parallel for)      
+for (int idx = 0; idx < particles->size(); ++idx) {
+  particles->SetU(idx, interpolateU(fields->u, particles->GetX(idx), particles->GetY(idx)));
+  particles->SetV(idx, interpolateV(fields->v, particles->GetX(idx), particles->GetY(idx)));
 }
 }

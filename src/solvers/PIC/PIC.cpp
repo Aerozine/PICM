@@ -96,7 +96,8 @@ void PIC::Step() {
   //@todo please stop using strings for storing value
   //@todo we need to be sure about the order here
   ProjectParticlesOnGrid("hat"); // p2g
-  ApplyGravity();                // apply gravitiy into grid
+  if (params.gravity != 0.0)
+    ApplyGravity();                // apply gravitiy into grid
   MakeIncompressible(params, *fields);
   ProjectGridOnParticles(); // g2p
   fields->Div();
@@ -104,13 +105,14 @@ void PIC::Step() {
   AdvectParticles();
   CountAliveParticles();
   UpdateCellState();
-  RefillParticles();
+  if (params.refill == true)
+    RefillParticles();
 }
 
 void PIC::Run() {
   fields->Div();
   fields->VelocityNormCenterGrid();
-  ProjectGridOnParticles();
+  ProjectBCOnParticles();
   WriteOutput(0);
 
   const double start = GET_TIME();

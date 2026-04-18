@@ -1,7 +1,7 @@
 #include "PIC.hpp"
 //*    must be applied to fields
 void PIC::ApplyGravity() {
-  const varType g = varType(9.81);
+  const varType g = varType(params.gravity);
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->v.ny; j++) {
     for (int i = 0; i < fields->v.nx; i++) {
@@ -15,8 +15,7 @@ void PIC::ApplyGravity() {
         continue;
       // Apply to any fluid-adjacent face, including free-surface faces
       // (original code required both FLUID, starving surface faces of gravity)
-      if (IS_FLUID(top))
-        fields->v.Set(i, j, fields->v.Get(i, j) - dt * g);
+      fields->v.Set(i, j, fields->v.Get(i, j) - dt * g);
     }
   }
 }
