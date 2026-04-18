@@ -17,7 +17,7 @@
     "write_smoke":         true,
     "write_particles": true,
 
-    "folder":   "results",
+    "folder":   "results/PIC/uniform",
     "filename": "simulation",
 
     "velocityu": {

@@ -56,6 +56,8 @@ public:
   std::string filename =
       "simulation"; ///< Base filename (unused at runtime, reserved).
 
+  varType gravity = 0.0;
+
   bool write_u = true;
   bool write_v = true;
   bool write_p = true;
@@ -63,9 +65,11 @@ public:
   bool write_norm_velocity = false;
   bool write_smoke = false;
   bool write_particles = false;
+  bool refill = false;
 
   std::string method = "semi_lagrangian";
   std::string freeSurface = "no";
+  std::string particleMethod = "vanilla_pic";
   SolverConfig solver;
 
   Parameters() = default;
