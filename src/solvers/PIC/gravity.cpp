@@ -1,5 +1,5 @@
 #include "PIC.hpp"
-//*    must be applied to fields
+/*    must be applied to fields
 void PIC::ApplyGravity() const {
   const varType g = params.gravity;
   OMP_PRAGMA(omp parallel for collapse(2))
@@ -22,8 +22,8 @@ void PIC::ApplyGravity() const {
 // */
 
 // gravity through particles -> change order of functions in Step() in PIC.cpp
-/*
-void PIC::ApplyGravity() {
+//*
+void PIC::ApplyGravity() const {
 varType g = 9.81;
 OMP_PRAGMA(omp parallel for)
   for (int idx = 0; idx < particles->size(); idx++){

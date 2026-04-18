@@ -53,7 +53,7 @@ for (int j = 1; j < fields.p.ny - 1; ++j) {
       continue;
     const double p_old = fields.p.Get(i, j);
     const auto sumP =
-        neighbourSum(fields, fields.p.nx, fields.p.ny, i, j, beta);
+        neighbourSum(fields, i, j, beta);
     // i j express in p ref , for div which is nx , ny -1,-1
     // @todo always /4 but not always 4 neighbour right ?
     const double p_neighbour =

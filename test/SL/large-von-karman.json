@@ -6,7 +6,7 @@
     "ny": 300,
     "nt": 1000,
     "density": 1000,
-    "sampling_rate": 1,
+    "sampling_rate": 5,
 
     "write_u":             true,
     "write_v":             true,
@@ -63,7 +63,8 @@
 
     "solver": {
   "type": "red_black_gauss_seidel",
-    "max_iterations": 1e5,
-    "tolerance": 1e-2
-}
+    "max_iterations": 1e8,
+    "tolerance": 1e-5
+},
+  "method": "sl"
 }

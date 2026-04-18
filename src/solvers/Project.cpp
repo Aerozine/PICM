@@ -28,6 +28,9 @@ void Solver::solvePressure(const Parameters &p, Fields2D &f) {
   case SolverConfig::Type::MICCG0:
     solveMICCG0(f, scale, maxIters, tol);
     break;
+ case SolverConfig::Type::CG:
+    //solveCG(f, coef, beta, maxIters, tol);
+    break;
   default:
     std::cerr << "[SemiLagrangian] Unknown pressure solver type – aborting.\n";
     std::exit(EXIT_FAILURE);

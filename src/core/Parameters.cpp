@@ -43,7 +43,7 @@ std::string SolverConfig::typeName() const {
 
 SolverConfig::Method SolverConfig::methodFromJson(const nlohmann::json &j) {
   const std::string s = j.get<std::string>();
-  if (s == "semi_lagrangian") return Method::SL;
+  if (s == "semilagrangian" || s== "sl") return Method::SL;
   if (s == "vanilla_pic" || s == "pic")     return Method::VanillaPIC;
   if (s == "flip")            return Method::FLIP;
   if (s == "mixed_flip_pic")  return Method::Mixed_FLIP_PIC;
@@ -107,7 +107,7 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
     smoke_json = j["smoke"];
   if (j.contains("solver")) {
     solver = SolverConfig::fromJson(j["solver"]);
-    //if (j.contains("method"))
+    if (j.contains("method"))
     solver.method = SolverConfig::methodFromJson(j["method"].get<std::string>());
   }
 }

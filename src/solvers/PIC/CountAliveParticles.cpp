@@ -10,13 +10,13 @@ for (int i = 0; i < nx; i++)
 // small atomic race for countalive
 // OMP_PRAGMA(omp parallel for)
 for (int idx = 0; idx < particles->size(); ++idx) {
-  const int ci = std::clamp(static_cast<int>(std::floor(particles->GetX(idx) / dx)),
+  int ci = std::clamp(static_cast<int>(std::floor(particles->GetX(idx) / dx)),
                       0, nx - 1);
-  const int cj = std::clamp(static_cast<int>(std::floor(particles->GetY(idx) / dy)),
+  int cj = std::clamp(static_cast<int>(std::floor(particles->GetY(idx) / dy)),
                       0, ny - 1);
 
   if (!(fields->Label(ci + 1, cj + 1) & Fields2D::SOLID)) {
-    const varType cnt = fields->countAliveParticles->Get(ci, cj);
+    varType cnt = fields->countAliveParticles->Get(ci, cj);
     fields->countAliveParticles->Set(ci, cj, cnt + 1.0);
   }
 }

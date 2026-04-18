@@ -95,11 +95,14 @@ for (int idx = 0; idx < particles->size(); ++idx) {
         continue;
       }
       //@todo should be illegal to do 1e-12
-      if (fields->u_weight->Get(i, j) > varType(1e-12))
+      if (fields->u_weight->Get(i, j) <= static_cast<varType>(100) * std::numeric_limits<varType>::epsilon() ) {
+        if (!IS_BC_U(left)) {
+          fields->u.Set(i, j, static_cast<varType>(0));
+        }
+      } else {
         fields->u.Set(i, j,
                       fields->u_sum->Get(i, j) / fields->u_weight->Get(i, j));
-      else if (!IS_BC_U(left))
-        fields->u.Set(i, j, varType(0));
+      }
     }
   }
 

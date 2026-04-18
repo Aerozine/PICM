@@ -108,7 +108,7 @@ void PIC::RefillParticles() {
           //   u = interpolateU(fields->u, x, y);
           //   v = 0.0;
           // } else {
-          varType u = interpolateU(fields->u, nx, y);
+          varType u = interpolateU(fields->u, x, y);
           varType v = interpolateV(fields->v, x, y);
           // }
 
