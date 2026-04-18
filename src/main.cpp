@@ -1,7 +1,7 @@
 #include "core/Parameters.hpp"
 #include "solvers/PIC/PIC.hpp"
-#include "solvers/PIC/FLIP.hpp"
-#include "solvers/PIC/APIC.hpp"
+#include "solvers/FLIP/FLIP.hpp"
+#include "solvers/APIC/APIC.hpp"
 #include "solvers/SemiLagrangian/SemiLagrangian.hpp"
 
 #include <iostream>
@@ -17,40 +17,35 @@ int main(int argc, char *argv[]) {
     return 42;
   }
   std::cout << params << std::endl;
-
-  // Initialize the solver
-  if (params.method == "pic") {
-    std::cout << "Particle In cell method \n" << std::endl;
-
-    if (params.particleMethod == "vanilla_pic"){
-      PIC solver(params);
-      std::cout << "variant of the method: vanilla pic \n" << std::endl;
-      solver.Run();
-    } else if (params.particleMethod == "flip"){
-      FLIP solver(params);
-      std::cout << "variant of the method: flip \n" << std::endl;
-      solver.Run();
-    } else if (params.particleMethod == "apic"){
-      APIC solver(params);
-      std::cout << "variant of the method: apic \n" << std::endl;
-      solver.Run();
-    } else{
-      std::cerr << "[main] Unknown PIC variant '" << params.particleMethod
-                << "' – defaulting to vanilla pic.\n";
-      PIC solver(params);
-      solver.Run();
+switch (params.solver.method) {
+    case SolverConfig::Method::SL: {
+        std::cout << "SL\n";
+        SemiLagrangian solver(params);
+        solver.Run();
+        break;
     }
-
-  } else {
-    // Default: "semi_lagrangian"
-    if (params.method != "semi_lagrangian")
-      std::cerr << "[main] Unknown method '" << params.method
-                << "' – defaulting to semi_lagrangian.\n";
-
-    std::cout << "SL" << std::endl;
-    SemiLagrangian solver(params);
-    solver.Run();
-  }
+    case SolverConfig::Method::VanillaPIC: {
+        std::cout << "VanillaPIC\n";
+        PIC solver(params);
+        solver.Run();
+        break;
+    }
+    case SolverConfig::Method::FLIP: {
+        std::cout << "FLIP\n";
+        FLIP solver(params);
+        solver.Run();
+        break;
+    }
+    case SolverConfig::Method::Mixed_FLIP_PIC:
+        std::cerr << "Mixed_FLIP_PIC not yet implemented\n";
+        break;
+    case SolverConfig::Method::APIC: {
+        std::cout << "APIC\n";
+        APIC solver(params);
+        solver.Run();
+        break;
+    }
+}
   std::cout << "Simulation completed successfully!\n";
   return 0;
 }

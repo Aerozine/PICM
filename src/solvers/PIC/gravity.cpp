@@ -1,7 +1,7 @@
 #include "PIC.hpp"
 //*    must be applied to fields
-void PIC::ApplyGravity() {
-  const varType g = varType(params.gravity);
+void PIC::ApplyGravity() const {
+  const varType g = params.gravity;
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->v.ny; j++) {
     for (int i = 0; i < fields->v.nx; i++) {

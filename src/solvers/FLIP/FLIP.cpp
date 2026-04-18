@@ -1,6 +1,6 @@
 #include "FLIP.hpp"
 
-FLIP::FLIP(const Parameters& params)
+FLIP::FLIP(Parameters& params)
     : PIC(params),
       u_old(fields->u.nx, fields->u.ny),
       v_old(fields->v.nx, fields->v.ny) {} 
@@ -19,14 +19,14 @@ void FLIP::SaveOldVelocities() {
 }
 
 void FLIP::Step() {
-    ProjectParticlesOnGrid("hat"); 
+    ProjectParticlesOnGrid();
     SaveOldVelocities(); // save old veloctiy (!= PIC)
     ApplyGravity();             
     MakeIncompressible(params, *fields);
     ProjectGridOnParticles(); // based on u_old and u_new (!= PIC) 
     fields->Div();
     fields->VelocityNormCenterGrid();
-    AdvectParticles();
+    Advect();
     CountAliveParticles();
     UpdateCellState();
     RefillParticles();

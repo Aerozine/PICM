@@ -1,7 +1,7 @@
 #include "PIC.hpp"
 #include <cmath>
 
-void PIC::AdvectParticles() {
+void PIC::Advect() {
   const varType xMax = dx * nx;
   const varType yMax = dy * ny;
   const int np = particles->size();
@@ -15,15 +15,15 @@ OMP_PRAGMA(omp parallel for)
     varType u0 = particles->GetU(idx);
     varType v0 = particles->GetV(idx);
 
-    varType xmid = x0 + varType(0.5) * dt * u0;
-    varType ymid = y0 + varType(0.5) * dt * v0;
+    varType xmid = x0 + static_cast<varType>(0.5) * dt * u0;
+    varType ymid = y0 + static_cast<varType>(0.5) * dt * v0;
     varType umid = interpolateU(fields->u, xmid, ymid);
     varType vmid = interpolateV(fields->v, xmid, ymid);
 
     varType x1 = x0 + dt * umid;
     varType y1 = y0 + dt * vmid;
 
-    if (x1 < varType(0) || x1 >= xMax || y1 < varType(0) || y1 >= yMax) {
+    if (x1 < static_cast<varType>(0) || x1 >= xMax || y1 < static_cast<varType>(0) || y1 >= yMax) {
       keep[idx] = 0;
       continue;
     }
@@ -31,7 +31,7 @@ OMP_PRAGMA(omp parallel for)
     int i1 = std::clamp(static_cast<int>(std::floor(x1 / dx)), 0, nx - 1);
     int j1 = std::clamp(static_cast<int>(std::floor(y1 / dy)), 0, ny - 1);
 
-    if (IS_SOLID(fields->Label(i + 1, j + 1))) {
+    if (IS_SOLID(fields->Label(i1 + 1, j1 + 1))) {
       keep[idx] = 0;
       continue;
     }
@@ -46,4 +46,3 @@ OMP_PRAGMA(omp parallel for)
     }
   }
 }
-

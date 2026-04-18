@@ -5,6 +5,7 @@ varType PIC::GetW() {
   return static_cast<varType>(particles->ppcx * particles->ppcy);
 }
 // @todo handle different hat correctly
+// needs to be handle in the Cmake for precision over cost
 varType hat1(varType r) {
   if (r >= varType(0) && r <= varType(1))
     return varType(1) - r;
@@ -47,31 +48,27 @@ void PIC::ProjectParticleOnMAC(int idx) {
   varType up = particles->GetU(idx);
   varType vp = particles->GetV(idx);
 
-  ScatterToGrid(x / dx, y / dy - varType(0.5), up, fields->u_sum,
-                fields->u_weight, nx + 1, ny);
-  ScatterToGrid(x / dx - varType(0.5), y / dy, vp, fields->v_sum,
-                fields->v_weight, nx, ny + 1);
+  ScatterToGrid(x / dx, y / dy - varType(0.5), up, *fields->u_sum,
+                *fields->u_weight, nx + 1, ny);
+  ScatterToGrid(x / dx - varType(0.5), y / dy, vp, *fields->v_sum,
+                *fields->v_weight, nx, ny + 1);
 }
 
-void PIC::ProjectParticlesOnGrid(std::string kernel) {
-  if (kernel != "hat") {
-    std::cerr << "[PIC] Unknown P2G kernel '" << kernel << "'.\n";
-    return;
-  }
+void PIC::ProjectParticlesOnGrid() {
 
   // Weights to zero.
 OMP_PRAGMA(omp parallel for collapse(2))
 for (int j = 0; j < fields->u.ny; j++)
   for (int i = 0; i < fields->u.nx; i++) {
-    fields->u_sum.Set(i, j, varType(0));
-    fields->u_weight.Set(i, j, varType(0));
+    fields->u_sum->Set(i, j, varType(0));
+    fields->u_weight->Set(i, j, varType(0));
   }
 
 OMP_PRAGMA(omp parallel for collapse(2))
 for (int j = 0; j < fields->v.ny; j++)
   for (int i = 0; i < fields->v.nx; i++) {
-    fields->v_sum.Set(i, j, varType(0));
-    fields->v_weight.Set(i, j, varType(0));
+    fields->v_sum->Set(i, j, varType(0));
+    fields->v_weight->Set(i, j, varType(0));
   }
 // will messed up the code due to race condition and other funny things
 // @todo must be implemented directly inside the project particle on MAC
@@ -98,9 +95,9 @@ for (int idx = 0; idx < particles->size(); ++idx) {
         continue;
       }
       //@todo should be illegal to do 1e-12
-      if (fields->u_weight.Get(i, j) > varType(1e-12))
+      if (fields->u_weight->Get(i, j) > varType(1e-12))
         fields->u.Set(i, j,
-                      fields->u_sum.Get(i, j) / fields->u_weight.Get(i, j));
+                      fields->u_sum->Get(i, j) / fields->u_weight->Get(i, j));
       else if (!IS_BC_U(left))
         fields->u.Set(i, j, varType(0));
     }
@@ -123,8 +120,8 @@ for (int idx = 0; idx < particles->size(); ++idx) {
         // Boundary value already set — do not overwrite
         continue;
       }
-      if (fields->v_weight.Get(i, j) > varType(1e-12)){
-        varType newV = fields->v_sum.Get(i, j) / fields->v_weight.Get(i, j);
+      if (fields->v_weight->Get(i, j) > varType(1e-12)){
+        varType newV = fields->v_sum->Get(i, j) / fields->v_weight->Get(i, j);
         fields->v.Set(i, j, newV);
       }
       else if (!IS_BC_V(bottom))

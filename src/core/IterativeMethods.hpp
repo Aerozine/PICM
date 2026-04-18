@@ -10,6 +10,7 @@
  * @param coef      rho * dx^2 / dt.
  * @param maxIters  Maximum number of iterations.
  * @param tol       Relative residual convergence threshold.
+ * @param beta
  */
 void solveJacobi(Fields2D &fields, int nx, int ny, double coef, int maxIters,
                  double tol, double beta);
@@ -48,7 +49,6 @@ void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
  * @param scale     dt / (rho * dx^2).
  * @param maxIters  Maximum number of PCG iterations.
  * @param tol       Relative residual convergence threshold.
- * @param beta      Beta parameter for solid boundary conditions.
  * @return          @c true if converged within @p maxIters.
  */
 bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol);

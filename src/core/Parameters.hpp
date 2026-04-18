@@ -1,38 +1,51 @@
 #pragma once
+#include "SolverConfig.hpp"
 #include "SceneObjects.hpp"
 #include <nlohmann/json.hpp>
-#include <ostream>
 #include <string>
-
-class Fields2D;
+// @todo does this is really necesarry ?
+// why not simply use include fields ?
+//class Fields2D;
 
 /**
  * @brief Configuration for the iterative pressure (Poisson) solver.
  */
+/*
 struct SolverConfig {
   /// Available pressure solver algorithms.
   enum class Type {
     JACOBI,       ///< Jacobi iteration (parallelisable, slow convergence).
     GAUSS_SEIDEL, ///< Gauss-Seidel (faster convergence, sequential).
     RB_GS,        ///< Red-black GS (parallelisable + fast convergence).
-    MICCG0        ///< Modified Incomplete Cholesky CG level 0 ( better )
+    MICCG0,        ///< Modified Incomplete Cholesky CG level 0 ( better )
+    CG
   };
-
+  enum class Method {
+    SL,
+    VanillaPIC,
+    FLIP,
+    Mixed_FLIP_PIC,
+    APIC
+  };
+  /// Parse a Method from a JSON string value.
+  static Method methodFromJson(const nlohmann::json &j);
+  /// @return The method as a human-readable string.
+  static std::string methodName(Method m);
+  Method method;
   Type type;
   int maxIters;     ///< Maximum number of iterations per step.
   double tolerance; ///< Relative residual convergence threshold.
 
-  /**
    * @brief Construct a SolverConfig from a JSON object.
    *
    * @param j JSON object node.
    * @return  Populated SolverConfig.
-   */
   static SolverConfig fromJson(const nlohmann::json &j);
 
   /// @return The solver type as a lowercase string (matches JSON key values).
   std::string typeName() const;
 };
+// */
 
 /// @brief All simulation parameters parsed from a JSON configuration file.
 class Parameters {
@@ -53,8 +66,6 @@ public:
   // Output
   int sampling_rate = 1;          ///< Write output every N steps.
   std::string folder = "results"; ///< Output directory.
-  std::string filename =
-      "simulation"; ///< Base filename (unused at runtime, reserved).
 
   varType gravity = 0.0;
 
@@ -66,10 +77,7 @@ public:
   bool write_smoke = false;
   bool write_particles = false;
   bool refill = false;
-
-  std::string method = "semi_lagrangian";
   std::string freeSurface = "no";
-  std::string particleMethod = "vanilla_pic";
   SolverConfig solver;
 
   Parameters() = default;
