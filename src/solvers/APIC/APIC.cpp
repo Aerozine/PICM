@@ -1,21 +1,21 @@
 #include "APIC.hpp"
 
-APIC::APIC(const Parameters& params)
+APIC::APIC(Parameters& params)
     : PIC(params) {} 
-
-varType APIC::dhat(varType r) const {
-    if (varType(-1.5) <= r && r < varType(-0.5))
-        return r + varType(1.5);
-    if (varType(-0.5) <= r && r < varType(0.5))
-        return -varType(2.0) * r;
-    if (varType(0.5) <= r && r < varType(1.5))
-        return r - varType(1.5);
-    return varType(0);
+// todo needs to be fixed for each type of hat
+varType APIC::dhat(varType r) {
+    if (static_cast<varType>(-1.5) > r && r < static_cast<varType>(-0.5))
+        return r + static_cast<varType>(1.5);
+    if (static_cast<varType>(-0.5) <= r && r < static_cast<varType>(0.5))
+        return -static_cast<varType>(2.0) * r;
+    if (static_cast<varType>(0.5) <= r && r < static_cast<varType>(1.5))
+        return r - static_cast<varType>(1.5);
+    return static_cast<varType>(0);
 }
 
-Vec2 APIC::gradWeightU(int i, int j, varType xp, varType yp) const {
-    varType rx = xp / dx - varType(i);
-    varType ry = yp / dy - varType(0.5) - varType(j);
+Vec2 APIC::gradWeightU(const int i, const int j, const varType xp, const varType yp) const {
+    const varType rx = xp / dx - static_cast<varType>(i);
+    const varType ry = yp / dy - static_cast<varType>(0.5) - static_cast<varType>(j);
 
     Vec2 g;
     g.x = (dhat(rx) * hat(ry)) / dx;
@@ -24,12 +24,12 @@ Vec2 APIC::gradWeightU(int i, int j, varType xp, varType yp) const {
 }
 
 Vec2 APIC::gradWeightV(int i, int j, varType xp, varType yp) const {
-    varType rx = xp / dx - varType(0.5) - varType(i);
-    varType ry = yp / dy - varType(j);
+    const varType rx = xp / dx - static_cast<varType>(0.5) - static_cast<varType>(i);
+    const varType ry = yp / dy - static_cast<varType>(j);
 
     Vec2 g;
-    g.x = (dhat(rx) * hat(ry)) / dx;
-    g.y = (hat(rx) * dhat(ry)) / dy;
+    g.x = dhat(rx) * hat(ry) / dx;
+    g.y = hat(rx) * dhat(ry) / dy;
     return g;
 }
 
@@ -44,10 +44,10 @@ void APIC::ProjectGridOnParticles() {
         const varType vNew = interpolateV(fields->v, xp, yp);
 
         // 2) reconstruction de cu
-        Vec2 cu{varType(0), varType(0)};
+        Vec2 cu{static_cast<varType>(0), static_cast<varType>(0)};
         {
             const varType i_real = xp / dx;
-            const varType j_real = yp / dy - varType(0.5);
+            const varType j_real = yp / dy - static_cast<varType>(0.5);
             const int i0 = static_cast<int>(std::floor(i_real));
             const int j0 = static_cast<int>(std::floor(j_real));
 
@@ -135,8 +135,8 @@ void APIC::ProjectParticleOnMAC(int idx) {
 
         const varType uAff = up + cuX * dux + cuY * duy;
 
-        fields->u_sum.Set(i, j, fields->u_sum.Get(i, j) + w * uAff);
-        fields->u_weight.Set(i, j, fields->u_weight.Get(i, j) + w);
+        fields->u_sum->Set(i, j, fields->u_sum->Get(i, j) + w * uAff);
+        fields->u_weight->Set(i, j, fields->u_weight->Get(i, j) + w);
       }
     }
   }
@@ -168,8 +168,8 @@ void APIC::ProjectParticleOnMAC(int idx) {
 
         const varType vAff = vp + cvX * dvx + cvY * dvy;
 
-        fields->v_sum.Set(i, j, fields->v_sum.Get(i, j) + w * vAff);
-        fields->v_weight.Set(i, j, fields->v_weight.Get(i, j) + w);
+        fields->v_sum->Set(i, j, fields->v_sum->Get(i, j) + w * vAff);
+        fields->v_weight->Set(i, j, fields->v_weight->Get(i, j) + w);
       }
     }
   }

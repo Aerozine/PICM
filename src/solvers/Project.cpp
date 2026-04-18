@@ -1,35 +1,35 @@
-#include "Project.hpp"
-
 #include <iostream>
-
-#include "SemiLagrangian.hpp"
+#include "Solver.hpp"
 // Pressure solve dispatch
 
-void solvePressure(const Parameters &params, Fields2D &fields) {
-  double tol = params.solver.tolerance;
-  int maxIters = params.solver.maxIters;
+void Solver::solvePressure(const Parameters &p, Fields2D &f) {
+  double tol = p.solver.tolerance;
+  int maxIters = p.solver.maxIters;
   const double coef =
-      static_cast<double>(params.density) * static_cast<double>(params.dx) *
-      static_cast<double>(params.dx) / static_cast<double>(params.dt);
-  const double beta = static_cast<double>(params.density) *
-                      static_cast<double>(params.dx) /
-                      static_cast<double>(params.dt);
+      static_cast<double>(p.density) * static_cast<double>(p.dx) *
+      static_cast<double>(p.dx) / static_cast<double>(p.dt);
+  const double beta = static_cast<double>(p.density) *
+                      static_cast<double>(p.dx) /
+                      static_cast<double>(p.dt);
   const double scale = 1.0 / coef;
-  int nx = params.nx;
-  int ny = params.ny;
-  switch (params.solver.type) {
+  int nx = p.nx;
+  int ny = p.ny;
+  switch (p.solver.type) {
     // @todo fix JACOBI , GS , RM MICCG0 and do CG
   case SolverConfig::Type::JACOBI:
-    solveJacobi(fields, nx, ny, coef, maxIters, tol, beta);
+    solveJacobi(f, nx, ny, coef, maxIters, tol, beta);
     break;
   case SolverConfig::Type::GAUSS_SEIDEL:
-    solveGaussSeidel(fields, nx, ny, coef, maxIters, tol, beta);
+    solveGaussSeidel(f, nx, ny, coef, maxIters, tol, beta);
     break;
   case SolverConfig::Type::RB_GS:
-    solveRedBlackGaussSeidel(fields, nx, ny, coef, maxIters, tol, beta);
+    solveRedBlackGaussSeidel(f, nx, ny, coef, maxIters, tol, beta);
     break;
   case SolverConfig::Type::MICCG0:
-    solveMICCG0(fields, scale, maxIters, tol);
+    solveMICCG0(f, scale, maxIters, tol);
+    break;
+ case SolverConfig::Type::CG:
+    //solveCG(f, coef, beta, maxIters, tol);
     break;
   default:
     std::cerr << "[SemiLagrangian] Unknown pressure solver type – aborting.\n";
@@ -39,7 +39,7 @@ void solvePressure(const Parameters &params, Fields2D &fields) {
 
 // Velocity correction
 
-void updateVelocities(const Parameters &params, Fields2D &fields) {
+void Solver::updateVelocities(const Parameters &params, Fields2D &fields) {
   // Explicit pressure-gradient correction on all interior faces:
   //   u^{n+1}_{i,j} = u^*_{i,j} - (dt / (rho * dx)) * (p_{i,j} - p_{i-1,j})
   const varType coef = params.dt / (params.density * params.dx);
@@ -96,7 +96,7 @@ void updateVelocities(const Parameters &params, Fields2D &fields) {
   }
 }
 
-void MakeIncompressible(const Parameters &params, Fields2D &fields) {
-  solvePressure(params, fields);
-  updateVelocities(params, fields);
+void Solver::MakeIncompressible(const Parameters &p, Fields2D &f) {
+  solvePressure(p, f);
+  updateVelocities(p, f);
 }

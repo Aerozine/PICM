@@ -49,8 +49,8 @@ private:
    * @param step       Zero-based frame index.
    * @return Filename string, e.g. @c "u_0042.vti".
    */
-  [[nodiscard]] std::string formatFilename(const std::string &field_name,
-                                           int step) const;
+  [[nodiscard]] static std::string formatFilename(const std::string &field_name,
+                                                  int step);
 
   /**
    * @brief Append one @c \<DataSet\> line to the PVD entry list.

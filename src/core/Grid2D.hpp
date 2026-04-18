@@ -16,10 +16,10 @@ public:
   Grid2D(int nx, int ny) : nx(nx), ny(ny), A(nx * ny, varType{0}) {}
 
   /// @brief Read the value at cell (i, j).
-  [[nodiscard]] varType Get(int i, int j) const { return A[nx * j + i]; }
+  [[nodiscard]] varType Get(const int i, const int j) const { return A[nx * j + i]; }
 
   /// @brief Write a value into cell (i, j).
-  void Set(int i, int j, varType val) { A[nx * j + i] = val; }
+  void Set(const int i, const int j, const varType val) { A[nx * j + i] = val; }
 
   /// @brief Return true if (i, j) is within grid bounds.
   [[nodiscard]] bool InBounds(int i, int j) const {

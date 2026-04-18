@@ -89,7 +89,7 @@ void PIC::RefillParticles() {
           continue;
 
         // Cell was just promoted to fluid this step (stray particle) — skip.
-        int alive = static_cast<int>(fields->countAliveParticles.Get(ci, cj));
+        int alive = static_cast<int>(fields->countAliveParticles->Get(ci, cj));
         if (alive <= 0)
           continue;
 
