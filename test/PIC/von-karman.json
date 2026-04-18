@@ -1,14 +1,14 @@
 {
-    "dx": 2e-3,
-    "dy": 2e-3,
-    "dt": 1e-3,
-    "nx": 160,
+    "dx": 0.05,
+    "dy": 0.05,
+    "dt": 0.01,
+    "nx": 150,
     "ny": 80,
-    "nt": 200,
-    "ppcx": 4,
-    "ppcy": 4,
+    "nt": 2000,
     "density": 1000,
-    "sampling_rate": 1,
+    "sampling_rate": 5,
+    "ppcx": 3,
+    "ppcy": 3,
     "write_u": true,
     "write_v": true,
     "write_p": true,
@@ -23,7 +23,7 @@
     "velocityu": {
         "rectangle": {
             "condition": "boundary",
-            "val": 2e-1,
+            "val": 1,
             "x1": "0",
             "y1": "0",
             "x2": "0",
@@ -55,7 +55,7 @@
     "solver": {
         "type": "red_black_gauss_seidel",
         "max_iterations": 1e5,
-        "tolerance": 1e-3
+        "tolerance": 1e-2
     },
     "method": "pic",
     "gravity": 0.0,
