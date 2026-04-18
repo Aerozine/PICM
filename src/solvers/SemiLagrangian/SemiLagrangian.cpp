@@ -2,8 +2,7 @@
 #include <algorithm>
 #include <iostream>
 
-SemiLagrangian::SemiLagrangian(Parameters &params)
-    : Solver(params){
+SemiLagrangian::SemiLagrangian(Parameters &params) : Solver(params) {
 /*params(params), nx(params.nx), ny(params.ny),
       dx(static_cast<varType>(params.dx)), dy(static_cast<varType>(params.dy)),
       dt(static_cast<varType>(params.dt)),
@@ -25,7 +24,7 @@ SemiLagrangian::SemiLagrangian(Parameters &params)
   // geometry). SceneObject instances are created and destroyed inside here.
   params.applyToFields(*fields);
 
-  //InitializeOutputWriters();
+  // InitializeOutputWriters();
 
 #ifndef NDEBUG
   std::cout << "SemiLagrangian initialised: " << nx << " x " << ny << " grid, "
@@ -43,8 +42,8 @@ void SemiLagrangian::Step() {
 }
 
 void SemiLagrangian::Run() {
-    fields->Div();
-    fields->VelocityNormCenterGrid();
-    WriteOutput(0);
-    RunLoop(std::max(1, params.nt / 20));
+  fields->Div();
+  fields->VelocityNormCenterGrid();
+  WriteOutput(0);
+  RunLoop(std::max(1, params.nt / 20));
 }

@@ -8,20 +8,26 @@
 SolverConfig SolverConfig::fromJson(const nlohmann::json &j) {
   SolverConfig cfg;
 
-  cfg.maxIters  = static_cast<int>(j.value("max_iterations", 1000.0));
+  cfg.maxIters = static_cast<int>(j.value("max_iterations", 1000.0));
   cfg.tolerance = j.value("tolerance", 1e-4);
-  cfg.type      = Type::MICCG0;
-  cfg.method    = Method::SL;
+  cfg.type = Type::MICCG0;
+  cfg.method = Method::SL;
 
   if (j.contains("type")) {
     const std::string t = j["type"].get<std::string>();
-    if      (t == "jacobi")                 cfg.type = Type::JACOBI;
-    else if (t == "gauss_seidel")           cfg.type = Type::GAUSS_SEIDEL;
-    else if (t == "red_black_gauss_seidel") cfg.type = Type::RB_GS;
-    else if (t == "miccg0")                 cfg.type = Type::MICCG0;
-    else if (t == "cg")                     cfg.type = Type::CG;
+    if (t == "jacobi")
+      cfg.type = Type::JACOBI;
+    else if (t == "gauss_seidel")
+      cfg.type = Type::GAUSS_SEIDEL;
+    else if (t == "red_black_gauss_seidel")
+      cfg.type = Type::RB_GS;
+    else if (t == "miccg0")
+      cfg.type = Type::MICCG0;
+    else if (t == "cg")
+      cfg.type = Type::CG;
     else
-      std::cerr << "[SolverConfig] Unknown solver type '" << t << "' – defaulting to miccg0.\n";
+      std::cerr << "[SolverConfig] Unknown solver type '" << t
+                << "' – defaulting to miccg0.\n";
   }
 
   if (j.contains("method"))
@@ -32,22 +38,32 @@ SolverConfig SolverConfig::fromJson(const nlohmann::json &j) {
 
 std::string SolverConfig::typeName() const {
   switch (type) {
-  case Type::JACOBI:       return "jacobi";
-  case Type::GAUSS_SEIDEL: return "gauss_seidel";
-  case Type::RB_GS:        return "red_black_gauss_seidel";
-  case Type::MICCG0:       return "miccg0";
-  case Type::CG:           return "cg";
+  case Type::JACOBI:
+    return "jacobi";
+  case Type::GAUSS_SEIDEL:
+    return "gauss_seidel";
+  case Type::RB_GS:
+    return "red_black_gauss_seidel";
+  case Type::MICCG0:
+    return "miccg0";
+  case Type::CG:
+    return "cg";
   }
   return "unknown";
 }
 
 SolverConfig::Method SolverConfig::methodFromJson(const nlohmann::json &j) {
   const std::string s = j.get<std::string>();
-  if (s == "semilagrangian" || s== "sl") return Method::SL;
-  if (s == "vanilla_pic" || s == "pic")     return Method::VanillaPIC;
-  if (s == "flip")            return Method::FLIP;
-  if (s == "mixed_flip_pic")  return Method::Mixed_FLIP_PIC;
-  if (s == "apic")            return Method::APIC;
+  if (s == "semilagrangian" || s == "sl")
+    return Method::SL;
+  if (s == "vanilla_pic" || s == "pic")
+    return Method::VanillaPIC;
+  if (s == "flip")
+    return Method::FLIP;
+  if (s == "mixed_flip_pic")
+    return Method::Mixed_FLIP_PIC;
+  if (s == "apic")
+    return Method::APIC;
   std::cerr << "[SolverConfig] Unknown method '" << s
             << "' – defaulting to semi_lagrangian.\n";
   return Method::SL;
@@ -55,11 +71,16 @@ SolverConfig::Method SolverConfig::methodFromJson(const nlohmann::json &j) {
 
 std::string SolverConfig::methodName(Method m) {
   switch (m) {
-  case Method::SL:             return "semi_lagrangian";
-  case Method::VanillaPIC:     return "vanilla_pic";
-  case Method::FLIP:           return "flip";
-  case Method::Mixed_FLIP_PIC: return "mixed_flip_pic";
-  case Method::APIC:           return "apic";
+  case Method::SL:
+    return "semi_lagrangian";
+  case Method::VanillaPIC:
+    return "vanilla_pic";
+  case Method::FLIP:
+    return "flip";
+  case Method::Mixed_FLIP_PIC:
+    return "mixed_flip_pic";
+  case Method::APIC:
+    return "apic";
   }
   return "unknown";
 }
@@ -108,7 +129,8 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   if (j.contains("solver")) {
     solver = SolverConfig::fromJson(j["solver"]);
     if (j.contains("method"))
-    solver.method = SolverConfig::methodFromJson(j["method"].get<std::string>());
+      solver.method =
+          SolverConfig::methodFromJson(j["method"].get<std::string>());
   }
 }
 

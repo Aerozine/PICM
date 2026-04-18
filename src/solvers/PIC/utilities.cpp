@@ -7,8 +7,9 @@ varType PIC::rand01() {
   return dist(rng);
 }
 
-// specific interpolation to U-type grid 
-varType PIC::interpolateU(const Grid2D& g, const varType x, const varType y) const {
+// specific interpolation to U-type grid
+varType PIC::interpolateU(const Grid2D &g, const varType x,
+                          const varType y) const {
   const varType i_real = x / dx;
   const varType j_real = y / dy - REAL_LITERAL(0.5);
   int i = static_cast<int>(std::floor(i_real));
@@ -17,14 +18,13 @@ varType PIC::interpolateU(const Grid2D& g, const varType x, const varType y) con
   const varType fy = j_real - varType(j);
   i = std::clamp(i, 0, g.nx - 2);
   j = std::clamp(j, 0, g.ny - 2);
-  return (1 - fy) * ((1 - fx) * g.Get(i, j) + 
-                          fx  * g.Get(i + 1, j)) +
-              fy  * ((1 - fx) * g.Get(i, j + 1) + 
-                          fx  * g.Get(i + 1, j + 1));
+  return (1 - fy) * ((1 - fx) * g.Get(i, j) + fx * g.Get(i + 1, j)) +
+         fy * ((1 - fx) * g.Get(i, j + 1) + fx * g.Get(i + 1, j + 1));
 }
 
-// specific interpolation to V-type grid 
-varType PIC::interpolateV(const Grid2D& g, const varType x, const varType y) const {
+// specific interpolation to V-type grid
+varType PIC::interpolateV(const Grid2D &g, const varType x,
+                          const varType y) const {
   const varType i_real = x / dx - REAL_LITERAL(0.5);
   const varType j_real = y / dy;
   int i = static_cast<int>(std::floor(i_real));
@@ -33,8 +33,6 @@ varType PIC::interpolateV(const Grid2D& g, const varType x, const varType y) con
   const varType fy = j_real - varType(j);
   i = std::clamp(i, 0, g.nx - 2);
   j = std::clamp(j, 0, g.ny - 2);
-  return (1 - fy) * ((1 - fx) * g.Get(i, j) +
-                          fx  * g.Get(i + 1, j)) +
-               fy * ((1 - fx) * g.Get(i, j + 1) +
-                          fx  * g.Get(i + 1, j + 1));
+  return (1 - fy) * ((1 - fx) * g.Get(i, j) + fx * g.Get(i + 1, j)) +
+         fy * ((1 - fx) * g.Get(i, j + 1) + fx * g.Get(i + 1, j + 1));
 }
