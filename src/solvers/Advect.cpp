@@ -1,4 +1,4 @@
-#include "SemiLagrangian.hpp"
+#include "Solver.hpp"
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -6,7 +6,7 @@
 
 // TODO: advect in SOLIDS is useless | add if(SOLID) {skip} ?
 // is branching worse than looking in each solid ?
-void SemiLagrangian::Advect() const {
+void Solver::Advect() {
   Grid2D uNew(fields->u.nx, fields->u.ny);
   Grid2D vNew(fields->v.nx, fields->v.ny);
 
@@ -53,7 +53,7 @@ void SemiLagrangian::Advect() const {
   fields->v = std::move(vNew);
 }
 
-void SemiLagrangian::AdvectSmoke() const {
+void Solver::AdvectSmoke() const {
   Grid2D smokeNew(fields->smokeMap.nx, fields->smokeMap.ny);
 
   OMP_PRAGMA(omp parallel for collapse(2))
@@ -102,7 +102,7 @@ void SemiLagrangian::AdvectSmoke() const {
 }
 
 // RK2 backward particle traces
-void SemiLagrangian::traceParticleU(const int i, const int j, varType &x,
+void Solver::traceParticleU(const int i, const int j, varType &x,
                                     varType &y) const {
   // u-face physical position: (i·dx, (j+0.5)·dy).
   const varType x0 = static_cast<varType>(i) * dx;
@@ -128,7 +128,7 @@ void SemiLagrangian::traceParticleU(const int i, const int j, varType &x,
   y = std::clamp(y, REAL_LITERAL(0.0), static_cast<varType>(fields->u.ny) * dy);
 }
 
-void SemiLagrangian::traceParticleV(const int i, const int j, varType &x,
+void Solver::traceParticleV(const int i, const int j, varType &x,
                                     varType &y) const {
   // v-face physical position: ((i+0.5)·dx, j·dy).
   const varType x0 = (static_cast<varType>(i) + REAL_LITERAL(0.5)) * dx;
@@ -152,7 +152,7 @@ void SemiLagrangian::traceParticleV(const int i, const int j, varType &x,
 
 // Bilinear interpolation
 
-varType SemiLagrangian::interpolateU(const varType x, const varType y) const {
+varType Solver::interpolateU(const varType x, const varType y) const {
   const varType i_real = x / dx;
   const varType j_real = y / dy - REAL_LITERAL(0.5);
 
@@ -175,7 +175,7 @@ varType SemiLagrangian::interpolateU(const varType x, const varType y) const {
          fy * ((REAL_LITERAL(1.0) - fx) * u01 + fx * u11);
 }
 
-varType SemiLagrangian::interpolateV(const varType x, const varType y) const {
+varType Solver::interpolateV(const varType x, const varType y) const {
   const varType i_real = x / dx - REAL_LITERAL(0.5);
   const varType j_real = y / dy;
 
@@ -201,13 +201,13 @@ varType SemiLagrangian::interpolateV(const varType x, const varType y) const {
          fy * ((REAL_LITERAL(1.0) - fx) * v01 + fx * v11);
 }
 
-void SemiLagrangian::getVelocity(const varType x, const varType y, varType &u,
+void Solver::getVelocity(const varType x, const varType y, varType &u,
                                  varType &v) const {
   u = interpolateU(x, y);
   v = interpolateV(x, y);
 }
 
-varType SemiLagrangian::interpolateSmoke(const varType x,
+varType Solver::interpolateSmoke(const varType x,
                                          const varType y) const {
   // smokeMap is cell-centred: (i+0.5)*dx, (j+0.5)*dy
   const varType i_real = x / dx - REAL_LITERAL(0.5);

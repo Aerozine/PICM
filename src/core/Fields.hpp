@@ -1,8 +1,9 @@
 #pragma once
 #include "Grid2D.hpp"
-#include <cstdint>
+#include "SolverConfig.hpp"
 #include <string>
 #include <vector>
+#include <optional>
 // yes i know it should be illegal but useful for dbg
 #define FIELD_USOLID NAN
 
@@ -51,24 +52,27 @@ public:
   Grid2D u, v, p, div;
   Grid2D normVelocity;
   Grid2D smokeMap;
-
-  Grid2D u_sum, u_weight;
-  Grid2D v_sum, v_weight;
-
-  Grid2D countAliveParticles;
-  // TODO improve string method to sth else and maybe particularize ?
-  Fields2D(int nx, int ny, varType density, varType dt, varType dx, varType dy,
-           std::string method, std::string freeSurface)
-      : nx(nx), ny(ny), density(density), dt(dt), dx(dx), dy(dy), u(nx + 1, ny),
-        v(nx, ny + 1), p(nx + 2, ny + 2), div(nx, ny), normVelocity(nx, ny),
-        smokeMap(nx, ny),
-        u_sum(method == "PIC" ? nx + 1 : 0, method == "PIC" ? ny : 0),
-        u_weight(method == "PIC" ? nx + 1 : 0, method == "PIC" ? ny : 0),
-        v_sum(method == "PIC" ? nx : 0, method == "PIC" ? ny + 1 : 0),
-        v_weight(method == "PIC" ? nx : 0, method == "PIC" ? ny + 1 : 0),
-        countAliveParticles(method == "PIC" ? nx : 0, method == "PIC" ? ny : 0),
-        Labels(static_cast<std::size_t>(nx + 2) * (ny + 2),
-               freeSurface == "yes" ? Fields2D::AIR : Fields2D::FLUID) {}
+  std::optional<Grid2D> u_sum, u_weight;
+  std::optional<Grid2D> v_sum, v_weight;
+  std::optional<Grid2D> countAliveParticles;
+// TODO improve string method to sth else and maybe particularize ?
+Fields2D(int nx, int ny, varType density, varType dt, varType dx, varType dy,
+        const SolverConfig &sol, const std::string &freeSurface)
+    : nx(nx), ny(ny), density(density), dt(dt), dx(dx), dy(dy),
+      u(nx + 1, ny), v(nx, ny + 1), p(nx + 2, ny + 2), div(nx, ny),
+      normVelocity(nx, ny), smokeMap(nx, ny),
+      Labels(static_cast<std::size_t>(nx + 2) * (ny + 2),
+             freeSurface == "yes" ? Fields2D::AIR : Fields2D::FLUID)
+{
+    if (sol.method != SolverConfig::Method::SL) {
+        u_sum.emplace(nx + 1, ny);
+        u_weight.emplace(nx + 1, ny);
+        v_sum.emplace(nx, ny + 1);
+        v_weight.emplace(nx, ny + 1);
+        countAliveParticles.emplace(nx, ny);
+    }
+    // else: all five stay std::nullopt — no allocation at all
+}
 
   /// @brief Return the cell type of cell (i, j).
   [[nodiscard]] inline CellType Label(int i, int j) const noexcept {

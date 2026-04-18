@@ -56,13 +56,13 @@
     },
 
 
+    "method": "pic",
     "solver": {
         "type": "red_black_gauss_seidel",
         "max_iterations": 1e5,
         "tolerance": 1e-4
     },
-    "method": "pic",
     "freeSurface": "yes",
-    "gravity": 0.0,
+    "gravity": -9.0,
     "refill": false 
 }

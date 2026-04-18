@@ -1,12 +1,8 @@
-#include "Fields.hpp"
-#include "Grid2D.hpp"
-#include "IterativeMethods.hpp"
-#include "Precision.hpp"
-#include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <iostream>
-#include <vector>
+#include "Fields.hpp"
+#include "Grid2D.hpp"
+#include "Precision.hpp"
 // should be statitced
 /* small reminder about the geometry
  *           +----------+
@@ -89,6 +85,7 @@
 inline bool checkConvergence(double res, double &res0, int it, double tol) {
   if (it == 0) {
     res0 = res;
+    // @todo use is finite instead ( for float it dont mean anything )
     return res0 < 1e-30;
   }
   return (res0 < 1e-30) ? true : (res / res0) < tol;

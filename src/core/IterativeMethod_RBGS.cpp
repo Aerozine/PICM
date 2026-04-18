@@ -6,7 +6,6 @@
 #include <cassert>
 #include <cmath>
 #include <iostream>
-#include <vector>
 
 //@todo I know this should be illegal
 // but this is the simpliest way to incude code and nicely inside a c file
@@ -20,7 +19,7 @@ void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
   const int N = std::min(nx, ny);
   // @todo this is really overkill apollo used the same number
   // of decimal to reach the moon
-  const double pi = 3.14159265358979;
+  constexpr double pi = 3.14159265358979;
   const double omega = std::min(1.95, 2.0 / (1.0 + std::sin(pi / N)));
 
   for (int it = 0; it < maxIters; ++it) {

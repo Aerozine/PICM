@@ -124,12 +124,12 @@ void buildPrecon(const Fields2D &f, int nx, int ny, double scale,
                  const std::vector<double> &Adiag,
                  std::vector<double> &precon) {
   // recommanded value
-  constexpr double tau = 0.97;
   constexpr double sigma = 0.25;
   const double scale2 = scale * scale;
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < ny; ++j) {
     for (int i = 0; i < nx; ++i) {
+      constexpr double tau = 0.97;
       if (IS_SOLID(f.Label(i, j)))
         continue;
       const int id = nx * j + i;
@@ -181,7 +181,7 @@ void applyPrecon(const Fields2D &f, int nx, int ny, double scale,
   }
 
   // L^T p = q backward substitution
-  std::fill(z.begin(), z.end(), 0.0);
+  std::ranges::fill(z, 0.0);
   for (int j = ny - 1; j >= 0; --j) {
     for (int i = nx - 1; i >= 0; --i) {
       if (IS_SOLID(f.Label(i, j)))

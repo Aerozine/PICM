@@ -2,15 +2,8 @@ cmake_minimum_required(VERSION 3.15)
 project(PIC)
 
 option(USE_FLOAT_PRECISION "Use float instead of double" ON)
-option(USE_FP16 "Use half-precision floating point (FP16)" OFF)
 option(USE_PARALLEL "Use paralellization" ON)
 # todo set meta-option speed level o0 , o1 , o2
-# where o0 is fp64 + precise algo
-# o1 is fp32 + precise algo
-# o2 is fp64 + fast algo
-# o3 is fp64 + fast algo
-# or simply put fp in // that fast algo
-# WIP
 #option(ADVECT_TRILIN "Use trilinear interpolation instead of bilinear in advect" ON)
 #option(ADVECT_RK3 "use high order RK3 instead of RK2" ON)
 include(FetchContent)
@@ -20,6 +13,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
+# by default Debug target is not parallizable ( comment these 3 line if you want it to be parallel)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND NOT DEFINED USE_PARALLEL)
+  set(USE_PARALLEL OFF CACHE BOOL "Use parallelization")
+endif()
+
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 message(STATUS "Setting nlohmannJson")
