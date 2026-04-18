@@ -31,7 +31,7 @@ OMP_PRAGMA(omp parallel for)
     int i1 = std::clamp(static_cast<int>(std::floor(x1 / dx)), 0, nx - 1);
     int j1 = std::clamp(static_cast<int>(std::floor(y1 / dy)), 0, ny - 1);
 
-    if (IS_SOLID(fields->Label(i + 1, j + 1))) {
+    if (IS_SOLID(fields->Label(i1 + 1, j1 + 1))) {
       keep[idx] = 0;
       continue;
     }
