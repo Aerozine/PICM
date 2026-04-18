@@ -95,7 +95,8 @@ for (int idx = 0; idx < particles->size(); ++idx) {
         continue;
       }
       //@todo should be illegal to do 1e-12
-      if (fields->u_weight->Get(i, j) <= static_cast<varType>(100) * std::numeric_limits<varType>::epsilon() ) {
+      if (fields->u_weight->Get(i, j) <=
+          static_cast<varType>(100) * std::numeric_limits<varType>::epsilon()) {
         if (!IS_BC_U(left)) {
           fields->u.Set(i, j, static_cast<varType>(0));
         }
@@ -123,11 +124,10 @@ for (int idx = 0; idx < particles->size(); ++idx) {
         // Boundary value already set — do not overwrite
         continue;
       }
-      if (fields->v_weight->Get(i, j) > varType(1e-12)){
+      if (fields->v_weight->Get(i, j) > varType(1e-12)) {
         varType newV = fields->v_sum->Get(i, j) / fields->v_weight->Get(i, j);
         fields->v.Set(i, j, newV);
-      }
-      else if (!IS_BC_V(bottom))
+      } else if (!IS_BC_V(bottom))
         fields->v.Set(i, j, varType(0));
     }
   }
@@ -135,17 +135,21 @@ for (int idx = 0; idx < particles->size(); ++idx) {
 void PIC::ProjectGridOnParticles() {
 OMP_PRAGMA(omp parallel for)
 for (int idx = 0; idx < particles->size(); ++idx) {
-  particles->SetU(idx, interpolateU(fields->u, particles->GetX(idx), particles->GetY(idx)));
-  particles->SetV(idx, interpolateV(fields->v, particles->GetX(idx), particles->GetY(idx)));
+  particles->SetU(
+      idx, interpolateU(fields->u, particles->GetX(idx), particles->GetY(idx)));
+  particles->SetV(
+      idx, interpolateV(fields->v, particles->GetX(idx), particles->GetY(idx)));
 }
 }
 
 // same function as above in PIC but needed for FLIP
 // because ProjectGridOnParticles is virtual (rewritten for FLIP)
-void PIC::ProjectBCOnParticles() { 
-OMP_PRAGMA(omp parallel for)      
+void PIC::ProjectBCOnParticles() {
+OMP_PRAGMA(omp parallel for)
 for (int idx = 0; idx < particles->size(); ++idx) {
-  particles->SetU(idx, interpolateU(fields->u, particles->GetX(idx), particles->GetY(idx)));
-  particles->SetV(idx, interpolateV(fields->v, particles->GetX(idx), particles->GetY(idx)));
+  particles->SetU(
+      idx, interpolateU(fields->u, particles->GetX(idx), particles->GetY(idx)));
+  particles->SetV(
+      idx, interpolateV(fields->v, particles->GetX(idx), particles->GetY(idx)));
 }
 }

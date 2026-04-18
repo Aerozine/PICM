@@ -6,6 +6,7 @@ public:
   explicit FLIP(Parameters &params);
 
   void Step() override;
+
 protected:
   void ProjectGridOnParticles() override;
   Grid2D u_old;

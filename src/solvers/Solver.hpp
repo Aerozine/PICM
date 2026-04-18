@@ -1,20 +1,20 @@
 #pragma once
 #include "../core/Fields.hpp"
+#include "../core/IterativeMethods.hpp"
 #include "../core/OutputWriter.hpp"
 #include "../core/Parameters.hpp"
-#include "../core/IterativeMethods.hpp"
 #include <memory>
 
 class Solver {
 public:
-    explicit Solver(Parameters& params);
-    virtual ~Solver();
-    // basicaly a if anyone try to copy or assign , bang error
-    Solver(const Solver&)            = delete;
-    Solver& operator=(const Solver&) = delete;
+  explicit Solver(Parameters &params);
+  virtual ~Solver();
+  // basicaly a if anyone try to copy or assign , bang error
+  Solver(const Solver &) = delete;
+  Solver &operator=(const Solver &) = delete;
 
-    virtual void Run()  = 0;
-    virtual void Step() = 0;
+  virtual void Run() = 0;
+  virtual void Step() = 0;
 
 protected:
   Parameters &params;
@@ -36,17 +36,18 @@ protected:
   std::unique_ptr<OutputWriter> smokeWriter;
   // @todo do a IF DEBUG THEN
   std::unique_ptr<OutputWriter> labelWriter;
-    // Shared time-step loop used by Run() in every subclass.
-    void RunLoop(int reportEvery);
+  // Shared time-step loop used by Run() in every subclass.
+  void RunLoop(int reportEvery);
   /// @brief Construct the OutputWriters requested in @c params.
   void InitializeOutputWriters();
-    // @todo maybe put it in-another file or update vel + solve pressure in another scope
-    void MakeIncompressible(const Parameters &p, Fields2D &f);
+  // @todo maybe put it in-another file or update vel + solve pressure in
+  // another scope
+  void MakeIncompressible(const Parameters &p, Fields2D &f);
 
-    void updateVelocities(const Parameters &p, Fields2D &f);
+  void updateVelocities(const Parameters &p, Fields2D &f);
 
-    void solvePressure(const Parameters &p, Fields2D &f);
-    /**
+  void solvePressure(const Parameters &p, Fields2D &f);
+  /**
    * @brief Write all enabled fields at the current step if it falls on a
    *        sampling interval.
    * @param step Current time-step index (0-based).

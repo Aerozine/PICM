@@ -1,9 +1,9 @@
 #pragma once
 #include "Grid2D.hpp"
 #include "SolverConfig.hpp"
+#include <optional>
 #include <string>
 #include <vector>
-#include <optional>
 // yes i know it should be illegal but useful for dbg
 #define FIELD_USOLID NAN
 
@@ -55,24 +55,23 @@ public:
   std::optional<Grid2D> u_sum, u_weight;
   std::optional<Grid2D> v_sum, v_weight;
   std::optional<Grid2D> countAliveParticles;
-// TODO improve string method to sth else and maybe particularize ?
-Fields2D(int nx, int ny, varType density, varType dt, varType dx, varType dy,
-        const SolverConfig &sol, const std::string &freeSurface)
-    : nx(nx), ny(ny), density(density), dt(dt), dx(dx), dy(dy),
-      u(nx + 1, ny), v(nx, ny + 1), p(nx + 2, ny + 2), div(nx, ny),
-      normVelocity(nx, ny), smokeMap(nx, ny),
-      Labels(static_cast<std::size_t>(nx + 2) * (ny + 2),
-             freeSurface == "yes" ? Fields2D::AIR : Fields2D::FLUID)
-{
+  // TODO improve string method to sth else and maybe particularize ?
+  Fields2D(int nx, int ny, varType density, varType dt, varType dx, varType dy,
+           const SolverConfig &sol, const std::string &freeSurface)
+      : nx(nx), ny(ny), density(density), dt(dt), dx(dx), dy(dy), u(nx + 1, ny),
+        v(nx, ny + 1), p(nx + 2, ny + 2), div(nx, ny), normVelocity(nx, ny),
+        smokeMap(nx, ny),
+        Labels(static_cast<std::size_t>(nx + 2) * (ny + 2),
+               freeSurface == "yes" ? Fields2D::AIR : Fields2D::FLUID) {
     if (sol.method != SolverConfig::Method::SL) {
-        u_sum.emplace(nx + 1, ny);
-        u_weight.emplace(nx + 1, ny);
-        v_sum.emplace(nx, ny + 1);
-        v_weight.emplace(nx, ny + 1);
-        countAliveParticles.emplace(nx, ny);
+      u_sum.emplace(nx + 1, ny);
+      u_weight.emplace(nx + 1, ny);
+      v_sum.emplace(nx, ny + 1);
+      v_weight.emplace(nx, ny + 1);
+      countAliveParticles.emplace(nx, ny);
     }
     // else: all five stay std::nullopt — no allocation at all
-}
+  }
 
   /// @brief Return the cell type of cell (i, j).
   [[nodiscard]] inline CellType Label(int i, int j) const noexcept {

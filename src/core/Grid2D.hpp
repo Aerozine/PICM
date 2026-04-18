@@ -16,7 +16,9 @@ public:
   Grid2D(int nx, int ny) : nx(nx), ny(ny), A(nx * ny, varType{0}) {}
 
   /// @brief Read the value at cell (i, j).
-  [[nodiscard]] varType Get(const int i, const int j) const { return A[nx * j + i]; }
+  [[nodiscard]] varType Get(const int i, const int j) const {
+    return A[nx * j + i];
+  }
 
   /// @brief Write a value into cell (i, j).
   void Set(const int i, const int j, const varType val) { A[nx * j + i] = val; }

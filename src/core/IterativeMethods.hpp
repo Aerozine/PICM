@@ -66,5 +66,5 @@ bool solveMICCG0(Fields2D &fields, double scale, int maxIters, double tol);
  * @param tol      Convergence: ||r||_inf / ||b||_inf < tol.
  * @return         true if converged within maxIters.
  */
-//bool solveCG(Fields2D &fields, double coef, double beta,
-             //int maxIters, double tol);
+// bool solveCG(Fields2D &fields, double coef, double beta,
+// int maxIters, double tol);
