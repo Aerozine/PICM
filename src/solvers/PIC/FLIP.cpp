@@ -19,10 +19,10 @@ void FLIP::SaveOldVelocities() {
 }
 
 void FLIP::Step() {
+    if (params.gravity != 0.0)
+        ApplyGravity(); 
     ProjectParticlesOnGrid("hat"); 
     SaveOldVelocities(); // save old veloctiy (!= PIC)
-    if (params.gravity != 0.0)
-        ApplyGravity();    
     MakeIncompressible(params, *fields);
     ProjectGridOnParticles(); // based on u_old and u_new (!= PIC) 
     fields->Div();
