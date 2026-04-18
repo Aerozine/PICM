@@ -1,12 +1,9 @@
-#include "Fields.hpp"
-#include "Grid2D.hpp"
-#include "IterativeMethods.hpp"
-#include "Precision.hpp"
-#include <algorithm>
 #include <cassert>
 #include <cmath>
-#include <iostream>
-#include <vector>
+#include "Fields.hpp"
+#include "Grid2D.hpp"
+#include "Precision.hpp"
+// @todo should not include cpp file
 // should be statitced
 /* small reminder about the geometry
  *           +----------+
@@ -31,14 +28,14 @@
  */
 
 // IN P SPACE PLEASE
-[[nodiscard]] inline varType neighbourSum(const Fields2D &f, int nx, int ny,
-                                          int i, int j, double beta) {
+[[nodiscard]] inline varType neighbourSum(const Fields2D &f,
+                                          const int i, const int j, [[maybe_unused]] double beta) {
   // i j in terms of pressure cells
   varType sumP = 0.0;
   const varType pC = f.p.Get(i, j);
   assert(std::isfinite(pC));
-  assert(i >= 0 && i < nx);
-  assert(j >= 0 && j < ny);
+  assert(i >= 0 && i < f.p.nx);
+  assert(j >= 0 && j < f.p.ny);
 
   labeltype current_cell = f.Label(i, j);
   // Left neighbour
@@ -89,14 +86,15 @@
 inline bool checkConvergence(double res, double &res0, int it, double tol) {
   if (it == 0) {
     res0 = res;
+    // @todo use is finite instead ( for float it dont mean anything )
     return res0 < 1e-30;
   }
   return (res0 < 1e-30) ? true : (res / res0) < tol;
 }
 // Gauss-Seidel update for a single FLUID cell.
 //  p_new = ( -coef * div_{ij} + sum p_nb ) / N_nb
-[[nodiscard]] inline double gsUpdate(const Fields2D &f, int nx, int ny, int i,
-                                     int j, double coef, double beta) {
-  const auto sumP = neighbourSum(f, nx, ny, i, j, beta);
+[[nodiscard]] inline double gsUpdate(const Fields2D &f, const int i,
+                                     const int j, const double coef, const double beta) {
+  const auto sumP = neighbourSum(f, i, j, beta);
   return (-coef * f.div.Get(i, j) + sumP) / 4.0;
 }

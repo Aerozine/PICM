@@ -3,43 +3,63 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <string_view>
 
 // SolverConfig
 SolverConfig SolverConfig::fromJson(const nlohmann::json &j) {
-  SolverConfig cfg{
-      .type = Type::MICCG0,
-      .maxIters = j.value("max_iterations", 1000),
-      .tolerance = j.value("tolerance", 1e-4),
-  };
+  SolverConfig cfg;
+
+  cfg.maxIters  = static_cast<int>(j.value("max_iterations", 1000.0));
+  cfg.tolerance = j.value("tolerance", 1e-4);
+  cfg.type      = Type::MICCG0;
+  cfg.method    = Method::SL;
 
   if (j.contains("type")) {
     const std::string t = j["type"].get<std::string>();
-    if (t == "jacobi")
-      cfg.type = Type::JACOBI;
-    else if (t == "gauss_seidel")
-      cfg.type = Type::GAUSS_SEIDEL;
-    else if (t == "red_black_gauss_seidel")
-      cfg.type = Type::RB_GS;
-    else if (t == "miccg0")
-      cfg.type = Type::MICCG0;
+    if      (t == "jacobi")                 cfg.type = Type::JACOBI;
+    else if (t == "gauss_seidel")           cfg.type = Type::GAUSS_SEIDEL;
+    else if (t == "red_black_gauss_seidel") cfg.type = Type::RB_GS;
+    else if (t == "miccg0")                 cfg.type = Type::MICCG0;
+    else if (t == "cg")                     cfg.type = Type::CG;
     else
-      std::cerr << "[SolverConfig] Unknown solver type '" << t
-                << "' – defaulting to miccg0.\n";
+      std::cerr << "[SolverConfig] Unknown solver type '" << t << "' – defaulting to miccg0.\n";
   }
+
+  if (j.contains("method"))
+    cfg.method = methodFromJson(j["method"].get<std::string>());
+
   return cfg;
 }
 
 std::string SolverConfig::typeName() const {
   switch (type) {
-  case Type::JACOBI:
-    return "jacobi";
-  case Type::GAUSS_SEIDEL:
-    return "gauss_seidel";
-  case Type::RB_GS:
-    return "red_black_gauss_seidel";
-  case Type::MICCG0:
-    return "miccg0";
+  case Type::JACOBI:       return "jacobi";
+  case Type::GAUSS_SEIDEL: return "gauss_seidel";
+  case Type::RB_GS:        return "red_black_gauss_seidel";
+  case Type::MICCG0:       return "miccg0";
+  case Type::CG:           return "cg";
+  }
+  return "unknown";
+}
+
+SolverConfig::Method SolverConfig::methodFromJson(const nlohmann::json &j) {
+  const std::string s = j.get<std::string>();
+  if (s == "semilagrangian" || s== "sl") return Method::SL;
+  if (s == "vanilla_pic" || s == "pic")     return Method::VanillaPIC;
+  if (s == "flip")            return Method::FLIP;
+  if (s == "mixed_flip_pic")  return Method::Mixed_FLIP_PIC;
+  if (s == "apic")            return Method::APIC;
+  std::cerr << "[SolverConfig] Unknown method '" << s
+            << "' – defaulting to semi_lagrangian.\n";
+  return Method::SL;
+}
+
+std::string SolverConfig::methodName(Method m) {
+  switch (m) {
+  case Method::SL:             return "semi_lagrangian";
+  case Method::VanillaPIC:     return "vanilla_pic";
+  case Method::FLIP:           return "flip";
+  case Method::Mixed_FLIP_PIC: return "mixed_flip_pic";
+  case Method::APIC:           return "apic";
   }
   return "unknown";
 }
@@ -63,16 +83,13 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   write_smoke = j.value("write_smoke", write_smoke);
   ppcy = j.value("ppcy", ppcy);
   ppcx = j.value("ppcx", ppcx);
-  method = j.value("method", "semi_lagrangian");
-  freeSurface = j.value("freeSurface", "no");
-  particleMethod = j.value("particleMethod", "vanilla_pic");
+
+  freeSurface = j.value("freeSurface", freeSurface);
   gravity = j.value("gravity", gravity);
   refill = j.value("refill", refill);
   write_particles = j.value("write_particles", write_particles);
   // Output paths
   folder = j.value("folder", folder);
-  // @todo remove the filename ?
-  filename = j.value("filename", filename);
   // Boundary condition
   if (j.contains("velocityu"))
     velocityU_json = j["velocityu"];
@@ -88,8 +105,11 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
     fluid_json = j["fluid"];
   if (j.contains("smoke"))
     smoke_json = j["smoke"];
-  if (j.contains("solver"))
+  if (j.contains("solver")) {
     solver = SolverConfig::fromJson(j["solver"]);
+    if (j.contains("method"))
+    solver.method = SolverConfig::methodFromJson(j["method"].get<std::string>());
+  }
 }
 
 void Parameters::applyToFields(Fields2D &fields) const {
@@ -145,24 +165,19 @@ bool Parameters::loadFromFile(const std::string &path) {
 }
 
 bool Parameters::parseCommandLine(const int argc, char *argv[]) {
-  // Expect exactly:  <prog> -c <path>  or  <prog> --config <path>
-  if (argc == 3) {
-    const std::string_view flag = argv[1];
-    if (flag == "-c" || flag == "--config")
-      return loadFromFile(argv[2]);
-  }
+  if (argc == 2)
+    return loadFromFile(argv[1]);
   printUsage(argv[0]);
   return false;
 }
 
 void Parameters::printUsage(const char *prog) {
-  // RTFM
-  std::cout << "Usage: " << prog << " -c <config.json>\n";
+  std::cout << "Usage: " << prog << " <config.json>\n";
 }
 // allow us to use the << operator to print params
 std::ostream &operator<<(std::ostream &os, const Parameters &p) {
   os << "\n=== Simulation Parameters ===\n"
-     << "  Method  : " << p.method << '\n'
+
      << "  Grid    : " << p.nx << " x " << p.ny << "  dx=" << p.dx
      << "  dy=" << p.dy << '\n'
      << "  Time    : nt=" << p.nt << "  dt=" << p.dt << '\n'

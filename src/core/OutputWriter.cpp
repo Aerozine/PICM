@@ -35,7 +35,7 @@ static void writeU32(std::ofstream &out, uint32_t v) {
   out.write(reinterpret_cast<const char *>(&v), sizeof(v));
 }
 std::string OutputWriter::formatFilename(const std::string &field_name,
-                                         int step) const {
+                                         int step) {
   // Zero-pad the step number to four digits: "u_0042.vti"
   std::ostringstream oss;
   oss << field_name << '_' << std::setw(4) << std::setfill('0') << step
@@ -268,7 +268,7 @@ bool OutputWriter::writeParticles(const Particles &particles,
   offset += headerSize + static_cast<uint32_t>(connPayload.size());
 
   const uint32_t offOffset = offset;
-  offset += headerSize + static_cast<uint32_t>(offPayload.size());
+  offset += static_cast<uint32_t>(offPayload.size());
 
   std::ostringstream xml;
   xml << "<?xml version=\"1.0\"?>\n"

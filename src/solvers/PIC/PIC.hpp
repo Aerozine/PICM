@@ -1,67 +1,44 @@
 #pragma once
-#include "../../core/Fields.hpp"
-#include "../../core/OutputWriter.hpp"
-#include "../../core/Parameters.hpp"
 #include "../../core/Particles.hpp"
-#include "../../solvers/SemiLagrangian/Project.hpp"
+#include "../Solver.hpp"
 #include <memory>
 
-class PIC {
+class PIC : public Solver {
 public:
-  PIC(const Parameters &params);
-  virtual ~PIC();
-  void Run();
-  virtual void Step();
+    explicit PIC(Parameters& params);
+    ~PIC() override;
+
+    void Run()  override;
+    void Step() override;
 
 protected:
-  const Parameters &params;
+    Particles* particles = nullptr;
 
-  int nx, ny;
-  varType dx, dy, dt;
-  varType density;
-  Fields2D *fields;
-  Particles *particles;
+    varType GetW();
+    [[nodiscard]] varType hat(varType r) const;
 
-  // particles to grid projection
-  varType GetW();
-  varType hat(varType r) const;
-  virtual void ProjectParticleOnMAC(int idx);
-  void ProjectParticlesOnGrid(std::string kernel);
-  void ProjectBCOnParticles();
+    virtual void ProjectParticleOnMAC(int idx);
+    void ProjectParticlesOnGrid();
+    void ProjectBCOnParticles();
+    virtual void ProjectGridOnParticles();
 
-  // grid to particles projection
-  virtual void ProjectGridOnParticles();
+    void Advect() override; // particle advection — overrides Solver::Advect()
 
-  // advection
-  void AdvectParticles();
-  [[nodiscard]] varType interpolateU(const Grid2D& g, varType x, varType y) const;
-  [[nodiscard]] varType interpolateV(const Grid2D& g, varType x, varType y) const;
+    [[nodiscard]] varType interpolateU(const Grid2D& g, varType x, varType y) const;
+    [[nodiscard]] varType interpolateV(const Grid2D& g, varType x, varType y) const;
 
-  // reseeding
-  void RefillParticles();
-  void CountAliveParticles();
-  varType rand01();
+    void    RefillParticles();
+    void    CountAliveParticles();
+    varType rand01();
 
-  // gravity
-  void ApplyGravity();
+    void ApplyGravity() const;
+    void UpdateCellState() const;
 
-  // cellstate
-  void UpdateCellState();
+    void ScatterToGrid(varType xg, varType yg, varType val,
+                       Grid2D& sum, Grid2D& weight, int imax, int jmax);
 
-  void ScatterToGrid(varType xg, varType yg, varType val, Grid2D &sum,
-                        Grid2D &weight, int imax, int jmax);
+    void WriteOutput(int step) const;
 
 private:
-  std::unique_ptr<OutputWriter> uWriter;
-  std::unique_ptr<OutputWriter> vWriter;
-  std::unique_ptr<OutputWriter> pWriter;
-  std::unique_ptr<OutputWriter> divWriter;
-  std::unique_ptr<OutputWriter> normVelocityWriter;
-  std::unique_ptr<OutputWriter> smokeWriter;
-  std::unique_ptr<OutputWriter> particlesWriter;
-
-  std::unique_ptr<OutputWriter> labelWriter;
-
-  void InitializeOutputWriters();
-  void WriteOutput(int step) const;
+    std::unique_ptr<OutputWriter> particlesWriter;
 };

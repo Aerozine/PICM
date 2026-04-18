@@ -64,5 +64,5 @@ public:
   void SetCu(int i, varType cx, varType cy) { A[i].cu.x = cx; A[i].cu.y = cy; } 
   void SetCv(int i, varType cx, varType cy) { A[i].cv.x = cx; A[i].cv.y = cy; } 
 
-  void InitParticleGrid(Fields2D &fields);
+  void InitParticleGrid(const Fields2D &fields);
 };
