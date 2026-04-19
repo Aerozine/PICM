@@ -52,7 +52,7 @@ protected:
    *        sampling interval.
    * @param step Current time-step index (0-based).
    */
-  void WriteOutput(int step) const;
+  virtual void WriteOutput(int step) const;
 
   /**
    * @brief Advect u and v using a semi-Lagrangian (RK2 backward-trace +
