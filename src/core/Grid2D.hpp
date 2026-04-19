@@ -1,5 +1,7 @@
 #pragma once
 #include "Precision.hpp"
+#include <cassert>
+#include <cmath>
 #include <vector>
 ///@brief  **ROW-MAJOR 2d grid** @c A[nx*j+i]
 class Grid2D {
