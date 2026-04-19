@@ -24,7 +24,7 @@ void PIC::ApplyGravity() const {
 // gravity through particles -> change order of functions in Step() in PIC.cpp
 //*
 void PIC::ApplyGravity() const {
-  varType g = 9.81;
+  varType g = params.gravity;
 OMP_PRAGMA(omp parallel for)
 for (int idx = 0; idx < particles->size(); idx++) {
   varType v = particles->GetV(idx);
