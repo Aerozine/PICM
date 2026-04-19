@@ -46,10 +46,14 @@ void PIC::WriteOutput(int step) const {
 
   if (params.write_particles && particlesWriter) {
     bool ok = particlesWriter->writeParticles(*particles, "particles");
+  
     if (!ok)
       std::cerr << "[PIC] Warning: failed to write particles at step " << step
                 << '\n';
   }
+  //if (params.write_countAliveParticles && countAliveParticles)
+  if(countAliveParticles)
+  countAliveParticles->writeGrid2D(*fields->countAliveParticles, "countAliveParticles");
 }
 
 void PIC::Step() {
