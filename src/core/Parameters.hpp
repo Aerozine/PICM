@@ -75,7 +75,7 @@ public:
   bool write_div = false;
   bool write_norm_velocity = false;
   bool write_smoke = false;
-  bool write_countAliveParticles = false;
+  bool write_countAliveParticles = true;
   bool write_particles = false;
   bool refill = false;
   std::string freeSurface = "no";
