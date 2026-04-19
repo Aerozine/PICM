@@ -102,6 +102,7 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   write_div = j.value("write_div", write_div);
   write_norm_velocity = j.value("write_norm_velocity", write_norm_velocity);
   write_smoke = j.value("write_smoke", write_smoke);
+  write_countAliveParticles = j.value("write_countAliveParticles", write_countAliveParticles);
   ppcy = j.value("ppcy", ppcy);
   ppcx = j.value("ppcx", ppcx);
 

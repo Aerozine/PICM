@@ -54,6 +54,7 @@ void Solver::WriteOutput(int step) const {
     ok &= normVelocityWriter->writeGrid2D(fields->normVelocity, "normVelocity");
   if (params.write_smoke && smokeWriter)
     ok &= smokeWriter->writeGrid2D(fields->smokeMap, "smoke");
+
   // @todo IFDBG
   ok &= labelWriter->writeLabels(fields->Labels, fields->nx + 2, fields->ny + 2,
                                  "label");
