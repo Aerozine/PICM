@@ -5,8 +5,8 @@
     "nx": 200,
     "ny": 200,
     "nt": 1000,
-    "ppcx": 4,
-    "ppcy": 4,
+    "ppcx": 5,
+    "ppcy": 5,
     "density": 1000,
     "sampling_rate": 5,
     "write_u": true,
@@ -75,11 +75,11 @@
 
     "solver": {
         "type": "red_black_gauss_seidel",
-        "max_iterations": 1e5,
+        "max_iterations": 1e6,
         "tolerance": 1e-3
     },
     "method": "pic",
     "freeSurface": "no",
     "gravity": 9.81,
-    "refill": false
+    "refill": true 
 }

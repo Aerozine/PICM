@@ -3,12 +3,12 @@
     "dy": 0.05,
     "dt": 0.01,
     "nx": 100,
-    "ny": 190,
-    "nt": 200,
+    "ny": 250,
+    "nt": 2500,
     "ppcx": 5,
     "ppcy": 5,
     "density": 1000,
-    "sampling_rate": 1,
+    "sampling_rate": 10,
     "write_u": true,
     "write_v": true,
     "write_p": true,
@@ -69,8 +69,8 @@
     },
     "method": "pic",
     "freeSurface": "yes",
-    "gravity": 9.81,
-    "refill": false
+    "gravity": 1.0,
+    "refill": true 
 }
 
 
