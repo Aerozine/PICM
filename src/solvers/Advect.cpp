@@ -102,7 +102,7 @@ void Solver::AdvectSmoke() const {
 
 // RK2 backward particle traces
 void Solver::traceParticleU(const int i, const int j, varType &x,
-                                    varType &y) const {
+                            varType &y) const {
   // u-face physical position: (i·dx, (j+0.5)·dy).
   const varType x0 = static_cast<varType>(i) * dx;
   const varType y0 = (static_cast<varType>(j) + REAL_LITERAL(0.5)) * dy;
@@ -128,7 +128,7 @@ void Solver::traceParticleU(const int i, const int j, varType &x,
 }
 
 void Solver::traceParticleV(const int i, const int j, varType &x,
-                                    varType &y) const {
+                            varType &y) const {
   // v-face physical position: ((i+0.5)·dx, j·dy).
   const varType x0 = (static_cast<varType>(i) + REAL_LITERAL(0.5)) * dx;
   const varType y0 = static_cast<varType>(j) * dy;
@@ -145,8 +145,8 @@ void Solver::traceParticleV(const int i, const int j, varType &x,
 
   // @todo for a particle u should not be nx-1,ny-1 the size is not the same
   // 1 cell is thrown away
-  x = std::clamp(x, REAL_LITERAL(0.0), static_cast<varType>(nx ) * dx);
-  y = std::clamp(y, REAL_LITERAL(0.0), static_cast<varType>(ny ) * dy);
+  x = std::clamp(x, REAL_LITERAL(0.0), static_cast<varType>(nx) * dx);
+  y = std::clamp(y, REAL_LITERAL(0.0), static_cast<varType>(ny) * dy);
 }
 
 // Bilinear interpolation
@@ -201,13 +201,12 @@ varType Solver::interpolateV(const varType x, const varType y) const {
 }
 
 void Solver::getVelocity(const varType x, const varType y, varType &u,
-                                 varType &v) const {
+                         varType &v) const {
   u = interpolateU(x, y);
   v = interpolateV(x, y);
 }
 
-varType Solver::interpolateSmoke(const varType x,
-                                         const varType y) const {
+varType Solver::interpolateSmoke(const varType x, const varType y) const {
   // smokeMap is cell-centred: (i+0.5)*dx, (j+0.5)*dy
   const varType i_real = x / dx - REAL_LITERAL(0.5);
   const varType j_real = y / dy - REAL_LITERAL(0.5);

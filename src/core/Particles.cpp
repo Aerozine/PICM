@@ -4,7 +4,8 @@
 
 varType rand01() {
   static std::mt19937 rng(std::random_device{}());
-  static std::uniform_real_distribution<varType> dist(static_cast<varType>(0), static_cast<varType>(1));
+  static std::uniform_real_distribution<varType> dist(static_cast<varType>(0),
+                                                      static_cast<varType>(1));
   return dist(rng);
 }
 

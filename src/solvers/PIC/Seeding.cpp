@@ -45,8 +45,10 @@ void PIC::RefillParticles() {
 
           // assign inflow velocity from the BC face, interpolate the other
           // component
-          varType u = isInflowU ? fields->u.Get(ci, cj) : interpolateU(fields->u, x, y);
-          varType v = isInflowV ? fields->v.Get(ci, cj) : interpolateV(fields->v, x, y);
+          varType u =
+              isInflowU ? fields->u.Get(ci, cj) : interpolateU(fields->u, x, y);
+          varType v =
+              isInflowV ? fields->v.Get(ci, cj) : interpolateV(fields->v, x, y);
 
           // random birth time + partial advection CH7 p 115
           varType tau = rand01() * dt;
