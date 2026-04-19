@@ -57,8 +57,8 @@
         "max_iterations": 1e5,
         "tolerance": 1e-2
     },
-    "method": "pic",
+    "method": "flip",
     "gravity": 0.0,
-    "refill": true,
-    "particleMethod": "flip"
+    "freeSurface": "no",
+    "refill": true
 }
