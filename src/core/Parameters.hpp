@@ -1,11 +1,11 @@
 #pragma once
-#include "SolverConfig.hpp"
 #include "SceneObjects.hpp"
+#include "SolverConfig.hpp"
 #include <nlohmann/json.hpp>
 #include <string>
 // @todo does this is really necesarry ?
 // why not simply use include fields ?
-//class Fields2D;
+// class Fields2D;
 
 /**
  * @brief Configuration for the iterative pressure (Poisson) solver.

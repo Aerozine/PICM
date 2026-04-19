@@ -1,16 +1,15 @@
-#include <iostream>
 #include "Solver.hpp"
+#include <iostream>
 // Pressure solve dispatch
 
 void Solver::solvePressure(const Parameters &p, Fields2D &f) {
   double tol = p.solver.tolerance;
   int maxIters = p.solver.maxIters;
-  const double coef =
-      static_cast<double>(p.density) * static_cast<double>(p.dx) *
-      static_cast<double>(p.dx) / static_cast<double>(p.dt);
-  const double beta = static_cast<double>(p.density) *
-                      static_cast<double>(p.dx) /
+  const double coef = static_cast<double>(p.density) *
+                      static_cast<double>(p.dx) * static_cast<double>(p.dx) /
                       static_cast<double>(p.dt);
+  const double beta = static_cast<double>(p.density) *
+                      static_cast<double>(p.dx) / static_cast<double>(p.dt);
   const double scale = 1.0 / coef;
   int nx = p.nx;
   int ny = p.ny;
@@ -28,8 +27,8 @@ void Solver::solvePressure(const Parameters &p, Fields2D &f) {
   case SolverConfig::Type::MICCG0:
     solveMICCG0(f, scale, maxIters, tol);
     break;
- case SolverConfig::Type::CG:
-    //solveCG(f, coef, beta, maxIters, tol);
+  case SolverConfig::Type::CG:
+    // solveCG(f, coef, beta, maxIters, tol);
     break;
   default:
     std::cerr << "[SemiLagrangian] Unknown pressure solver type – aborting.\n";

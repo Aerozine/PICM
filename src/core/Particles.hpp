@@ -27,20 +27,20 @@ public:
     // A.reserve(nx * ny * ppcx * ppcy * 3);
   }
   int size() const { return static_cast<int>(A.size()); }
-  
+
   void Add(varType x, varType y, varType u, varType v, unsigned id,
-          varType cuX = 0, varType cuY = 0, varType cvX = 0, varType cvY = 0) {
-      Particle p;
-      p.pos.x = x;
-      p.pos.y = y;
-      p.vel.x = u;
-      p.vel.y = v;
-      p.cu.x = cuX;
-      p.cu.y = cuY;
-      p.cv.x = cvX;
-      p.cv.y = cvY;
-      p.id = id;
-      A.push_back(p);
+           varType cuX = 0, varType cuY = 0, varType cvX = 0, varType cvY = 0) {
+    Particle p;
+    p.pos.x = x;
+    p.pos.y = y;
+    p.vel.x = u;
+    p.vel.y = v;
+    p.cu.x = cuX;
+    p.cu.y = cuY;
+    p.cv.x = cvX;
+    p.cv.y = cvY;
+    p.id = id;
+    A.push_back(p);
   }
 
   void Remove(int i) {
@@ -61,8 +61,14 @@ public:
   void SetY(int i, varType v) { A[i].pos.y = v; }
   void SetU(int i, varType v) { A[i].vel.x = v; }
   void SetV(int i, varType v) { A[i].vel.y = v; }
-  void SetCu(int i, varType cx, varType cy) { A[i].cu.x = cx; A[i].cu.y = cy; } 
-  void SetCv(int i, varType cx, varType cy) { A[i].cv.x = cx; A[i].cv.y = cy; } 
+  void SetCu(int i, varType cx, varType cy) {
+    A[i].cu.x = cx;
+    A[i].cu.y = cy;
+  }
+  void SetCv(int i, varType cx, varType cy) {
+    A[i].cv.x = cx;
+    A[i].cv.y = cy;
+  }
 
   void InitParticleGrid(const Fields2D &fields);
 };
