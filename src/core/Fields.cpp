@@ -7,6 +7,8 @@ void Fields2D::Div() {
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < ny; ++j)
     for (int i = 0; i < nx; ++i) {
+      if (IS_AIR(Label(i + 1, j + 1)))
+        div.Set(i, j, 0.0);
       const varType dudx = (u.Get(i + 1, j) - u.Get(i, j)) / dx;
       const varType dvdy = (v.Get(i, j + 1) - v.Get(i, j)) / dy;
       assert(std::isfinite(dudx));
