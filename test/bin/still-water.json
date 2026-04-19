@@ -1,10 +1,10 @@
 {
-    "dx": 0.05,
-    "dy": 0.05,
+    "dx": 0.1,
+    "dy": 0.1,
     "dt": 0.01,
-    "nx": 200,
-    "ny": 200,
-    "nt": 1000,
+    "nx": 5,
+    "ny": 5,
+    "nt": 500,
     "ppcx": 4,
     "ppcy": 4,
     "density": 1000,
@@ -14,32 +14,24 @@
     "write_p": true,
     "write_div": true,
     "write_norm_velocity": true,
+    "write_countAliveParticles": true,
     "write_smoke": true,
     "write_particles": true,
-    "folder": "results/PIC/free",
+    "folder": "results/PIC/still-water",
     "filename": "simulation",
 
     "fluid": {
-        "rectangle":{
+        "rectangle": [
+       {
             "x1": "1",
             "y1": "1",
-            "x2": "nx/2",
-            "y2": "100"
+            "x2": "nx",
+            "y2": "nx/2"
         }
+        ]
     },
 
     "solid": {
-        "cylinder": [{
-            "x": "50",
-            "y": "50",
-            "r": "20"
-        },
-        {
-            "x": "150",
-            "y": "50",
-            "r": "20"
-        }],
-
         "rectangle":[{
             "x1": "0",
             "y1": "0",
@@ -69,11 +61,12 @@
 
     "solver": {
         "type": "red_black_gauss_seidel",
-        "max_iterations": 1e6,
-        "tolerance": 1e-3
+        "max_iterations": 1e5,
+        "tolerance": 1e-2
     },
     "method": "pic",
     "freeSurface": "yes",
     "gravity": 9.81,
-    "refill": false 
+    "refill": false
 }
+
