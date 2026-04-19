@@ -12,6 +12,9 @@ PIC::PIC(Parameters &params) : Solver(params) {
   if (params.write_particles)
     particlesWriter =
         std::make_unique<OutputWriter>(params.folder, "particles");
+  if (params.write_countAliveParticles)
+    countAliveParticles_writer =
+        std::make_unique<OutputWriter>(params.folder, "particles");
 
 #ifndef NDEBUG
   std::cout << "Grid dimensions:\n"
@@ -52,8 +55,8 @@ void PIC::WriteOutput(int step) const {
                 << '\n';
   }
   //if (params.write_countAliveParticles && countAliveParticles)
-  if(countAliveParticles)
-  countAliveParticles->writeGrid2D(*fields->countAliveParticles, "countAliveParticles");
+  if(params.write_countAliveParticles && fields->countAliveParticles)
+    countAliveParticles_writer->writeGrid2D(*fields->countAliveParticles, "countAliveParticles");
 }
 
 void PIC::Step() {

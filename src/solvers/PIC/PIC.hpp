@@ -43,4 +43,5 @@ protected:
 
 private:
   std::unique_ptr<OutputWriter> particlesWriter;
+  std::unique_ptr<OutputWriter> countAliveParticles_writer ;
 };
