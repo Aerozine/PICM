@@ -17,29 +17,19 @@ void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
   double res0 = 1.0;
 
   const int N = std::min(nx, ny);
-  // @todo this is really overkill apollo used the same number
-  // of decimal to reach the moon
   constexpr double pi = 3.14159265358979;
   const double omega = std::min(1.95, 2.0 / (1.0 + std::sin(pi / N)));
 
   for (int it = 0; it < maxIters; ++it) {
     double sumSq = 0.0;
     int count = 0;
+
     // inner domain nx ny from fields
     // @todo rewrite color as
     // n =0 , n+=2 , n<nmax
     // n =1 , n+=2 , n<nmax
     // for cache optim and simplification
-    // ALL INDICIES IN P referential
-    /*
-    if (fields.Label(i + 1, j + 1) & Fields2D::SOLID ||
-      fields.Label(i + 1, j + 1) & Fields2D::BC_P ||
-      fields.Label(i + 1, j + 1) & Fields2D::AIR ||
-      fields.Label(i + 1, j + 1) & Fields2D::IC_P) {
-      @todo trying IC_P is idiomatic because it does a BC job
-      does BCP is really correct ?
-      */
-    // in P system
+
     for (int color = 0; color < 2; ++color) {
 OMP_PRAGMA(omp parallel for collapse(2) reduction(+:sumSq) reduction(+:count))
 // for the inner solution ;
