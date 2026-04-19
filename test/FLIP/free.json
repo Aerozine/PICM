@@ -73,6 +73,7 @@
         "tolerance": 1e-3
     },
     "method": "flip",
+    "coefPic": 0.0,
     "freeSurface": "yes",
     "gravity": 9.81,
     "refill": false 

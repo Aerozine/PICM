@@ -108,6 +108,7 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
 
   freeSurface = j.value("freeSurface", freeSurface);
   gravity = j.value("gravity", gravity);
+  coefPic = j.value("coefPic", coefPic);
   refill = j.value("refill", refill);
   write_particles = j.value("write_particles", write_particles);
   // Output paths
