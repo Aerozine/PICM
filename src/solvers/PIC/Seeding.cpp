@@ -67,15 +67,6 @@ void PIC::RefillParticles() {
         }
 
       } else if (IS_FLUID(fields->Label(ci + 1, cj + 1))) {
-        // quelle est la logique derriere ceci ? dès que on touche un SOLID ou de l'AIR
-        // tu ne veux pas refill ? 
-        bool isSurface = !IS_FLUID(fields->Label(ci, cj + 1)) ||
-                         !IS_FLUID(fields->Label(ci + 2, cj + 1)) ||
-                         !IS_FLUID(fields->Label(ci + 1, cj)) ||
-                         !IS_FLUID(fields->Label(ci + 1, cj + 2));
-        if (isSurface)
-          continue;
-
         int alive = static_cast<int>(fields->countAliveParticles->Get(ci, cj));
         if (alive <= 0)
           continue;
