@@ -53,10 +53,9 @@ void PIC::WriteOutput(int step) const {
 }
 
 void PIC::Step() {
-  ProjectParticlesOnGrid();
-  // basically a if !0 and not a inf or NAN
-  if (std::isnormal(params.gravity))
+  if (params.gravity > 0.0)
     ApplyGravity();
+  ProjectParticlesOnGrid();
   MakeIncompressible(params, *fields);
   ProjectGridOnParticles();
   fields->Div();
