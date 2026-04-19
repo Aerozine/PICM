@@ -64,5 +64,5 @@
     "method": "flip",
     "freeSurface": "yes",
     "gravity": 9.81,
-    "refill": true 
+    "refill": false 
 }

@@ -20,7 +20,6 @@ void FLIP::Step() {
   if (params.gravity > 0.0)
     ApplyGravity();
   ProjectParticlesOnGrid();
-  ProjectParticlesOnGrid();
   SaveOldVelocities(); // save old veloctiy (!= PIC)
   MakeIncompressible(params, *fields);
   ProjectGridOnParticles(); // based on u_old and u_new (!= PIC)
@@ -34,6 +33,8 @@ void FLIP::Step() {
 }
 
 void FLIP::ProjectGridOnParticles() {
+    varType coefPic  = 0.05; 
+    varType coefFlip = 0.95; 
     OMP_PRAGMA(omp parallel for)
     for (int idx = 0; idx < particles->size(); ++idx) {
       const varType x = particles->GetX(idx);
@@ -48,7 +49,12 @@ void FLIP::ProjectGridOnParticles() {
       const varType u_old_grid = interpolateU(u_old, x, y);
       const varType v_old_grid = interpolateV(v_old, x, y);
 
-      particles->SetU(idx, up_old + (u_new_grid - u_old_grid));
-      particles->SetV(idx, vp_old + (v_new_grid - v_old_grid));
+      particles->SetU(idx, coefFlip * (up_old + (u_new_grid - u_old_grid))
+                   + coefPic  * u_new_grid);
+      particles->SetV(idx, coefFlip * (vp_old + (v_new_grid - v_old_grid))
+                   + coefPic  * v_new_grid);
+
+      // particles->SetU(idx, up_old + (u_new_grid - u_old_grid));
+      // particles->SetV(idx, vp_old + (v_new_grid - v_old_grid));
     }
 }

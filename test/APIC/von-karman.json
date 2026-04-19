@@ -60,5 +60,5 @@
     "method": "apic",
     "freeSurface": "no",
     "gravity": 0.0,
-    "refill": true
+    "refill": true 
 }
