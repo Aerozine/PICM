@@ -68,6 +68,7 @@ public:
   std::string folder = "results"; ///< Output directory.
 
   varType gravity = 0.0;
+  varType coefPic = 0.05;
 
   bool write_u = true;
   bool write_v = true;
