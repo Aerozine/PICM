@@ -21,7 +21,9 @@ for (int i = 0; i < fields->countAliveParticles->nx; i++) {
       for (int j = 0; j < ny; j++) {
         if (!IS_AIR(fields->Label(i + 1, j + 1)))
           continue;
-       
+    
+        fields->p.Set(i, j, 0.0);
+
         labeltype leftLabel = fields->Label(i, j + 1);
         labeltype rightLabel = fields->Label(i + 2, j + 1);
         labeltype bottomLabel = fields->Label(i + 1, j);

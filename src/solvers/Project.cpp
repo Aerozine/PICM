@@ -46,24 +46,13 @@ void Solver::updateVelocities(const Parameters &params, Fields2D &fields) {
   OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
   for (int j = 0; j < fields.u.ny; ++j) {
     for (int i = 0; i < fields.u.nx; ++i) {
-      // boundary is applied on p0,1 for u0,0
       if (IS_BC_U(fields.Label(i, j + 1))) {
         continue;
       } else if (IS_SOLID(fields.Label(i + 1, j + 1)) ||
                  IS_SOLID(fields.Label(i, j + 1))) {
         fields.u.Set(i, j, 0.0);
         continue;
-        // } else if (IS_AIR(fields.Label(i + 1, j + 1)) &&
-        //            IS_AIR(fields.Label(i, j + 1))) {
-        //   fields.u.Set(i, j, FIELD_USOLID);
-        //   continue;
       }
-      // may not be well suited but allow error verification for u >0
-      /*
-      assert(0.0<=fields.u.Get(i, j) -
-                        coef * (fields.p.Get(i + 1, j + 1) - fields.p.Get(i, j +
-      1)));
-      */
       fields.u.Set(i, j,
                    fields.u.Get(i, j) - coef * (fields.p.Get(i + 1, j + 1) -
                                                 fields.p.Get(i, j + 1)));
@@ -80,10 +69,6 @@ void Solver::updateVelocities(const Parameters &params, Fields2D &fields) {
                  IS_SOLID(fields.Label(i + 1, j))) {
         fields.v.Set(i, j, 0.0);
         continue;
-        // } else if (is_air(fields.label(i + 1, j + 1)) &&
-        //            is_air(fields.label(i + 1, j))) {
-        //   fields.v.set(i, j, 0.0);
-        //   continue;
       }
       assert(std::isfinite(
           fields.v.Get(i, j) -

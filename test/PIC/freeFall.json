@@ -64,5 +64,5 @@
     "method": "pic",
     "freeSurface": "yes",
     "gravity": 1.0,
-    "refill": true 
+    "refill": false
 }
