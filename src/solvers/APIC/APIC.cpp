@@ -1,13 +1,14 @@
 #include "APIC.hpp"
 
 APIC::APIC(Parameters &params) : PIC(params) {}
+
 // todo needs to be fixed for each type of hat
 varType APIC::dhat(varType r) {
-  if (static_cast<varType>(-1.5) > r && r < static_cast<varType>(-0.5))
+  if (varType(-1.5) <= r && r < varType(-0.5))
     return r + static_cast<varType>(1.5);
-  if (static_cast<varType>(-0.5) <= r && r < static_cast<varType>(0.5))
+  if (varType(-0.5) <= r && r < varType(0.5))
     return -static_cast<varType>(2.0) * r;
-  if (static_cast<varType>(0.5) <= r && r < static_cast<varType>(1.5))
+  if (varType(0.5) <= r && r < varType(1.5))
     return r - static_cast<varType>(1.5);
   return static_cast<varType>(0);
 }
