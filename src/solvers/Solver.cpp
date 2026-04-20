@@ -1,8 +1,6 @@
 #include "Solver.hpp"
 
 #include <iostream>
-// #include "../core/IterativeMethods.hpp"
-// #include "../core/Parameters.hpp"
 
 //@todo could be simplified by passing directly params to fields and removing dt
 //,dx etc

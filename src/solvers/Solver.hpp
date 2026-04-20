@@ -1,6 +1,6 @@
 #pragma once
 #include "../core/Fields.hpp"
-#include "../core/IterativeMethods.hpp"
+#include "../core/IterativeMethod/IterativeMethods.hpp"
 #include "../core/OutputWriter.hpp"
 #include "../core/Parameters.hpp"
 #include <memory>

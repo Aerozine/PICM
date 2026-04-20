@@ -349,8 +349,8 @@ void OutputWriter::finalisePVD() {
 
   pvd_finalised_ = true;
 }
-bool OutputWriter::writeLabels(const std::vector<uint16_t> &labels, int nx,
-                               int ny, const std::string &id) {
+bool OutputWriter::writeLabels(const uint16_t *labels, int nx,
+                                 int ny, const std::string &id) {
   if (pvd_finalised_)
     return false;
 
@@ -358,7 +358,7 @@ bool OutputWriter::writeLabels(const std::vector<uint16_t> &labels, int nx,
                                               ny * sizeof(uint16_t));
 
   // Convert directly to bytes (no compression helper needed)
-  const auto *rawPtr = reinterpret_cast<const unsigned char *>(labels.data());
+  const auto *rawPtr = reinterpret_cast<const unsigned char *>(labels);
   std::vector<unsigned char> payload(rawPtr, rawPtr + rawBytes);
 
 #ifdef HAVE_ZLIB

@@ -91,7 +91,6 @@ for (int idx = 0; idx < particles->size(); ++idx) {
         continue;
       }
       if (IS_BC_U(left)) {
-        // Boundary value already set — do not overwrite
         continue;
       }
       //@todo should be illegal to do 1e-12
@@ -135,15 +134,17 @@ for (int idx = 0; idx < particles->size(); ++idx) {
 void PIC::ProjectGridOnParticles() {
 OMP_PRAGMA(omp parallel for)
 for (int idx = 0; idx < particles->size(); ++idx) {
+  varType unew=interpolateU(fields->u, particles->GetX(idx), particles->GetY(idx));
+  assert(unew<1e4);
   particles->SetU(
-      idx, interpolateU(fields->u, particles->GetX(idx), particles->GetY(idx)));
+      idx,unew );
+  varType vnew = interpolateV(fields->v, particles->GetX(idx),particles->GetY(idx));
+  assert(vnew<1e4);
   particles->SetV(
-      idx, interpolateV(fields->v, particles->GetX(idx), particles->GetY(idx)));
+      idx,vnew);
 }
 }
 
-// same function as above in PIC but needed for FLIP
-// because ProjectGridOnParticles is virtual (rewritten for FLIP)
 void PIC::ProjectBCOnParticles() {
 OMP_PRAGMA(omp parallel for)
 for (int idx = 0; idx < particles->size(); ++idx) {
