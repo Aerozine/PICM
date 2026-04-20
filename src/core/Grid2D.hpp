@@ -1,8 +1,12 @@
 #pragma once
+#include <cstdlib>
+#include <cstring>
+
 #include "Precision.hpp"
 #include <vector>
 ///@brief  **ROW-MAJOR 2d grid** @c A[nx*j+i]
 class Grid2D {
+  //@todo do a sparsified version
 public:
   int nx;
   int ny;
@@ -12,8 +16,46 @@ public:
   //  A = new varType[nx * ny];
   //}
   */
-  std::vector<varType> A; ///< Flat cell data, row-major: A[nx*j + i].
-  Grid2D(int nx, int ny) : nx(nx), ny(ny), A(nx * ny, varType{0}) {}
+  //std::vector<varType> A; ///< Flat cell data, row-major: A[nx*j + i].
+  varType *A = nullptr;
+  Grid2D()=default;
+
+  Grid2D(int nx_, int ny_)
+      : nx(nx_), ny(ny_),
+        A(static_cast<varType *>(
+            std::calloc(static_cast<std::size_t>(nx_) * ny_, sizeof(varType))))
+  {}
+  ~Grid2D() { std::free(A); }
+  Grid2D(const Grid2D &o)
+    : nx(o.nx), ny(o.ny),
+      A(static_cast<varType *>(
+          std::malloc(static_cast<std::size_t>(o.nx) * o.ny * sizeof(varType))))
+  {
+    std::memcpy(A, o.A, static_cast<std::size_t>(nx) * ny * sizeof(varType));
+  }
+
+  Grid2D &operator=(const Grid2D &o) {
+    if (this == &o) return *this;
+    if (nx * ny != o.nx * o.ny) {
+      std::free(A);
+      A = static_cast<varType *>(
+          std::malloc(static_cast<std::size_t>(o.nx) * o.ny * sizeof(varType)));
+    }
+    nx = o.nx; ny = o.ny;
+    std::memcpy(A, o.A, static_cast<std::size_t>(nx) * ny * sizeof(varType));
+    return *this;
+  }
+  Grid2D(Grid2D &&o) noexcept : nx(o.nx), ny(o.ny), A(o.A) {
+    o.nx = 0; o.ny = 0; o.A = nullptr;
+  }
+
+  Grid2D &operator=(Grid2D &&o) noexcept {
+    if (this == &o) return *this;
+    std::free(A);
+    nx = o.nx; ny = o.ny; A = o.A;
+    o.nx = 0; o.ny = 0; o.A = nullptr;
+    return *this;
+  }
 
   /// @brief Read the value at cell (i, j).
   [[nodiscard]] varType Get(const int i, const int j) const {
@@ -22,11 +64,6 @@ public:
 
   /// @brief Write a value into cell (i, j).
   void Set(const int i, const int j, const varType val) { A[nx * j + i] = val; }
-
-  /// @brief Return true if (i, j) is within grid bounds.
-  [[nodiscard]] bool InBounds(int i, int j) const {
-    return i >= 0 && i < nx && j >= 0 && j < ny;
-  }
 
   /**
    * @brief Bilinearly interpolation

@@ -47,7 +47,6 @@ void FLIP::ProjectGridOnParticles() {
 
       const varType u_old_grid = interpolateU(u_old, x, y);
       const varType v_old_grid = interpolateV(v_old, x, y);
-
       particles->SetU(idx, up_old + (u_new_grid - u_old_grid));
       particles->SetV(idx, vp_old + (v_new_grid - v_old_grid));
     }

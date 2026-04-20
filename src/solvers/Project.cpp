@@ -21,16 +21,25 @@ void Solver::solvePressure(const Parameters &p, Fields2D &f) {
   case SolverConfig::Type::GAUSS_SEIDEL:
     solveGaussSeidel(f, nx, ny, coef, maxIters, tol, beta);
     break;
-  case SolverConfig::Type::RB_GS:
-    solveRedBlackGaussSeidel(f, nx, ny, coef, maxIters, tol, beta);
-    break;
+    case SolverConfig::Type::RB_GS:
+#ifdef USE_CUDA
+      //std::cout << "[Solver] RB_GS → GPU (CUDA)\n";
+      solveRedBlackGaussSeidel_GPU(f, nx, ny, coef, maxIters, tol, beta);
+#else
+      solveRedBlackGaussSeidel(f, nx, ny, coef, maxIters, tol, beta);
+#endif
+      break;
   case SolverConfig::Type::MICCG0:
     solveMICCG0(f, scale, maxIters, tol);
     break;
-  case SolverConfig::Type::CG:
-    // solveCG(f, coef, beta, maxIters, tol);
-    break;
-  default:
+    case SolverConfig::Type::CG:
+#ifdef USE_CUDA
+      solveCG_GPU(f, coef, beta, maxIters, tol);
+#else
+      solveCG(f, coef, beta, maxIters, tol);
+#endif
+      break;
+    default:
     std::cerr << "[SemiLagrangian] Unknown pressure solver type – aborting.\n";
     std::exit(EXIT_FAILURE);
   }
