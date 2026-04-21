@@ -29,7 +29,7 @@ public:
   int size() const { return static_cast<int>(A.size()); }
 
   void Add(varType x, varType y, varType u, varType v, unsigned id,
-           varType cuX = 0, varType cuY = 0, varType cvX = 0, varType cvY = 0) {
+           varType cuX = 0.0, varType cuY = 0.0, varType cvX = 0.0, varType cvY = 0.0) {
     Particle p;
     p.pos.x = x;
     p.pos.y = y;

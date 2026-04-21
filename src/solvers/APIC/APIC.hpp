@@ -10,10 +10,6 @@ public:
 
 protected:
   void ProjectGridOnParticles() override;
-  Vec2 gradWeightU(int i, int j, varType xp, varType yp) const;
-  Vec2 gradWeightV(int i, int j, varType xp, varType yp) const;
-
+  void ScatterToGridAPIC(varType xg, varType yg, varType xp, varType yp, varType baseVal, varType cX, varType cY, varType faceOffsetX, varType faceOffsetY, Grid2D &sum, Grid2D &weight, int imax, int jmax);
   void ProjectParticleOnMAC(int idx) override;
-
-  static varType dhat(varType r);
 };
