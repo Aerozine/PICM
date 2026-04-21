@@ -44,7 +44,7 @@ protected:
   void ApplyGravity() const;
   void UpdateCellState() const;
 
-  void ScatterToGrid(varType xg, varType yg, varType val, Grid2D &sum,
+  virtual void ScatterToGrid(varType xg, varType yg, varType val, Grid2D &sum,
                      Grid2D &weight, int imax, int jmax);
 
   void WriteOutput(int step) const;

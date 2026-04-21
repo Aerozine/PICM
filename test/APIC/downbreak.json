@@ -5,8 +5,8 @@
     "nx": 200,
     "ny": 220,
     "nt": 500,
-    "ppcx": 5,
-    "ppcy": 5,
+    "ppcx": 6,
+    "ppcy": 6,
     "density": 1000,
     "sampling_rate": 2,
     "write_u": true,
@@ -64,5 +64,6 @@
     "method": "apic",
     "freeSurface": "yes",
     "gravity": 9.81,
-    "refill": false 
+    "refill": false,
+    "kernelOrder": 2
 }
