@@ -65,6 +65,7 @@ public:
 
   // Output
   int sampling_rate = 1;          ///< Write output every N steps.
+  int kernelOrder = 2; 
   std::string folder = "results"; ///< Output directory.
 
   varType gravity = 0.0;

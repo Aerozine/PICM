@@ -4,33 +4,16 @@
 varType PIC::GetW() {
   return static_cast<varType>(particles->ppcx * particles->ppcy);
 }
-// @todo handle different hat correctly
-// needs to be handle in the Cmake for precision over cost
-varType hat1(varType r) {
-  if (r >= varType(0) && r <= varType(1))
-    return varType(1) - r;
-  else if (r >= varType(-1) && r < varType(0))
-    return varType(1) + r;
-  else
-    return varType(0);
-}
-// h2
-varType PIC::hat(varType r) const {
-  if (varType(-1.5) <= r && r < varType(-0.5))
-    return varType(0.5) * (r + varType(3.0 / 2.0)) * (r + varType(3.0 / 2.0));
-  if (varType(-0.5) <= r && r < varType(0.5))
-    return varType(0.75) - r * r;
-  if (varType(0.5) <= r && r < varType(1.5))
-    return varType(0.5) * (varType(3.0 / 2.0) - r) * (varType(3.0 / 2.0) - r);
-  return varType(0);
-}
+
 void PIC::ScatterToGrid(varType xg, varType yg, varType val, Grid2D &sum,
                         Grid2D &weight, int imax, int jmax) {
   int i0 = static_cast<int>(std::floor(xg));
   int j0 = static_cast<int>(std::floor(yg));
-  // @todo dynamic to hat size ! for h1 2 , h2 3
-  for (int dj = -1; dj <= 1; ++dj) {
-    for (int di = -1; di <= 1; ++di) {
+
+  int radius = params.kernelOrder;
+
+  for (int dj = -radius; dj <= radius; ++dj) {
+    for (int di = -radius; di <= radius; ++di) {
       int i = i0 + di, j = j0 + dj;
       if (i < 0 || i >= imax || j < 0 || j >= jmax)
         continue;

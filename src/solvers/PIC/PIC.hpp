@@ -15,7 +15,15 @@ protected:
   Particles *particles = nullptr;
 
   varType GetW();
-  [[nodiscard]] varType hat(varType r) const;
+
+  varType hat(varType r) const;
+  varType dhat(varType r) const;
+
+  varType hatTrilinear(varType r) const;
+  varType hatQuadraticBSpline(varType r) const;
+
+  varType dhatTrilinear(varType r) const;
+  varType dhatQuadraticBSpline(varType r) const;
 
   virtual void ProjectParticleOnMAC(int idx);
   void ProjectParticlesOnGrid();
