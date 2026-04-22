@@ -38,31 +38,24 @@ void PIC::ProjectParticleOnMAC(int idx) {
 }
 
 void PIC::ProjectParticlesOnGrid() {
+  OMP_PRAGMA(omp parallel for collapse(2))
+  for (int j = 0; j < fields->u.ny; j++)
+    for (int i = 0; i < fields->u.nx; i++) {
+      fields->u_sum->Set(i, j, varType(0));
+      fields->u_weight->Set(i, j, varType(0));
+    }
 
-  // Weights to zero.
-OMP_PRAGMA(omp parallel for collapse(2))
-for (int j = 0; j < fields->u.ny; j++)
-  for (int i = 0; i < fields->u.nx; i++) {
-    fields->u_sum->Set(i, j, varType(0));
-    fields->u_weight->Set(i, j, varType(0));
+  OMP_PRAGMA(omp parallel for collapse(2))
+  for (int j = 0; j < fields->v.ny; j++)
+    for (int i = 0; i < fields->v.nx; i++) {
+      fields->v_sum->Set(i, j, varType(0));
+      fields->v_weight->Set(i, j, varType(0));
+    }
+
+  for (int idx = 0; idx < particles->size(); ++idx) {
+    ProjectParticleOnMAC(idx);
   }
 
-OMP_PRAGMA(omp parallel for collapse(2))
-for (int j = 0; j < fields->v.ny; j++)
-  for (int i = 0; i < fields->v.nx; i++) {
-    fields->v_sum->Set(i, j, varType(0));
-    fields->v_weight->Set(i, j, varType(0));
-  }
-// will messed up the code due to race condition and other funny things
-// @todo must be implemented directly inside the project particle on MAC
-// OMP_PRAGMA(omp parallel for)
-for (int idx = 0; idx < particles->size(); ++idx) {
-  ProjectParticleOnMAC(idx);
-}
-
-// Normalize u faces.
-// u(i,j) sits between Label(i, j+1) [left] and Label(i+1, j+1) [right].
-// This matches SemiLagrangian::Advect() u-loop convention.
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->u.ny; j++) {
     for (int i = 0; i < fields->u.nx; i++) {
@@ -72,27 +65,18 @@ for (int idx = 0; idx < particles->size(); ++idx) {
       if (IS_SOLID(left) || IS_SOLID(right)) {
         fields->u.Set(i, j, varType(0));
         continue;
-      }
-      if (IS_BC_U(left)) {
-        // Boundary value already set — do not overwrite
+      } if (IS_BC_U(left)) {
         continue;
       }
-      //@todo should be illegal to do 1e-12
-      if (fields->u_weight->Get(i, j) <=
-          static_cast<varType>(100) * std::numeric_limits<varType>::epsilon()) {
-        if (!IS_BC_U(left)) {
-          fields->u.Set(i, j, static_cast<varType>(0));
-        }
-      } else {
-        fields->u.Set(i, j,
-                      fields->u_sum->Get(i, j) / fields->u_weight->Get(i, j));
-      }
+
+      if (fields->u_weight->Get(i, j) >= REAL_EPSILON) {
+        varType uNew = fields->u_sum->Get(i, j) / fields->u_weight->Get(i, j);
+        fields->u.Set(i, j, uNew);
+      } else if (!IS_BC_U(left)) 
+          fields->u.Set(i, j, varType(0));
     }
   }
 
-  // Normalize v faces.
-  // v(i,j) sits between Label(i+1, j) [bottom] and Label(i+1, j+1) [top].
-  // This matches SemiLagrangian::Advect() v-loop convention.
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < fields->v.ny; j++) {
     for (int i = 0; i < fields->v.nx; i++) {
@@ -102,9 +86,7 @@ for (int idx = 0; idx < particles->size(); ++idx) {
       if (IS_SOLID(bottom) || IS_SOLID(top)) {
         fields->v.Set(i, j, varType(0));
         continue;
-      }
-      if (IS_BC_V(bottom)) {
-        // Boundary value already set — do not overwrite
+      } if (IS_BC_V(bottom)) {
         continue;
       }
       if (fields->v_weight->Get(i, j) > varType(1e-12)) {
@@ -125,8 +107,6 @@ for (int idx = 0; idx < particles->size(); ++idx) {
 }
 }
 
-// same function as above in PIC but needed for FLIP
-// because ProjectGridOnParticles is virtual (rewritten for FLIP)
 void PIC::ProjectBCOnParticles() {
 OMP_PRAGMA(omp parallel for)
 for (int idx = 0; idx < particles->size(); ++idx) {

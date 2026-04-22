@@ -110,13 +110,16 @@ void APIC::ProjectGridOnParticles() {
     varType cuY = varType(0);
 
     const varType detU = Du00 * Du11 - Du01 * Du01;
-    if (detU > varType(1e-18)) {
+    if (detU > REAL_EPSILON) {
       const varType inv00 =  Du11 / detU;
       const varType inv01 = -Du01 / detU;
       const varType inv11 =  Du00 / detU;
 
       cuX = bu0 * inv00 + bu1 * inv01;
       cuY = bu0 * inv01 + bu1 * inv11;
+    } else {
+      cuX = varType(0);
+      cuY = varType(0);
     }
 
     // ----- C_v = b_v D_v^{-1} -----
@@ -124,24 +127,16 @@ void APIC::ProjectGridOnParticles() {
     varType cvY = varType(0);
 
     const varType detV = Dv00 * Dv11 - Dv01 * Dv01;
-    if (detV > varType(1e-18)) {
+    if (detV > REAL_EPSILON) {
       const varType inv00 =  Dv11 / detV;
       const varType inv01 = -Dv01 / detV;
       const varType inv11 =  Dv00 / detV;
 
       cvX = bv0 * inv00 + bv1 * inv01;
       cvY = bv0 * inv01 + bv1 * inv11;
-    }
-
-    bool nearBoundary =
-      xp < 0.1 * dx ||
-      xp > (fields->nx - 1.1) * dx ||
-      yp < 0.5 * dy ||
-      yp > (fields->ny - 1.1) * dy;
-
-    if (nearBoundary) {
-      cuX = cuY = 0.0;
-      cvX = cvY = 0.0;
+    } else {
+      cvX = varType(0);
+      cvY = varType(0);
     }
 
     particles->SetU(idx, uNew);
