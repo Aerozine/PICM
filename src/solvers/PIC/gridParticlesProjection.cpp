@@ -100,21 +100,29 @@ void PIC::ProjectParticlesOnGrid() {
 void PIC::ProjectGridOnParticles() {
 OMP_PRAGMA(omp parallel for)
 for (int idx = 0; idx < particles->size(); ++idx) {
-  particles->SetU(
-      idx, interpolateU(fields->u, particles->GetX(idx), particles->GetY(idx)));
-  particles->SetV(
-      idx, interpolateV(fields->v, particles->GetX(idx), particles->GetY(idx)));
+  varType x = particles->GetX(idx);
+  varType y = particles->GetY(idx);
+  particles->SetU(idx,
+    fields->u.interpolate(x,y,dx,dy,0));
+      //interpolateU(fields->u, particles->GetX(idx), particles->GetY(idx)));
+  particles->SetV(idx,
+    fields->v.interpolate(x,y,dx,dy,1));
+    //interpolateV(fields->v, particles->GetX(idx), particles->GetY(idx)));
 }
 }
 
 // same function as above in PIC but needed for FLIP
 // because ProjectGridOnParticles is virtual (rewritten for FLIP)
-void PIC::ProjectBCOnParticles() {
+/*void PIC::ProjectBCOnParticles() {
 OMP_PRAGMA(omp parallel for)
 for (int idx = 0; idx < particles->size(); ++idx) {
   particles->SetU(
-      idx, interpolateU(fields->u, particles->GetX(idx), particles->GetY(idx)));
+      idx,
+    u.interpolate(x, y, dx, dy, 0);
+      interpolateU(fields->u, particles->GetX(idx), particles->GetY(idx)));
   particles->SetV(
       idx, interpolateV(fields->v, particles->GetX(idx), particles->GetY(idx)));
 }
 }
+
+*/

@@ -10,7 +10,7 @@ void PIC::UpdateCellState() const {
       const labeltype current = fields->Label(i + 1, j + 1);
       if (IS_SOLID(current) || IS_BC_U(current) || IS_BC_V(current))
         continue;
-      if (fields->countAliveParticles->Get(i, j) > 0.0) {
+      if (fields->countAliveParticles->Get(i, j) > 0) {
         fields->setFluid(i + 1, j + 1);
         continue;
       }

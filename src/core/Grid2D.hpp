@@ -12,29 +12,16 @@ class Grid2D {
 public:
   int nx;
   int ny;
-  /* for debuging purpose
-  //  varType * A;
-  //Grid2D(int nx, int ny) : nx(nx), ny(ny) {
-  //  A = new varType[nx * ny];
-  //}
-  */
-  //std::vector<varType> A; ///< Flat cell data, row-major: A[nx*j + i].
   Grid2D()=default;
 
+  // calloc is just malloc but init at 0
   Grid2D(int nx_, int ny_)
       : nx(nx_), ny(ny_),
         A(static_cast<varType *>(
             std::calloc(static_cast<std::size_t>(nx_) * ny_, sizeof(varType))))
   {}
   ~Grid2D() { std::free(A); }
-  Grid2D(const Grid2D &o)
-    : nx(o.nx), ny(o.ny),
-      A(static_cast<varType *>(
-          std::malloc(static_cast<std::size_t>(o.nx) * o.ny * sizeof(varType))))
-  {
-    std::memcpy(A, o.A, static_cast<std::size_t>(nx) * ny * sizeof(varType));
-  }
-
+  /*
   Grid2D &operator=(const Grid2D &o) {
     if (this == &o) return *this;
     if (nx * ny != o.nx * o.ny) {
@@ -57,7 +44,7 @@ public:
     o.nx = 0; o.ny = 0; o.A = nullptr;
     return *this;
   }
-
+  */
   /// @brief Read the value at cell (i, j).
   [[nodiscard]] varType Get(const int i, const int j) const {
     return A[nx * j + i];
@@ -74,7 +61,7 @@ public:
    * @param dy    Cell height in y.
    * @param field Stagger type: 0 = u-face, 1 = v-face, other = cell-centre.
    */
-  [[nodiscard]] varType Interpolate(varType x, varType y, varType dx,
+  [[nodiscard]] varType interpolate(varType x, varType y, varType dx,
                                     varType dy, int field) const;
 //private:
 

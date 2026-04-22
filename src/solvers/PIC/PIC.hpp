@@ -6,14 +6,13 @@
 class PIC : public Solver {
 public:
   explicit PIC(Parameters &params);
-  ~PIC() override;
 
   void Run() override;
   void Step() override;
 
 protected:
-  Particles *particles = nullptr;
-
+  //Particles *particles = nullptr;
+  std::unique_ptr<Particles> particles;
   varType GetW();
 
   varType hat(varType r) const;
@@ -39,7 +38,6 @@ protected:
 
   void RefillParticles();
   void CountAliveParticles();
-  varType rand01();
 
   void ApplyGravity() const;
   void UpdateCellState() const;

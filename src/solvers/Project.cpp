@@ -2,7 +2,7 @@
 #include <iostream>
 // Pressure solve dispatch
 
-void Solver::solvePressure(const Parameters &p, Fields2D &f) {
+inline void solvePressure(const Parameters &p, Fields2D &f) {
   double tol = p.solver.tolerance;
   int maxIters = p.solver.maxIters;
   const double coef = static_cast<double>(p.density) *
@@ -23,7 +23,6 @@ void Solver::solvePressure(const Parameters &p, Fields2D &f) {
     break;
     case SolverConfig::Type::RB_GS:
 #ifdef USE_CUDA
-      //std::cout << "[Solver] RB_GS → GPU (CUDA)\n";
       solveRedBlackGaussSeidel_GPU(f, nx, ny, coef, maxIters, tol, beta);
 #else
       solveRedBlackGaussSeidel(f, nx, ny, coef, maxIters, tol, beta);
@@ -34,7 +33,6 @@ void Solver::solvePressure(const Parameters &p, Fields2D &f) {
     break;
     case SolverConfig::Type::CG:
 #ifdef USE_CUDA
-      //solveCG_GPU(f, coef, beta, maxIters, tol);
 #else
       solveCG(f, coef, beta, maxIters, tol);
 #endif
@@ -47,7 +45,7 @@ void Solver::solvePressure(const Parameters &p, Fields2D &f) {
 
 // Velocity correction
 
-void Solver::updateVelocities(const Parameters &params, Fields2D &fields) {
+inline void updateVelocities(const Parameters &params, Fields2D &fields) {
   // Explicit pressure-gradient correction on all interior faces:
   //   u^{n+1}_{i,j} = u^*_{i,j} - (dt / (rho * dx)) * (p_{i,j} - p_{i-1,j})
   const varType coef = params.dt / (params.density * params.dx);

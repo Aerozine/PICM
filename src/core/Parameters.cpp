@@ -109,7 +109,11 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
       solver.method = solverMethodFromJson(j["method"]);
   }
 }
-
+void Parameters::applySmoke(Grid2D smoke,Fields2D &f) {
+  const std::map<std::string, int> vars = {{"nx", nx}, {"ny", ny}};
+  if (!smoke_json.is_null())
+    for (const auto &obj : parseSceneObjects(smoke_json, vars)) obj->applySmoke(smoke, f);
+}
 void Parameters::applyToFields(Fields2D &fields) const {
   const std::map<std::string, int> vars = {{"nx", nx}, {"ny", ny}};
 
@@ -117,8 +121,6 @@ void Parameters::applyToFields(Fields2D &fields) const {
     for (const auto &obj : parseSceneObjects(air_json,  vars)) obj->applyAir(fields);
   if (!fluid_json.is_null())
     for (const auto &obj : parseSceneObjects(fluid_json, vars)) obj->applyFluid(fields);
-  if (!smoke_json.is_null())
-    for (const auto &obj : parseSceneObjects(smoke_json, vars)) obj->applySmoke(fields);
   if (!solid_json.is_null())
     for (const auto &obj : parseSceneObjects(solid_json, vars)) obj->applySolid(fields);
   if (!velocityU_json.is_null())

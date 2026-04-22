@@ -12,7 +12,7 @@ public:
 
   explicit SemiLagrangian(Parameters &params);
 
-  ~SemiLagrangian() override = default;
+  //~SemiLagrangian() override = default;
 
   // SemiLagrangian(const SemiLagrangian &) = delete;
   // SemiLagrangian &operator=(const SemiLagrangian &) = delete;
@@ -22,4 +22,12 @@ public:
 
   /// @brief Advance the simulation by one time step.
   void Step() override;
+private:
+  std::unique_ptr<Grid2D> smokeMap;
+  std::unique_ptr<OutputWriter> smokeWriter;
+    /**
+     * @brief Advect smokeMap using a semi-Lagrangian (RK2 backward-trace +
+     *        bilinear interpolation) scheme.
+     */
+    void AdvectSmoke() const;
 };
