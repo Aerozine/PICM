@@ -8,7 +8,8 @@
 #include <cmath>
 #include <iostream>
 #include <vector>
-
+// This code is provided only as example , must be implemented by ourself
+//@todo why not using Eigen >_<
 //@todo sparsify pressure etc
 // @todo make it work
 struct SparseA {

@@ -1,37 +1,34 @@
 {
-    "dx": 0.05,
-    "dy": 0.05,
+    "dx": 0.1,
+    "dy": 0.1,
     "dt": 0.01,
-    "nx": 100,
-    "ny": 250,
-    "nt": 2500,
-    "ppcx": 5,
-    "ppcy": 5,
+    "nx": 10,
+    "ny": 10,
+    "nt": 500,
+    "ppcx": 4,
+    "ppcy": 4,
     "density": 1000,
-    "sampling_rate": 10,
+    "sampling_rate": 5,
     "write_u": true,
     "write_v": true,
     "write_p": true,
     "write_div": true,
     "write_norm_velocity": true,
+    "write_countAliveParticles": true,
     "write_smoke": true,
     "write_particles": true,
-    "folder": "results/PIC/freeFallInWater",
+    "folder": "results/PIC/still-water",
     "filename": "simulation",
 
     "fluid": {
-        "rectangle": [{
-            "x1": "nx/2-19",
-            "y1": "ny-40",
-            "x2": "nx/2+19",
-            "y2": "ny-10"
-        },
-        {
+        "rectangle": [
+       {
             "x1": "1",
             "y1": "1",
-            "x2": "nx",
-            "y2": "30"
-        }]
+            "x2": "nx/2",
+            "y2": "nx/2"
+        }
+        ]
     },
 
     "solid": {
@@ -64,13 +61,12 @@
 
     "solver": {
         "type": "red_black_gauss_seidel",
-        "max_iterations": 1e3,
+        "max_iterations": 1e5,
         "tolerance": 1e-2
     },
     "method": "pic",
-    "freeSurface": true,
-    "gravity": 1.0,
-    "refill": false 
+    "freeSurface": "yes",
+    "gravity": 9.81,
+    "refill": false
 }
-
 

@@ -68,11 +68,10 @@
 
         "tolerance": 1e-3
     },
-    "method": "pic",
-    "freeSurface": "yes",
+    "method": "flip",
+    "freeSurface": true,
     "gravity": 9.81,
-    "refill": false,
-    "particleMethod": "flip"
+    "refill": false 
 }
 
 

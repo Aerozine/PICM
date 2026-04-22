@@ -33,6 +33,7 @@ protected:
   std::unique_ptr<OutputWriter> pWriter;
   std::unique_ptr<OutputWriter> divWriter;
   std::unique_ptr<OutputWriter> normVelocityWriter;
+  std::unique_ptr<OutputWriter> countAliveParticles;
   std::unique_ptr<OutputWriter> smokeWriter;
   // @todo do a IF DEBUG THEN
   std::unique_ptr<OutputWriter> labelWriter;

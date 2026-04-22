@@ -1,10 +1,12 @@
 {
-    "dx": 1e-3,
-    "dy": 1e-3,
-    "dt": 1e-4,
+    "dx": 0.005,
+    "dy": 0.005,
+    "dt": 0.001,
     "nx": 200,
     "ny": 20,
     "nt": 700,
+    "ppcx": 4,
+    "ppcy": 4,
     "density": 1000,
     "sampling_rate": 5,
 
@@ -23,11 +25,11 @@
     "velocityu": {
         "rectangle": {
             "condition": "boundary",
-            "val": 0.5,
-            "x1": "1",
-            "y1": "3",
-            "x2": "2",
-            "y2": "ny-2"
+            "val": 1.0,
+            "x1": "0",
+            "y1": "0",
+            "x2": "0",
+            "y2": "ny+1"
         }
     },
 
@@ -36,11 +38,11 @@
             "x1": "0",
             "y1": "0",
             "x2": "nx+1",
-            "y2": "2"
+            "y2": "0"
         },
         {
             "x1": "0",
-            "y1": "ny-1",
+            "y1": "ny+1",
             "x2": "nx+1",
             "y2": "ny+1"
         }]
@@ -53,5 +55,8 @@
         "tolerance": 1e-3
     },
 
-    "method": "pic"
+    "method": "pic",
+    "freeSurface": false,
+    "gravity": 0.0,
+    "refill": true
 }
