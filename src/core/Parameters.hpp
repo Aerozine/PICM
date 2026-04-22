@@ -72,6 +72,7 @@ public:
 
   /// Pretty-print all parameters to @p os (debug builds).
   friend std::ostream &operator<<(std::ostream &os, const Parameters &p);
+  void applySmoke(Grid2D smoke, Fields2D &f);
 
 private:
   nlohmann::json velocityU_json;
@@ -88,6 +89,7 @@ private:
    * @param j Root JSON object of the config file.
    */
   void loadFromJson(const nlohmann::json &j);
+
 
   /// Print command-line usage to stdout.
   static void printUsage(const char *prog);

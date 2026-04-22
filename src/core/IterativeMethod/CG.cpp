@@ -67,9 +67,17 @@ static SparseA buildSparseA(const Fields2D &f, int pnx, int pny) {
         const int i  = id % pnx;
         const int j  = id / pnx;
 
-        // Diagonal = 4
+        // Count actual neighbors to set diagonal correctly
+        int diag = 0;
+        if (fluidBottom(f, i, j)) ++diag;
+        if (fluidLeft  (f, i, j)) ++diag;
+        if (fluidRight (f, i, j)) ++diag;
+        if (fluidTop   (f, i, j)) ++diag;
+        
+        // Diagonal = number of fluid neighbors (matches neighbourSum)
+        const double diagonal = static_cast<double>(diag);
         A.col_id.push_back(id);
-        A.val   .push_back(4.0);
+        A.val   .push_back(diagonal);
         ++nnz;
 
         // Off-diagonals = -1, stored in ascending column order.
@@ -162,7 +170,8 @@ bool solveCG(Fields2D &fields, double coef, double /*beta*/,
         sigma += r[k] * r[k];
     }
 
-    if (sigma < 1e-60) {
+    double sigma0 = sigma;
+    if (sigma0 < 1e-60) {
 #ifndef NDEBUG
         std::cout << "  CG: initial residual negligible.\n";
 #endif

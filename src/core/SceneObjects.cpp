@@ -197,7 +197,7 @@ void RectangleObject::applyPressure(Fields2D &f) {
     }
 }
 
-void RectangleObject::applySmoke(Fields2D &f) {
+void RectangleObject::applySmoke(Grid2D &smokeMap, Fields2D &f) {
   if (condition != "initial" && condition != "boundary") {
     std::cout << "Invalid condition for rectangular velocity.\n"
               << "Available options: initial or boundary.\n";
@@ -208,14 +208,14 @@ void RectangleObject::applySmoke(Fields2D &f) {
     std::swap(x1, x2);
   if (y1 > y2)
     std::swap(y1, y2);
-  const int iMax = std::min(x2, f.smokeMap.nx - 1);
-  const int jMax = std::min(y2, f.smokeMap.ny - 1);
+  const int iMax = std::min(x2, smokeMap.nx - 1);
+  const int jMax = std::min(y2, smokeMap.ny - 1);
   for (int i = std::max(x1, 0); i <= iMax; ++i)
     for (int j = std::max(y1, 0); j <= jMax; ++j) {
       // +1,+1 to refer to the label array shifted
       if (IS_SOLID(f.Label(i + 1, j + 1)))
         continue;
-      f.smokeMap.Set(i, j, val);
+      smokeMap.Set(i, j, val);
       f.SetLabel(i + 1, j + 1,
                  condition == "initial" ? Fields2D::IC_S : Fields2D::BC_S);
     }

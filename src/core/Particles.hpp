@@ -3,6 +3,8 @@
 #include "Precision.hpp"
 #include <vector>
 
+#include "Parameters.hpp"
+
 struct Vec2 {
   varType x = 0.0;
   varType y = 0.0;
@@ -22,10 +24,15 @@ public:
   varType dx, dy;
   std::vector<Particle> A;
 
-  Particles(int nx, int ny, varType dx, varType dy, int ppcx, int ppcy)
+  Particles(Parameters &params)
+      : nx(params.nx), ny(params.ny), ppcx(params.ppcx), ppcy(params.ppcy), dx(params.dx), dy(params.dy) {
+     A.reserve(nx * ny * ppcx * ppcy * 3);
+  }
+  /*/Particles(int nx, int ny, varType dx, varType dy, int ppcx, int ppcy)
       : nx(nx), ny(ny), ppcx(ppcx), ppcy(ppcy), dx(dx), dy(dy) {
     // A.reserve(nx * ny * ppcx * ppcy * 3);
   }
+  */
   int size() const { return static_cast<int>(A.size()); }
 
   void Add(varType x, varType y, varType u, varType v, unsigned id,
@@ -72,3 +79,4 @@ public:
 
   void InitParticleGrid(const Fields2D &fields);
 };
+varType rand01();

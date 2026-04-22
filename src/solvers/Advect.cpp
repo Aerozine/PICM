@@ -24,8 +24,9 @@ void Solver::Advect() {
         continue;
       }
       varType x, y;
-      traceParticleU(i, j, x, y);
-      uNew.Set(i, j, interpolateU(x, y));
+      traceParticle(i, j, x, y,0);
+      uNew.Set(i, j,
+      fields->u.interpolate(x, y, dx, dy, 0));
     }
 
   OMP_PRAGMA(omp parallel for collapse(2))
@@ -43,191 +44,54 @@ void Solver::Advect() {
       }
 
       varType x, y;
-      traceParticleV(i, j, x, y);
-      assert(std::isfinite(interpolateV(x, y)));
-      vNew.Set(i, j, interpolateV(x, y));
+      traceParticle(i, j, x, y,1);
+      assert(std::isfinite(fields->v.interpolate(x, y, dx, dy, 1)));
+      vNew.Set(i, j,
+      fields->v.interpolate(x, y, dx, dy, 1));
     }
 
   fields->u = std::move(uNew);
   fields->v = std::move(vNew);
 }
 
-void Solver::AdvectSmoke() const {
-  Grid2D smokeNew(fields->smokeMap.nx, fields->smokeMap.ny);
 
-  OMP_PRAGMA(omp parallel for collapse(2))
-  for (int j = 0; j < fields->smokeMap.ny; ++j) {
-    for (int i = 0; i < fields->smokeMap.nx; ++i) {
-      // if (fields->Label(i, j) & Fields2D::BC_S) {
-      if (IS_BC_S(fields->Label(i + 1, j + 1))) {
-        assert(std::isfinite(fields->smokeMap.Get(i, j)));
-        smokeNew.Set(i, j, fields->smokeMap.Get(i, j));
-        continue;
-      }
-
-      // Position physique du centre de la cellule (i, j)
-      const varType x0 = (static_cast<varType>(i) + REAL_LITERAL(0.5)) * dx;
-      const varType y0 = (static_cast<varType>(j) + REAL_LITERAL(0.5)) * dy;
-
-      // RK2 backward trace
-      varType u0, v0;
-      getVelocity(x0, y0, u0, v0);
-      const varType xMid = x0 - REAL_LITERAL(0.5) * dt * u0;
-      const varType yMid = y0 - REAL_LITERAL(0.5) * dt * v0;
-
-      varType uMid, vMid;
-      getVelocity(xMid, yMid, uMid, vMid);
-      varType xDep = x0 - dt * uMid;
-      varType yDep = y0 - dt * vMid;
-
-      xDep = std::clamp(xDep, REAL_LITERAL(0.0),
-                        static_cast<varType>(nx - 1) * dx);
-      yDep = std::clamp(yDep, REAL_LITERAL(0.0),
-                        static_cast<varType>(ny - 1) * dy);
-
-      assert(std::isfinite(xDep));
-      assert(std::isfinite(yDep));
-      smokeNew.Set(i, j, interpolateSmoke(xDep, yDep));
-    }
-  }
-
-  // TODO : pass smokeNew as pointer of fields and avoir copy
-  for (int j = 0; j < fields->smokeMap.ny; ++j) {
-    for (int i = 0; i < fields->smokeMap.nx; ++i) {
-      assert(std::isfinite(smokeNew.Get(i, j)));
-      fields->smokeMap.Set(i, j, smokeNew.Get(i, j));
-    }
-  }
-}
 
 // RK2 backward particle traces
-void Solver::traceParticleU(const int i, const int j, varType &x,
-                            varType &y) const {
-  // u-face physical position: (i·dx, (j+0.5)·dy).
-  const varType x0 = static_cast<varType>(i) * dx;
-  const varType y0 = (static_cast<varType>(j) + REAL_LITERAL(0.5)) * dy;
+// field: 0 for u-face, 1 for v-face
+void Solver::traceParticle(const int i, const int j, varType &x, varType &y,
+                           const uint8_t field) const {
+  varType x0, y0;
 
+  if (field == 0) {
+    // u-face physical position: (i·dx, (j+0.5)·dy)
+    x0 = static_cast<varType>(i) * dx;
+    y0 = (static_cast<varType>(j) + REAL_LITERAL(0.5)) * dy;
+  } else {
+    // v-face physical position: ((i+0.5)·dx, j·dy)
+    x0 = (static_cast<varType>(i) + REAL_LITERAL(0.5)) * dx;
+    y0 = static_cast<varType>(j) * dy;
+  }
+
+  // RK2 backward trace: first half-step
   varType u0, v0;
   getVelocity(x0, y0, u0, v0);
   const varType xMid = x0 - REAL_LITERAL(0.5) * dt * u0;
   const varType yMid = y0 - REAL_LITERAL(0.5) * dt * v0;
 
-  varType uMid, vMid;
-  getVelocity(xMid, yMid, uMid, vMid);
-  x = x0 - dt * uMid;
-  y = y0 - dt * vMid;
-  /*
-  int l=std::floor(x/dt);
-  int n=std::floor(y/dt);
-  assert(IS_SOLID(fields->Label(l+1,n+1)));
-  */
-  // @todo for a particle u should not be nx-1,ny-1 the size is not the same
-  // 1 cell is thrown away
-  x = std::clamp(x, REAL_LITERAL(0.0), static_cast<varType>(fields->u.nx) * dx);
-  y = std::clamp(y, REAL_LITERAL(0.0), static_cast<varType>(fields->u.ny) * dy);
-}
-
-void Solver::traceParticleV(const int i, const int j, varType &x,
-                            varType &y) const {
-  // v-face physical position: ((i+0.5)·dx, j·dy).
-  const varType x0 = (static_cast<varType>(i) + REAL_LITERAL(0.5)) * dx;
-  const varType y0 = static_cast<varType>(j) * dy;
-
-  varType u0, v0;
-  getVelocity(x0, y0, u0, v0);
-  const varType xMid = x0 - REAL_LITERAL(0.5) * dt * u0;
-  const varType yMid = y0 - REAL_LITERAL(0.5) * dt * v0;
-
+  // RK2 backward trace: full step with midpoint velocity
   varType uMid, vMid;
   getVelocity(xMid, yMid, uMid, vMid);
   x = x0 - dt * uMid;
   y = y0 - dt * vMid;
 
+  // Clamp to valid range
   // @todo for a particle u should not be nx-1,ny-1 the size is not the same
   // 1 cell is thrown away
-  x = std::clamp(x, REAL_LITERAL(0.0), static_cast<varType>(nx) * dx);
-  y = std::clamp(y, REAL_LITERAL(0.0), static_cast<varType>(ny) * dy);
-}
-
-// Bilinear interpolation
-
-varType Solver::interpolateU(const varType x, const varType y) const {
-  const varType i_real = x / dx;
-  const varType j_real = y / dy - REAL_LITERAL(0.5);
-
-  int i = static_cast<int>(std::floor(i_real));
-  int j = static_cast<int>(std::floor(j_real));
-
-  const varType fx = i_real - static_cast<varType>(i);
-  const varType fy = j_real - static_cast<varType>(j);
-  // @todo check if it is correct to do -1 bc we are looking for +1
-  i = std::clamp(i, 0, fields->u.nx - 2);
-  j = std::clamp(j, 0, fields->u.ny - 2);
-
-  const varType u00 = fields->u.Get(i, j);
-  const varType u10 = fields->u.Get(i + 1, j);
-  const varType u01 = fields->u.Get(i, j + 1);
-  const varType u11 = fields->u.Get(i + 1, j + 1);
-
-  return (REAL_LITERAL(1.0) - fy) *
-             ((REAL_LITERAL(1.0) - fx) * u00 + fx * u10) +
-         fy * ((REAL_LITERAL(1.0) - fx) * u01 + fx * u11);
-}
-
-varType Solver::interpolateV(const varType x, const varType y) const {
-  const varType i_real = x / dx - REAL_LITERAL(0.5);
-  const varType j_real = y / dy;
-
-  int i = static_cast<int>(std::floor(i_real));
-  int j = static_cast<int>(std::floor(j_real));
-
-  const varType fx = i_real - static_cast<varType>(i);
-  const varType fy = j_real - static_cast<varType>(j);
-
-  // @todo check if it is correct to do -1 bc we are looking for +1
-  i = std::clamp(i, 0, fields->v.nx - 2);
-  j = std::clamp(j, 0, fields->v.ny - 2);
-
-  const varType v00 = fields->v.Get(i, j);
-  const varType v10 = fields->v.Get(i + 1, j);
-  const varType v01 = fields->v.Get(i, j + 1);
-  const varType v11 = fields->v.Get(i + 1, j + 1);
-  assert(std::isfinite((REAL_LITERAL(1.0) - fy) *
-                           ((REAL_LITERAL(1.0) - fx) * v00 + fx * v10) +
-                       fy * ((REAL_LITERAL(1.0) - fx) * v01 + fx * v11)));
-  return (REAL_LITERAL(1.0) - fy) *
-             ((REAL_LITERAL(1.0) - fx) * v00 + fx * v10) +
-         fy * ((REAL_LITERAL(1.0) - fx) * v01 + fx * v11);
-}
-
-void Solver::getVelocity(const varType x, const varType y, varType &u,
-                         varType &v) const {
-  u = interpolateU(x, y);
-  v = interpolateV(x, y);
-}
-
-varType Solver::interpolateSmoke(const varType x, const varType y) const {
-  // smokeMap is cell-centred: (i+0.5)*dx, (j+0.5)*dy
-  const varType i_real = x / dx - REAL_LITERAL(0.5);
-  const varType j_real = y / dy - REAL_LITERAL(0.5);
-
-  int i = static_cast<int>(std::floor(i_real));
-  int j = static_cast<int>(std::floor(j_real));
-
-  const varType fx = i_real - static_cast<varType>(i);
-  const varType fy = j_real - static_cast<varType>(j);
-
-  // @todo out-of-bound possible !
-  i = std::clamp(i, 0, fields->smokeMap.nx - 1);
-  j = std::clamp(j, 0, fields->smokeMap.ny - 1);
-
-  const varType s00 = fields->smokeMap.Get(i, j);
-  const varType s10 = fields->smokeMap.Get(i + 1, j);
-  const varType s01 = fields->smokeMap.Get(i, j + 1);
-  const varType s11 = fields->smokeMap.Get(i + 1, j + 1);
-  assert(std::isfinite((1.0 - fy) * ((1.0 - fx) * s00 + fx * s10) +
-                       fy * (1.0 - fx * s01 + fx * s11)));
-  return (REAL_LITERAL(1.0) - fy) *
-             ((REAL_LITERAL(1.0) - fx) * s00 + fx * s10) +
-         fy * ((REAL_LITERAL(1.0) - fx) * s01 + fx * s11);
+  if (field == 0) {
+    x = std::clamp(x, REAL_LITERAL(0.0), static_cast<varType>(fields->u.nx) * dx);
+    y = std::clamp(y, REAL_LITERAL(0.0), static_cast<varType>(fields->u.ny) * dy);
+  } else {
+    x = std::clamp(x, REAL_LITERAL(0.0), static_cast<varType>(fields->v.nx) * dx);
+    y = std::clamp(y, REAL_LITERAL(0.0), static_cast<varType>(fields->v.ny) * dy);
+  }
 }

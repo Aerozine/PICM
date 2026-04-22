@@ -26,8 +26,8 @@ void Fields2D::VelocityNormCenterGrid() {
       const varType x = (static_cast<varType>(i) + REAL_LITERAL(0.5)) * dx;
       const varType y = (static_cast<varType>(j) + REAL_LITERAL(0.5)) * dy;
 
-      const varType uc = u.Interpolate(x, y, dx, dy, 0);
-      const varType vc = v.Interpolate(x, y, dx, dy, 1);
+      const varType uc = u.interpolate(x, y, dx, dy, 0);
+      const varType vc = v.interpolate(x, y, dx, dy, 1);
 
       normVelocity.Set(i, j, std::sqrt(uc * uc + vc * vc));
     }

@@ -42,7 +42,7 @@ public:
   varType density;
   varType dt, dx, dy;
   //todo use a template for label ? is there an overhead ?
-  Grid2D u, v, p, div, normVelocity, smokeMap;
+  Grid2D u, v, p, div, normVelocity;
 
   Grid2D *u_sum             = nullptr;
   Grid2D *u_weight          = nullptr;
@@ -52,7 +52,7 @@ public:
 
   uint16_t *Labels = nullptr;
 
-  // ── constructor ────────────────────────────────────────────────────────────
+  // ── constructor  ────────────────────────────────────────────────────────────
   // freeSurface: true  → initialise all labels to AIR
   //              false → initialise all labels to FLUID (default, incompressible)
   Fields2D(int nx_, int ny_,
@@ -63,7 +63,7 @@ public:
         density(density_), dt(dt_), dx(dx_), dy(dy_),
         u(nx_ + 1, ny_), v(nx_, ny_ + 1),
         p(nx_ + 2, ny_ + 2), div(nx_, ny_),
-        normVelocity(nx_, ny_), smokeMap(nx_, ny_)
+        normVelocity(nx_, ny_)
   {
     const std::size_t labelCount =
         static_cast<std::size_t>(nx_ + 2) * (ny_ + 2);

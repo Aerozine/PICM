@@ -14,7 +14,7 @@ struct SceneObject {
   virtual void applyFluid(Fields2D &f) { (void)f; }
   virtual void applyVelocityU(Fields2D &f) { (void)f; }
   virtual void applyVelocityV(Fields2D &f) { (void)f; }
-  virtual void applySmoke(Fields2D &f) { (void)f; }
+  virtual void applySmoke(Grid2D &smokeMap, Fields2D &f) { (void)smokeMap;(void)f; }
   virtual void applyPressure(Fields2D &f) { (void)f; }
 };
 
@@ -29,7 +29,7 @@ struct RectangleObject : public SceneObject {
   void applyFluid(Fields2D &f) override;
   void applyVelocityU(Fields2D &f) override;
   void applyVelocityV(Fields2D &f) override;
-  void applySmoke(Fields2D &f) override;
+  void applySmoke(Grid2D &smokeMap, Fields2D &f) override;
   void applyPressure(Fields2D &f) override;
 };
 

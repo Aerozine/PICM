@@ -43,11 +43,11 @@ void FLIP::ProjectGridOnParticles() {
       const varType up_old = particles->GetU(idx);
       const varType vp_old = particles->GetV(idx);
 
-      const varType u_new_grid = interpolateU(fields->u, x, y);
-      const varType v_new_grid = interpolateV(fields->v, x, y);
+      const varType u_new_grid = fields->u.interpolate(x,y,fields->dx,fields->dy,0); //interpolateU(fields->u, x, y);
+      const varType v_new_grid = fields->v.interpolate(x,y,fields->dx,fields->dy,1);//interpolateV(fields->v, x, y);
 
-      const varType u_old_grid = interpolateU(u_old, x, y);
-      const varType v_old_grid = interpolateV(v_old, x, y);
+      const varType u_old_grid =u_old.interpolate(x,y,dx,dy,0); //interpolateU(u_old, x, y);
+      const varType v_old_grid =v_old.interpolate(x,y,dx,dy,1);// interpolateV(v_old, x, y);
 
       particles->SetU(idx, coefPic  * u_new_grid +
                            coefFlip * (up_old + (u_new_grid - u_old_grid)));

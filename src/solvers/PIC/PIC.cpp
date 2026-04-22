@@ -4,8 +4,8 @@
 
 static constexpr int CAPACITY_FACTOR = 3;
 
-PIC::PIC(Parameters &params) : Solver(params) {
-  particles = new Particles(nx, ny, dx, dy, params.ppcx, params.ppcy);
+PIC::PIC(Parameters &params) : Solver(params) ,particles(std::make_unique<Particles>(params)){
+  //particles = new Particles(nx, ny, dx, dy, params.ppcx, params.ppcy);
 
   // Base opened the standard writers; add the PIC-only one here,
   // where the vtable is fully active and particlesWriter exists.
@@ -35,11 +35,6 @@ PIC::PIC(Parameters &params) : Solver(params) {
 #endif
 }
 
-PIC::~PIC() {
-  delete particles;
-  particles = nullptr;
-  // fields deleted by Solver::~Solver()
-}
 
 void PIC::WriteOutput(int step) const {
   if (step % params.sampling_rate != 0)
@@ -77,7 +72,8 @@ void PIC::Step() {
 void PIC::Run() {
   fields->Div();
   fields->VelocityNormCenterGrid();
-  ProjectBCOnParticles();
+  //ProjectBCOnParticles();
+  ProjectGridOnParticles();
   WriteOutput(0);
-  RunLoop(std::max(1, params.nt / 10));
+  RunLoop(std::max(1, params.nt / 100));
 }

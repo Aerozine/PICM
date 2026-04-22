@@ -19,8 +19,11 @@ for (int idx = 0; idx < np; ++idx) {
 
   varType xmid = x0 + static_cast<varType>(0.5) * dt * u0;
   varType ymid = y0 + static_cast<varType>(0.5) * dt * v0;
-  varType umid = interpolateU(fields->u, xmid, ymid);
-  varType vmid = interpolateV(fields->v, xmid, ymid);
+  //@todo put a hat ?
+  varType umid = fields->u.interpolate(xmid, ymid, dx, dy, 0);
+    //interpolateU(fields->u, xmid, ymid);
+  varType vmid =fields->v.interpolate(xmid, ymid, dx, dy, 1);
+    //interpolateV(fields->v, xmid, ymid);
 
   varType x1 = x0 + dt * umid;
   varType y1 = y0 + dt * vmid;
@@ -35,7 +38,7 @@ for (int idx = 0; idx < np; ++idx) {
   int j1 = std::clamp(static_cast<int>(std::floor(y1 / dy)), 0, ny - 1);
 
   if (IS_SOLID(fields->Label(i1 + 1, j1 + 1))) {
-    keep[idx] = 0;
+    //keep[idx] = 0;
     continue;
   }
 
