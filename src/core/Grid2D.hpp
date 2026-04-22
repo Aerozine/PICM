@@ -3,6 +3,8 @@
 #include <cstring>
 
 #include "Precision.hpp"
+#include <cassert>
+#include <cmath>
 #include <vector>
 ///@brief  **ROW-MAJOR 2d grid** @c A[nx*j+i]
 class Grid2D {
@@ -17,7 +19,6 @@ public:
   //}
   */
   //std::vector<varType> A; ///< Flat cell data, row-major: A[nx*j + i].
-  varType *A = nullptr;
   Grid2D()=default;
 
   Grid2D(int nx_, int ny_)
@@ -75,4 +76,7 @@ public:
    */
   [[nodiscard]] varType Interpolate(varType x, varType y, varType dx,
                                     varType dy, int field) const;
+//private:
+
+  varType *A = nullptr;
 };

@@ -1,2 +1,1 @@
-// TO be Implemented
-// When CG will work
+// to be implemented

@@ -7,16 +7,9 @@ void PIC::RefillParticles() {
 
   for (int ci = 0; ci < nx; ci++) {
     for (int cj = 0; cj < ny; cj++) {
-      // Never touch solid cells
-      // Label of domain cell (ci,cj) is at Label(ci+1, cj+1)
       if (IS_SOLID(fields->Label(ci + 1, cj + 1)))
         continue;
 
-      // BC_U lives on the LEFT ghost cell  : Label(ci,   cj+1)
-      // BC_V lives on the BOTTOM ghost cell: Label(ci+1, cj  )
-      // matching SceneObjects::applyVelocityU -> SetLabel(i, j,   BC_U) with
-      // u(i, j-1) matching SceneObjects::applyVelocityV -> SetLabel(i, j-1,
-      // BC_V) with v(i-1, j-1)
       bool isInflowU = IS_BC_U(fields->Label(ci, cj + 1));
       bool isInflowV = IS_BC_V(fields->Label(ci + 1, cj));
       bool isInflow = isInflowU || isInflowV;
@@ -25,10 +18,8 @@ void PIC::RefillParticles() {
         // physically coherent emission rate CH7 p.114
         varType speed = varType(0);
         if (isInflowU)
-          // left face of domain cell (ci,cj) is u(ci, cj)
           speed = std::abs(fields->u.Get(ci, cj));
         else
-          // bottom face of domain cell (ci,cj) is v(ci, cj)
           speed = std::abs(fields->v.Get(ci, cj));
 
         varType dWdt = targetPPC * speed / dx;
@@ -43,8 +34,6 @@ void PIC::RefillParticles() {
           varType x = (ci + rand01()) * dx;
           varType y = (cj + rand01()) * dy;
 
-          // assign inflow velocity from the BC face, interpolate the other
-          // component
           varType u =
               isInflowU ? fields->u.Get(ci, cj) : interpolateU(fields->u, x, y);
           varType v =
@@ -78,19 +67,6 @@ void PIC::RefillParticles() {
         }
 
       } else if (IS_FLUID(fields->Label(ci + 1, cj + 1))) {
-        // Only refill interior fluid cells — ones where all 4 neighbours are
-        // also fluid. Surface cells are naturally sparse and must not be topped
-        // up, otherwise the free surface acts as a particle source.
-        // Neighbours in label space: left=(ci, cj+1), right=(ci+2, cj+1),
-        //                            bottom=(ci+1, cj), top=(ci+1, cj+2)
-        bool isSurface = !IS_FLUID(fields->Label(ci, cj + 1)) ||
-                         !IS_FLUID(fields->Label(ci + 2, cj + 1)) ||
-                         !IS_FLUID(fields->Label(ci + 1, cj)) ||
-                         !IS_FLUID(fields->Label(ci + 1, cj + 2));
-        if (isSurface)
-          continue;
-
-        // Cell was just promoted to fluid this step (stray particle) — skip.
         int alive = static_cast<int>(fields->countAliveParticles->Get(ci, cj));
         if (alive <= 0)
           continue;
@@ -103,16 +79,8 @@ void PIC::RefillParticles() {
           varType x = (ci + rand01()) * dx;
           varType y = (cj + rand01()) * dy;
 
-          // if (fields->Label(i + 1, j) & Fields2D::SOLID) {
-          //   u = 0.0;
-          //   v = interpolateV(fields->v, x, y);
-          // } else if (fields->Label(i - 1, j) & Fields2D::SOLID) {
-          //   u = interpolateU(fields->u, x, y);
-          //   v = 0.0;
-          // } else {
           varType u = interpolateU(fields->u, x, y);
           varType v = interpolateV(fields->v, x, y);
-          // }
 
           particles->Add(x, y, u, v, static_cast<unsigned>(particles->size()));
         }

@@ -52,6 +52,7 @@ void Solver::WriteOutput(int step) const {
     ok &= normVelocityWriter->writeGrid2D(fields->normVelocity, "normVelocity");
   if (params.write_smoke && smokeWriter)
     ok &= smokeWriter->writeGrid2D(fields->smokeMap, "smoke");
+
   // @todo IFDBG
   ok &= labelWriter->writeLabels(fields->Labels, fields->nx + 2, fields->ny + 2,
                                  "label");
@@ -66,12 +67,21 @@ void Solver::RunLoop(int reportEvery) {
     if (t % reportEvery == 0) {
       varType maxDiv = REAL_LITERAL(0.0);
       //@todo exclude cell that are anormal
+      int maxi=-1;
+      int maxj=-1;
       for (int j = 0; j < ny; ++j)
-        for (int i = 0; i < nx; ++i)
-          maxDiv = std::max(maxDiv, std::abs(fields->div.Get(i, j)));
-
+        for (int i = 0; i < nx; ++i){
+          // @todo implement i j printing for maxdiv
+          varType a= fields->div.Get(i,j);
+          if(a>maxDiv){
+          maxDiv=a;
+          maxi=i;
+          maxj=j;
+        }
+        //maxDiv = std::max(maxDiv, std::abs(fields->div.Get(i, j)));
+          }
       std::cout << "\rStep " << t << " / " << params.nt << " ("
-                << (100 * t / params.nt) << "%) " << "max |div| = " << maxDiv
+                << (100 * t / params.nt) << "%) " << "max |div| = " << maxDiv << "("<< maxi<< ","<< maxj <<")"
                 << std::flush;
     }
     Step();

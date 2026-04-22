@@ -19,19 +19,13 @@
     "folder": "results/PIC/free",
     "filename": "simulation",
 
-    "air": {
-        "rectangle": [{
-            "x1": "3",
-            "y1": "151",
-            "x2": "nx-2",
-            "y2": "ny-2"
-        },
-        {
-            "x1": "101",
-            "y1": "3",
-            "x2": "nx-2",
-            "y2": "150"
-        }]
+    "fluid": {
+        "rectangle":{
+            "x1": "1/2",
+            "y1": "1",
+            "x2": "nx/2",
+            "y2": "100"
+        }
     },
 
     "solid": {
@@ -50,22 +44,22 @@
             "x1": "0",
             "y1": "0",
             "x2": "nx+1",
-            "y2": "2"
+            "y2": "0"
         },
         {
             "x1": "0",
-            "y1": "ny-1",
+            "y1": "ny+1",
             "x2": "nx+1",
             "y2": "ny+1"
         },
         {
             "x1": "0",
             "y1": "0",
-            "x2": "2",
+            "x2": "0",
             "y2": "ny+1"
         },
         {
-            "x1": "nx-1",
+            "x1": "nx+1",
             "y1": "0",
             "x2": "nx+1",
             "y2": "ny+1"
@@ -75,11 +69,11 @@
 
     "solver": {
         "type": "red_black_gauss_seidel",
-        "max_iterations": 1e5,
-        "tolerance": 1e-3
+        "max_iterations": 1e6,
+        "tolerance": 1e-4
     },
     "method": "pic",
-    "freeSurface": "no",
+    "freeSurface": true,
     "gravity": 9.81,
-    "refill": false
+    "refill": false 
 }

@@ -57,8 +57,8 @@
         "max_iterations": 1e5,
         "tolerance": 1e-2
     },
-    "method": "pic",
-    "gravity": 9.81,
-    "refill": false,
-    "particleMethod": "apic"
+    "method": "apic",
+    "freeSurface": false,
+    "gravity": 0.0,
+    "refill": true 
 }

@@ -78,6 +78,10 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   ppcx            = j.value("ppcx",            ppcx);
   gravity         = j.value("gravity",         gravity);
   refill          = j.value("refill",          refill);
+
+  coefPic = j.value("coefPic", coefPic);
+  freeSurface = j.value("freeSurface", freeSurface);
+  write_countAliveParticles = j.value("write_countAliveParticles", write_countAliveParticles);
   write_particles = j.value("write_particles", write_particles);
   folder          = j.value("folder",          folder);
 

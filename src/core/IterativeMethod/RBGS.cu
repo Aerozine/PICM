@@ -22,7 +22,7 @@
 __device__ __forceinline__ int pidx(int pnx, int i, int j) {
     return pnx * j + i;
 }
-
+//@todo must be rewritten by ourself more simpler
 static constexpr int BX = 32;
 static constexpr int BY = 8;
 
