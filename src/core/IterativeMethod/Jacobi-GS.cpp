@@ -1,6 +1,6 @@
 
 #include "IterativeMethods.hpp"
-#include "utils.hpp"
+#include "Utils.hpp"
 #include "../Precision.hpp"
 
 #include <algorithm>
