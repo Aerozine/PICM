@@ -2,11 +2,11 @@
     "dx": 0.1,
     "dy": 0.1,
     "dt": 0.01,
-    "nx": 10,
-    "ny": 10,
+    "nx": 4,
+    "ny": 4,
     "nt": 500,
-    "ppcx": 4,
-    "ppcy": 4,
+    "ppcx": 3,
+    "ppcy": 3,
     "density": 1000,
     "sampling_rate": 5,
     "write_u": true,
@@ -64,9 +64,10 @@
         "max_iterations": 1e5,
         "tolerance": 1e-2
     },
-    "method": "pic",
+    "method": "apic",
     "freeSurface": "yes",
     "gravity": 9.81,
-    "refill": false
+    "refill": false,
+    "kernelOrder": 2
 }
 

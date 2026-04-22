@@ -21,8 +21,9 @@ public:
   double density = 1000.0;
 
   // Output
-  int         sampling_rate = 1;
-  std::string folder        = "results";
+  int sampling_rate = 1;          ///< Write output every N steps.
+  int kernelOrder = 2;
+  std::string folder = "results"; ///< Output directory.
 
   varType gravity = 0.0;
   varType coefPic = 0.05;

@@ -3,12 +3,12 @@
     "dy": 0.05,
     "dt": 0.01,
     "nx": 200,
-    "ny": 200,
-    "nt": 1000,
-    "ppcx": 4,
-    "ppcy": 4,
+    "ny": 220,
+    "nt": 500,
+    "ppcx": 5,
+    "ppcy": 5,
     "density": 1000,
-    "sampling_rate": 5,
+    "sampling_rate": 2,
     "write_u": true,
     "write_v": true,
     "write_p": true,
@@ -16,12 +16,12 @@
     "write_norm_velocity": true,
     "write_smoke": true,
     "write_particles": true,
-    "folder": "results/PIC/free",
+    "folder": "results/FLIP/downBreak",
     "filename": "simulation",
 
     "fluid": {
         "rectangle":{
-            "x1": "1/2",
+            "x1": "1",
             "y1": "1",
             "x2": "nx/2",
             "y2": "100"
@@ -29,17 +29,6 @@
     },
 
     "solid": {
-        "cylinder": [{
-            "x": "50",
-            "y": "50",
-            "r": "20"
-        },
-        {
-            "x": "150",
-            "y": "50",
-            "r": "20"
-        }],
-
         "rectangle":[{
             "x1": "0",
             "y1": "0",
@@ -69,11 +58,12 @@
 
     "solver": {
         "type": "red_black_gauss_seidel",
-        "max_iterations": 1e6,
-        "tolerance": 1e-3
+        "max_iterations": 1e5,
+        "tolerance": 1e-2
     },
-    "method": "pic",
-    "freeSurface": true,
+    "method": "flip",
+    "coefPic": 0.05,
+    "freeSurface": "yes",
     "gravity": 9.81,
     "refill": false 
 }
