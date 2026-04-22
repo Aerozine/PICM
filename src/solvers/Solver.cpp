@@ -81,7 +81,8 @@ void Solver::RunLoop(int reportEvery) {
         //maxDiv = std::max(maxDiv, std::abs(fields->div.Get(i, j)));
           }
       std::cout << "\rStep " << t << " / " << params.nt << " ("
-                << (100 * t / params.nt) << "%) " << "max |div| = " << maxDiv << "("<< maxi<< ","<< maxj <<")"
+                << (100 * t / params.nt) << "%) " << "max |div| = " << maxDiv << 
+                " reached at ("<< maxi<< ","<< maxj <<")"
                 << std::flush;
     }
     Step();

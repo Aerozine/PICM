@@ -1,103 +1,185 @@
 #include "APIC.hpp"
 
 APIC::APIC(Parameters &params) : PIC(params) {}
-// todo needs to be fixed for each type of hat
-varType APIC::dhat(varType r) {
-  if (static_cast<varType>(-1.5) > r && r < static_cast<varType>(-0.5))
-    return r + static_cast<varType>(1.5);
-  if (static_cast<varType>(-0.5) <= r && r < static_cast<varType>(0.5))
-    return -static_cast<varType>(2.0) * r;
-  if (static_cast<varType>(0.5) <= r && r < static_cast<varType>(1.5))
-    return r - static_cast<varType>(1.5);
-  return static_cast<varType>(0);
-}
-
-Vec2 APIC::gradWeightU(const int i, const int j, const varType xp,
-                       const varType yp) const {
-  const varType rx = xp / dx - static_cast<varType>(i);
-  const varType ry =
-      yp / dy - static_cast<varType>(0.5) - static_cast<varType>(j);
-
-  Vec2 g;
-  g.x = (dhat(rx) * hat(ry)) / dx;
-  g.y = (hat(rx) * dhat(ry)) / dy;
-  return g;
-}
-
-Vec2 APIC::gradWeightV(int i, int j, varType xp, varType yp) const {
-  const varType rx =
-      xp / dx - static_cast<varType>(0.5) - static_cast<varType>(i);
-  const varType ry = yp / dy - static_cast<varType>(j);
-
-  Vec2 g;
-  g.x = dhat(rx) * hat(ry) / dx;
-  g.y = hat(rx) * dhat(ry) / dy;
-  return g;
-}
 
 void APIC::ProjectGridOnParticles() {
-    OMP_PRAGMA(omp parallel for)
-    for (int idx = 0; idx < particles->size(); ++idx) {
-      const varType xp = particles->GetX(idx);
-      const varType yp = particles->GetY(idx);
+  OMP_PRAGMA(omp parallel for)
+  for (int idx = 0; idx < particles->size(); ++idx) {
+    const varType xp = particles->GetX(idx);
+    const varType yp = particles->GetY(idx);
 
-      // 1) vitesse particule : comme PIC
-      const varType uNew = interpolateU(fields->u, xp, yp);
-      const varType vNew = interpolateV(fields->v, xp, yp);
+    varType uNew = varType(0);
+    varType vNew = varType(0);
 
-      // 2) reconstruction de cu
-      Vec2 cu{static_cast<varType>(0), static_cast<varType>(0)};
-      {
-        const varType i_real = xp / dx;
-        const varType j_real = yp / dy - static_cast<varType>(0.5);
-        const int i0 = static_cast<int>(std::floor(i_real));
-        const int j0 = static_cast<int>(std::floor(j_real));
+    varType bu0 = varType(0);
+    varType bu1 = varType(0);
 
-        for (int dj = -1; dj <= 1; ++dj) {
-          for (int di = -1; di <= 1; ++di) {
-            const int i = i0 + di;
-            const int j = j0 + dj;
-            if (i < 0 || i >= fields->u.nx || j < 0 || j >= fields->u.ny)
-              continue;
+    varType Du00 = varType(0);
+    varType Du01 = varType(0);
+    varType Du11 = varType(0);
 
-            Vec2 gw = gradWeightU(i, j, xp, yp);
-            const varType uFace = fields->u.Get(i, j);
+    {
+      const varType xg = xp / dx;
+      const varType yg = yp / dy - varType(0.5);
 
-            cu.x += gw.x * uFace;
-            cu.y += gw.y * uFace;
-          }
+      const int i0 = static_cast<int>(std::floor(xg));
+      const int j0 = static_cast<int>(std::floor(yg));
+      const int radius = params.kernelOrder;
+
+      for (int dj = -radius; dj <= radius; ++dj) {
+        for (int di = -radius; di <= radius; ++di) {
+          const int i = i0 + di;
+          const int j = j0 + dj;
+
+          if (i < 0 || i >= fields->u.nx || j < 0 || j >= fields->u.ny)
+            continue;
+
+          const varType w = hat(xg - varType(i)) * hat(yg - varType(j));
+          if (w <= varType(0))
+            continue;
+
+          const varType uFace = fields->u.Get(i, j);
+
+          const varType xFace = varType(i) * dx;
+          const varType yFace = (varType(j) + varType(0.5)) * dy;
+
+          const varType ox = xFace - xp;
+          const varType oy = yFace - yp;
+
+          uNew += w * uFace;
+
+          bu0 += w * uFace * ox;
+          bu1 += w * uFace * oy;
+
+          Du00 += w * ox * ox;
+          Du01 += w * ox * oy;
+          Du11 += w * oy * oy;
         }
       }
-
-      // 3) reconstruction de cv
-      Vec2 cv{varType(0), varType(0)};
-      {
-        const varType i_real = xp / dx - varType(0.5);
-        const varType j_real = yp / dy;
-        const int i0 = static_cast<int>(std::floor(i_real));
-        const int j0 = static_cast<int>(std::floor(j_real));
-
-        for (int dj = -1; dj <= 1; ++dj) {
-          for (int di = -1; di <= 1; ++di) {
-            const int i = i0 + di;
-            const int j = j0 + dj;
-            if (i < 0 || i >= fields->v.nx || j < 0 || j >= fields->v.ny)
-              continue;
-
-            Vec2 gw = gradWeightV(i, j, xp, yp);
-            const varType vFace = fields->v.Get(i, j);
-
-            cv.x += gw.x * vFace;
-            cv.y += gw.y * vFace;
-          }
-        }
-      }
-
-      particles->SetU(idx, uNew);
-      particles->SetV(idx, vNew);
-      particles->SetCu(idx, cu.x, cu.y);
-      particles->SetCv(idx, cv.x, cv.y);
     }
+
+    varType bv0 = varType(0);
+    varType bv1 = varType(0);
+
+    varType Dv00 = varType(0);
+    varType Dv01 = varType(0);
+    varType Dv11 = varType(0);
+
+    {
+      const varType xg = xp / dx - varType(0.5);
+      const varType yg = yp / dy;
+
+      const int i0 = static_cast<int>(std::floor(xg));
+      const int j0 = static_cast<int>(std::floor(yg));
+      const int radius = params.kernelOrder;
+
+      for (int dj = -radius; dj <= radius; ++dj) {
+        for (int di = -radius; di <= radius; ++di) {
+          const int i = i0 + di;
+          const int j = j0 + dj;
+
+          if (i < 0 || i >= fields->v.nx || j < 0 || j >= fields->v.ny)
+            continue;
+
+          const varType w = hat(xg - varType(i)) * hat(yg - varType(j));
+          if (w <= varType(0))
+            continue;
+
+          const varType vFace = fields->v.Get(i, j);
+
+          const varType xFace = (varType(i) + varType(0.5)) * dx;
+          const varType yFace = varType(j) * dy;
+
+          const varType ox = xFace - xp;
+          const varType oy = yFace - yp;
+
+          vNew += w * vFace;
+
+          bv0 += w * vFace * ox;
+          bv1 += w * vFace * oy;
+
+          Dv00 += w * ox * ox;
+          Dv01 += w * ox * oy;
+          Dv11 += w * oy * oy;
+        }
+      }
+    }
+
+    // ----- C_u = b_u D_u^{-1} -----
+    varType cuX = varType(0);
+    varType cuY = varType(0);
+
+    const varType detU = Du00 * Du11 - Du01 * Du01;
+    if (detU > REAL_EPSILON) {
+      const varType inv00 =  Du11 / detU;
+      const varType inv01 = -Du01 / detU;
+      const varType inv11 =  Du00 / detU;
+
+      cuX = bu0 * inv00 + bu1 * inv01;
+      cuY = bu0 * inv01 + bu1 * inv11;
+    } else {
+      cuX = varType(0);
+      cuY = varType(0);
+    }
+
+    // ----- C_v = b_v D_v^{-1} -----
+    varType cvX = varType(0);
+    varType cvY = varType(0);
+
+    const varType detV = Dv00 * Dv11 - Dv01 * Dv01;
+    if (detV > REAL_EPSILON) {
+      const varType inv00 =  Dv11 / detV;
+      const varType inv01 = -Dv01 / detV;
+      const varType inv11 =  Dv00 / detV;
+
+      cvX = bv0 * inv00 + bv1 * inv01;
+      cvY = bv0 * inv01 + bv1 * inv11;
+    } else {
+      cvX = varType(0);
+      cvY = varType(0);
+    }
+
+    particles->SetU(idx, uNew);
+    particles->SetV(idx, vNew);
+    particles->SetCu(idx, cuX, cuY);
+    particles->SetCv(idx, cvX, cvY);
+  }
+}
+
+void APIC::ScatterToGridAPIC(varType xg, varType yg, varType xp, varType yp,
+                         varType baseVal, varType cX, varType cY, 
+                         varType faceOffsetX, varType faceOffsetY,
+                         Grid2D &sum, Grid2D &weight, int imax, int jmax) {
+  const int i0 = static_cast<int>(std::floor(xg));
+  const int j0 = static_cast<int>(std::floor(yg));
+
+  const int radius = params.kernelOrder;
+
+  for (int dj = -radius; dj <= radius; ++dj) {
+    for (int di = -radius; di <= radius; ++di) {
+      const int i = i0 + di;
+      const int j = j0 + dj;
+
+      if (i < 0 || i >= imax || j < 0 || j >= jmax)
+        continue;
+
+      const varType w = hat(xg - varType(i)) * hat(yg - varType(j));
+
+      if (w <= varType(0))
+        continue;
+
+      const varType xFace = (varType(i) + faceOffsetX) * dx;
+      const varType yFace = (varType(j) + faceOffsetY) * dy;
+
+      const varType ox = xFace - xp;
+      const varType oy = yFace - yp;
+
+      const varType affineVal = baseVal + cX * ox + cY * oy;
+
+      sum.Set(i, j, sum.Get(i, j) + w * affineVal);
+      weight.Set(i, j, weight.Get(i, j) + w);
+    }
+  }
 }
 
 void APIC::ProjectParticleOnMAC(int idx) {
@@ -110,69 +192,11 @@ void APIC::ProjectParticleOnMAC(int idx) {
   varType cvX = particles->GetCvX(idx);
   varType cvY = particles->GetCvY(idx);
 
-  // u faces
-  {
-    const varType xg = x / dx;
-    const varType yg = y / dy - varType(0.5);
+  ScatterToGridAPIC(x / dx, y / dy - varType(0.5), x, y, up, cuX, cuY,
+                  varType(0), varType(0.5), *fields->u_sum,
+                  *fields->u_weight, fields->u.nx, fields->u.ny);
 
-    const int i0 = static_cast<int>(std::floor(xg));
-    const int j0 = static_cast<int>(std::floor(yg));
-
-    for (int dj = -1; dj <= 1; ++dj) {
-      for (int di = -1; di <= 1; ++di) {
-        const int i = i0 + di;
-        const int j = j0 + dj;
-        if (i < 0 || i >= fields->u.nx || j < 0 || j >= fields->u.ny)
-          continue;
-
-        const varType w = hat(xg - varType(i)) * hat(yg - varType(j));
-        if (w <= varType(0))
-          continue;
-
-        const varType xFace = varType(i) * dx;
-        const varType yFace = (varType(j) + varType(0.5)) * dy;
-
-        const varType dux = xFace - x;
-        const varType duy = yFace - y;
-
-        const varType uAff = up + cuX * dux + cuY * duy;
-
-        fields->u_sum->Set(i, j, fields->u_sum->Get(i, j) + w * uAff);
-        fields->u_weight->Set(i, j, fields->u_weight->Get(i, j) + w);
-      }
-    }
-  }
-
-  // v faces
-  {
-    const varType xg = x / dx - varType(0.5);
-    const varType yg = y / dy;
-
-    const int i0 = static_cast<int>(std::floor(xg));
-    const int j0 = static_cast<int>(std::floor(yg));
-
-    for (int dj = -1; dj <= 1; ++dj) {
-      for (int di = -1; di <= 1; ++di) {
-        const int i = i0 + di;
-        const int j = j0 + dj;
-        if (i < 0 || i >= fields->v.nx || j < 0 || j >= fields->v.ny)
-          continue;
-
-        const varType w = hat(xg - varType(i)) * hat(yg - varType(j));
-        if (w <= varType(0))
-          continue;
-
-        const varType xFace = (varType(i) + varType(0.5)) * dx;
-        const varType yFace = varType(j) * dy;
-
-        const varType dvx = xFace - x;
-        const varType dvy = yFace - y;
-
-        const varType vAff = vp + cvX * dvx + cvY * dvy;
-
-        fields->v_sum->Set(i, j, fields->v_sum->Get(i, j) + w * vAff);
-        fields->v_weight->Set(i, j, fields->v_weight->Get(i, j) + w);
-      }
-    }
-  }
+  ScatterToGridAPIC(x / dx - varType(0.5), y / dy, x, y, vp, cvX, cvY,
+                  varType(0.5), varType(0), *fields->v_sum,
+                  *fields->v_weight, fields->v.nx, fields->v.ny);
 }

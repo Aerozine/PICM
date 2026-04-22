@@ -15,7 +15,15 @@ protected:
   Particles *particles = nullptr;
 
   varType GetW();
-  [[nodiscard]] varType hat(varType r) const;
+
+  varType hat(varType r) const;
+  varType dhat(varType r) const;
+
+  varType hatTrilinear(varType r) const;
+  varType hatQuadraticBSpline(varType r) const;
+
+  varType dhatTrilinear(varType r) const;
+  varType dhatQuadraticBSpline(varType r) const;
 
   virtual void ProjectParticleOnMAC(int idx);
   void ProjectParticlesOnGrid();
@@ -36,7 +44,7 @@ protected:
   void ApplyGravity() const;
   void UpdateCellState() const;
 
-  void ScatterToGrid(varType xg, varType yg, varType val, Grid2D &sum,
+  virtual void ScatterToGrid(varType xg, varType yg, varType val, Grid2D &sum,
                      Grid2D &weight, int imax, int jmax);
 
   void WriteOutput(int step) const;
