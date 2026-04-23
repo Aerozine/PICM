@@ -13,9 +13,10 @@ public:
 protected:
   //Particles *particles = nullptr;
   std::unique_ptr<Particles> particles;
-inline varType GetW() {
+/*inline varType GetW() {
   return static_cast<varType>(particles->ppcx * particles->ppcy);
 }
+*/
 inline varType hat(varType r) const {
 #ifdef USE_SPEED
     if (r >= varType(0) && r <= varType(1))

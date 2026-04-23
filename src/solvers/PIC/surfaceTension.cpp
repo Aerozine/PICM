@@ -61,7 +61,7 @@ void PIC::UpdatePhiFromParticles() const {
 }
 
 // @todo uniform prototype
-inline varType SurfaceTensionPressure(int i, int j,const Fields2D &fields, double gamma)  {
+inline varType SurfaceTensionPressure(int i, int j,const Fields2D &fields, varType gamma)  {
   const int im = std::clamp(i - 1, 0, fields.phi.nx - 1);
   const int ip = std::clamp(i + 1, 0, fields.phi.nx - 1);
   const int jm = std::clamp(j - 1, 0, fields.phi.ny - 1);

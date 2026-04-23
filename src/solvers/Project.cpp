@@ -3,14 +3,13 @@
 // Pressure solve dispatch
 
 inline void solvePressure(const Parameters &p, Fields2D &f) {
-  double tol = p.solver.tolerance;
+  varType tol = p.solver.tolerance;
   int maxIters = p.solver.maxIters;
-  const double coef = static_cast<double>(p.density) *
-                      static_cast<double>(p.dx) * static_cast<double>(p.dx) /
-                      static_cast<double>(p.dt);
-  const double beta = static_cast<double>(p.density) *
-                      static_cast<double>(p.dx) / static_cast<double>(p.dt);
-  const double scale = 1.0 / coef;
+  const varType coef = p.density *
+                      p.dx * p.dx /
+                      p.dt;
+  const varType beta = p.density *
+                      p.dx /p.dt;
   int nx = p.nx;
   int ny = p.ny;
   switch (p.solver.type) {

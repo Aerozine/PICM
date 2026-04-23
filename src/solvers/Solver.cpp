@@ -5,14 +5,44 @@
 //@todo could be simplified by passing directly params to fields and removing dt
 //,dx etc
 Solver::Solver(Parameters &params)
-    : params(params), nx(params.nx), ny(params.ny),
-      dx(static_cast<varType>(params.dx)), dy(static_cast<varType>(params.dy)),
-      dt(static_cast<varType>(params.dt)),
-      density(static_cast<varType>(params.density)),
-      fields(new Fields2D(nx, ny, density, dt, dx, dy, params.solver,
-                          params.freeSurface)) {
+  : params(params), nx(params.nx), ny(params.ny),
+    dx(params.dx), dy(params.dy),
+    dt(params.dt),
+    density(params.density),
+    fields(new Fields2D(nx, ny, density, dt, dx, dy, params.solver,
+                        params.freeSurface)) {
   InitializeOutputWriters();
 }
+void Solver::RunLoop(int reportEvery) {
+  const varType start = GET_TIME();
+
+  for (int t = 1; t <= params.nt; ++t) {
+    if (t % reportEvery == 0) {
+      varType maxDiv = REAL_LITERAL(0.0);
+      int maxi=-1;
+      int maxj=-1;
+      OMP_PRAGMA(omp parallel for reduction(max:maxDiv))
+      for (int j = 0; j < ny; ++j)
+        for (int i = 0; i < nx; ++i){
+          varType a= std::abs(fields->div.Get(i,j));
+          if(a>maxDiv){
+            maxDiv=a;
+            maxi=i;
+            maxj=j;
+          }
+        }
+      std::cout << "\rStep " << t << " / " << params.nt << " ("
+          << (100 * t / params.nt) << "%) " << "max |div| = " << maxDiv <<
+          " reached at ("<< maxi<< ","<< maxj <<")"
+          << std::flush;
+    }
+    Step();
+    WriteOutput(t);
+  }
+
+  std::cout << "\nDone: " << (GET_TIME() - start) << " s\n";
+}
+
 void Solver::InitializeOutputWriters() {
   if (params.write_u)
     uWriter = std::make_unique<OutputWriter>(params.folder, "u");
@@ -28,7 +58,6 @@ void Solver::InitializeOutputWriters() {
   // @todo IFDBG
   labelWriter = std::make_unique<OutputWriter>(params.folder, "label");
 }
-
 void Solver::WriteOutput(int step) const {
   if (step % params.sampling_rate != 0)
     return;
@@ -49,33 +78,5 @@ void Solver::WriteOutput(int step) const {
                                  "label");
   if (!ok)
     std::cerr << "[SemiLagrangian] Warning: failed to write output at step "
-              << step << '\n';
-}
-void Solver::RunLoop(int reportEvery) {
-  const double start = GET_TIME();
-
-  for (int t = 1; t <= params.nt; ++t) {
-    if (t % reportEvery == 0) {
-      varType maxDiv = REAL_LITERAL(0.0);
-      int maxi=-1;
-      int maxj=-1;
-      for (int j = 0; j < ny; ++j)
-        for (int i = 0; i < nx; ++i){
-          varType a= std::abs(fields->div.Get(i,j));
-          if(a>maxDiv){
-          maxDiv=a;
-          maxi=i;
-          maxj=j;
-        }
-          }
-      std::cout << "\rStep " << t << " / " << params.nt << " ("
-                << (100 * t / params.nt) << "%) " << "max |div| = " << maxDiv << 
-                " reached at ("<< maxi<< ","<< maxj <<")"
-                << std::flush;
-    }
-    Step();
-    WriteOutput(t);
-  }
-
-  std::cout << "\nDone: " << (GET_TIME() - start) << " s\n";
+        << step << '\n';
 }

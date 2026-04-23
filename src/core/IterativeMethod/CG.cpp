@@ -16,7 +16,7 @@ struct SparseA {
     // CSR storage more optimized when free surf
     std::vector<int>    row_ptr;  // size: nrows+1
     std::vector<int>    col_id;   // flat p-space column indices
-    std::vector<double> val;      // corresponding values (+4 or -1)
+    std::vector<varType> val;      // corresponding values (+4 or -1)
     // Maps sparse row index → flat p-space id
     std::vector<int>    row_id;
     int                 nrows = 0;
@@ -75,7 +75,7 @@ static SparseA buildSparseA(const Fields2D &f, int pnx, int pny) {
         if (fluidTop   (f, i, j)) ++diag;
         
         // Diagonal = number of fluid neighbors (matches neighbourSum)
-        const double diagonal = static_cast<double>(diag);
+        const varType diagonal = static_cast<varType>(diag);
         A.col_id.push_back(id);
         A.val   .push_back(diagonal);
         ++nnz;
@@ -92,11 +92,11 @@ static SparseA buildSparseA(const Fields2D &f, int pnx, int pny) {
 }
 
 // y = A·x  (sparse, fluid cells only; y is zero-initialised before call)
-static void applyA(const SparseA &A, const std::vector<double> &x,
-                   std::vector<double> &y) {
+static void applyA(const SparseA &A, const std::vector<varType> &x,
+                   std::vector<varType> &y) {
     OMP_PRAGMA(omp parallel for schedule(static))
     for (int row = 0; row < A.nrows; ++row) {
-        double acc = 0.0;
+        varType acc = 0.0;
         for (int k = A.row_ptr[row]; k < A.row_ptr[row + 1]; ++k)
             acc += A.val[k] * x[A.col_id[k]];
         y[A.row_id[row]] = acc;
@@ -104,14 +104,14 @@ static void applyA(const SparseA &A, const std::vector<double> &x,
 }
 
 //  Common RHS / warm-start / write-back helpers
-static double buildRHS(const Fields2D &f, int pnx, int pny, double coef,
-                       const SparseA &A, std::vector<double> &b) {
+static varType buildRHS(const Fields2D &f, int pnx, int pny, varType coef,
+                       const SparseA &A, std::vector<varType> &b) {
     std::fill(b.begin(), b.end(), 0.0);
-    double b_norm = 0.0;
+    varType b_norm = 0.0;
     for (int row = 0; row < A.nrows; ++row) {
         const int id = A.row_id[row];
         const int i  = id % pnx, j = id / pnx;
-        const double val = -coef * static_cast<double>(f.div.Get(i-1, j-1));
+        const varType val = -coef * static_cast<varType>(f.div.Get(i-1, j-1));
         b[id]  = val;
         b_norm = std::max(b_norm, std::abs(val));
     }
@@ -119,15 +119,15 @@ static double buildRHS(const Fields2D &f, int pnx, int pny, double coef,
 }
 
 static void warmStart(const Fields2D &f, int pnx,
-                      const SparseA &A, std::vector<double> &p) {
+                      const SparseA &A, std::vector<varType> &p) {
     for (int row = 0; row < A.nrows; ++row) {
         const int id = A.row_id[row];
-        p[id] = static_cast<double>(f.p.Get(id % pnx, id / pnx));
+        p[id] = static_cast<varType>(f.p.Get(id % pnx, id / pnx));
     }
 }
 
 static void writeBack(Fields2D &f, int pnx,
-                      const SparseA &A, const std::vector<double> &p) {
+                      const SparseA &A, const std::vector<varType> &p) {
     for (int row = 0; row < A.nrows; ++row) {
         const int id = A.row_id[row];
         f.p.Set(id % pnx, id / pnx, static_cast<varType>(p[id]));
@@ -135,8 +135,8 @@ static void writeBack(Fields2D &f, int pnx,
 }
 
 //  CG  (unpreconditioned)
-bool solveCG(Fields2D &fields, double coef, double beta,
-             int maxIters, double tol) {
+bool solveCG(Fields2D &fields, varType coef, varType beta,
+             int maxIters, varType tol) {
     fields.Div();
 
     const int pnx = fields.p.nx;
@@ -145,8 +145,8 @@ bool solveCG(Fields2D &fields, double coef, double beta,
 
     const SparseA A = buildSparseA(fields, pnx, pny);
 
-    std::vector<double> b(N, 0.0), p(N, 0.0);
-    const double b_norm = buildRHS(fields, pnx, pny, coef, A, b);
+    std::vector<varType> b(N, 0.0), p(N, 0.0);
+    const varType b_norm = buildRHS(fields, pnx, pny, coef, A, b);
 
     if (b_norm < 1e-30) {
 #ifndef NDEBUG
@@ -158,11 +158,11 @@ bool solveCG(Fields2D &fields, double coef, double beta,
     warmStart(fields, pnx, A, p);
 
     // r = b - A*p0
-    std::vector<double> Ap(N, 0.0);
+    std::vector<varType> Ap(N, 0.0);
     applyA(A, p, Ap);
 
-    std::vector<double> r(N), d(N);
-    double sigma = 0.0;
+    std::vector<varType> r(N), d(N);
+    varType sigma = 0.0;
     OMP_PRAGMA(omp parallel for reduction(+:sigma))
     for (int k = 0; k < N; ++k) {
         r[k]  = b[k] - Ap[k];
@@ -170,7 +170,7 @@ bool solveCG(Fields2D &fields, double coef, double beta,
         sigma += r[k] * r[k];
     }
 
-    double sigma0 = sigma;
+    varType sigma0 = sigma;
     if (sigma0 < 1e-60) {
 #ifndef NDEBUG
         std::cout << "  CG: initial residual negligible.\n";
@@ -179,21 +179,21 @@ bool solveCG(Fields2D &fields, double coef, double beta,
         return true;
     }
 
-    std::vector<double> Ad(N, 0.0);
+    std::vector<varType> Ad(N, 0.0);
     bool converged = false;
 
     for (int it = 0; it < maxIters; ++it) {
         applyA(A, d, Ad);
 
-        double dAd = 0.0;
+        varType dAd = 0.0;
         OMP_PRAGMA(omp parallel for reduction(+:dAd))
         for (int k = 0; k < N; ++k)
             dAd += d[k] * Ad[k];
 
         if (std::abs(dAd) < 1e-60) break;
-        const double alpha = sigma / dAd;
+        const varType alpha = sigma / dAd;
 
-        double r_inf = 0.0;
+        varType r_inf = 0.0;
         OMP_PRAGMA(omp parallel for reduction(max:r_inf))
         for (int k = 0; k < N; ++k) {
             p[k] += alpha * d[k];
@@ -210,12 +210,12 @@ bool solveCG(Fields2D &fields, double coef, double beta,
             break;
         }
 
-        double sigma_new = 0.0;
+        varType sigma_new = 0.0;
         OMP_PRAGMA(omp parallel for reduction(+:sigma_new))
         for (int k = 0; k < N; ++k)
             sigma_new += r[k] * r[k];
 
-        const double beta_cg = sigma_new / sigma;
+        const varType beta_cg = sigma_new / sigma;
         sigma = sigma_new;
 
         OMP_PRAGMA(omp parallel for)
@@ -238,21 +238,21 @@ bool solveCG(Fields2D &fields, double coef, double beta,
 //  Graphics" §4.4, adapted to the label-based connectivity above.
 //  The matrix A has constant diagonal = 4 for fluid cells.
 static void buildPrecon(const Fields2D &f, int pnx, int pny,
-                        const SparseA &A, std::vector<double> &precon) {
-    constexpr double tau   = 0.97;   // fill-in strength (Bridson §4.4)
-    constexpr double sigma = 0.25;   // safety factor to prevent negative pivots
-    constexpr double Adiag = 4.0;
+                        const SparseA &A, std::vector<varType> &precon) {
+    constexpr varType tau   = 0.97;   // fill-in strength (Bridson §4.4)
+    constexpr varType sigma = 0.25;   // safety factor to prevent negative pivots
+    constexpr varType Adiag = 4.0;
 
     std::fill(precon.begin(), precon.end(), 0.0);
 
     for (int row = 0; row < A.nrows; ++row) {
         const int id = A.row_id[row];
         const int i  = id % pnx, j = id / pnx;
-        double e = Adiag;
+        varType e = Adiag;
 
         // Left neighbour (id-1): already processed
         if (fluidLeft(f, i, j)) {
-            const double t = precon[id - 1];
+            const varType t = precon[id - 1];
             e -= t * t;
             if (fluidTop(f, i-1, j))  // cross fill-in
                 e -= tau * t * t;
@@ -260,7 +260,7 @@ static void buildPrecon(const Fields2D &f, int pnx, int pny,
 
         // Bottom neighbour (id-pnx): already processed
         if (fluidBottom(f, i, j)) {
-            const double t = precon[id - pnx];
+            const varType t = precon[id - pnx];
             e -= t * t;
             if (fluidRight(f, i, j-1))  // cross fill-in
                 e -= tau * t * t;
@@ -274,10 +274,10 @@ static void buildPrecon(const Fields2D &f, int pnx, int pny,
 // z = M^-1 r  via forward (L q = r) then backward (L^T z = q) solve.
 static void applyPrecon(const Fields2D &f, int pnx, int pny,
                         const SparseA &A,
-                        const std::vector<double> &precon,
-                        const std::vector<double> &r,
-                        std::vector<double>       &z,
-                        std::vector<double>       &q) {
+                        const std::vector<varType> &precon,
+                        const std::vector<varType> &r,
+                        std::vector<varType>       &z,
+                        std::vector<varType>       &q) {
     std::fill(q.begin(), q.end(), 0.0);
     std::fill(z.begin(), z.end(), 0.0);
 
@@ -285,7 +285,7 @@ static void applyPrecon(const Fields2D &f, int pnx, int pny,
     for (int row = 0; row < A.nrows; ++row) {
         const int id = A.row_id[row];
         const int i  = id % pnx, j = id / pnx;
-        double t = r[id];
+        varType t = r[id];
         if (fluidLeft  (f, i, j)) t -= precon[id - 1  ] * q[id - 1  ];
         if (fluidBottom(f, i, j)) t -= precon[id - pnx] * q[id - pnx];
         q[id] = t * precon[id];
@@ -295,14 +295,14 @@ static void applyPrecon(const Fields2D &f, int pnx, int pny,
     for (int row = A.nrows - 1; row >= 0; --row) {
         const int id = A.row_id[row];
         const int i  = id % pnx, j = id / pnx;
-        double t = q[id];
+        varType t = q[id];
         if (fluidRight(f, i, j)) t -= precon[id] * z[id + 1  ];
         if (fluidTop  (f, i, j)) t -= precon[id] * z[id + pnx];
         z[id] = t * precon[id];
     }
 }
 
-bool solveMICCG0(Fields2D &fields, double coef, int maxIters, double tol) {
+bool solveMICCG0(Fields2D &fields, varType coef, int maxIters, varType tol) {
     fields.Div();
 
     const int pnx = fields.p.nx;
@@ -311,8 +311,8 @@ bool solveMICCG0(Fields2D &fields, double coef, int maxIters, double tol) {
 
     const SparseA A = buildSparseA(fields, pnx, pny);
 
-    std::vector<double> b(N, 0.0), p(N, 0.0);
-    const double b_norm = buildRHS(fields, pnx, pny, coef, A, b);
+    std::vector<varType> b(N, 0.0), p(N, 0.0);
+    const varType b_norm = buildRHS(fields, pnx, pny, coef, A, b);
 
     if (b_norm < 1e-30) {
 #ifndef NDEBUG
@@ -324,11 +324,11 @@ bool solveMICCG0(Fields2D &fields, double coef, int maxIters, double tol) {
     warmStart(fields, pnx, A, p);
 
     // r = b - A*p0
-    std::vector<double> Ap(N, 0.0);
+    std::vector<varType> Ap(N, 0.0);
     applyA(A, p, Ap);
 
-    std::vector<double> r(N, 0.0);
-    double r0_inf = 0.0;
+    std::vector<varType> r(N, 0.0);
+    varType r0_inf = 0.0;
     OMP_PRAGMA(omp parallel for reduction(max:r0_inf))
     for (int k = 0; k < N; ++k) {
         r[k]   = b[k] - Ap[k];
@@ -344,7 +344,7 @@ bool solveMICCG0(Fields2D &fields, double coef, int maxIters, double tol) {
     }
 
     // Build preconditioner
-    std::vector<double> precon(N, 0.0);
+    std::vector<varType> precon(N, 0.0);
     buildPrecon(fields, pnx, pny, A, precon);
 
 #ifndef NDEBUG
@@ -359,12 +359,12 @@ bool solveMICCG0(Fields2D &fields, double coef, int maxIters, double tol) {
 #endif
 
     // PCG loop
-    std::vector<double> z(N, 0.0), s(N, 0.0), tmp(N, 0.0), q(N, 0.0);
+    std::vector<varType> z(N, 0.0), s(N, 0.0), tmp(N, 0.0), q(N, 0.0);
 
     applyPrecon(fields, pnx, pny, A, precon, r, z, q);
     s = z;
 
-    double sigma = 0.0;
+    varType sigma = 0.0;
     OMP_PRAGMA(omp parallel for reduction(+:sigma))
     for (int k = 0; k < N; ++k)
         sigma += z[k] * r[k];
@@ -380,15 +380,15 @@ bool solveMICCG0(Fields2D &fields, double coef, int maxIters, double tol) {
     for (int it = 0; it < maxIters; ++it) {
         applyA(A, s, tmp);
 
-        double dot_s_tmp = 0.0;
+        varType dot_s_tmp = 0.0;
         OMP_PRAGMA(omp parallel for reduction(+:dot_s_tmp))
         for (int k = 0; k < N; ++k)
             dot_s_tmp += tmp[k] * s[k];
 
         if (std::abs(dot_s_tmp) < 1e-60) break;
-        const double alpha = sigma / dot_s_tmp;
+        const varType alpha = sigma / dot_s_tmp;
 
-        double r_inf = 0.0;
+        varType r_inf = 0.0;
         OMP_PRAGMA(omp parallel for reduction(max:r_inf))
         for (int k = 0; k < N; ++k) {
             p[k] += alpha * s[k];
@@ -407,12 +407,12 @@ bool solveMICCG0(Fields2D &fields, double coef, int maxIters, double tol) {
 
         applyPrecon(fields, pnx, pny, A, precon, r, z, q);
 
-        double sigma_new = 0.0;
+        varType sigma_new = 0.0;
         OMP_PRAGMA(omp parallel for reduction(+:sigma_new))
         for (int k = 0; k < N; ++k)
             sigma_new += z[k] * r[k];
 
-        const double beta_pcg = sigma_new / sigma;
+        const varType beta_pcg = sigma_new / sigma;
         sigma = sigma_new;
 
         OMP_PRAGMA(omp parallel for)

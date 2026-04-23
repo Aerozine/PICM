@@ -51,17 +51,37 @@ void PIC::WriteOutput(int step) const {
   if(params.write_countAliveParticles && fields->countAliveParticles)
     countAliveParticles_writer->writeGrid2D(*fields->countAliveParticles, "countAliveParticles");
 }
-
+#ifdef LIKWID_PERFMON
+#include <likwid-marker.h>
+#define LSTART(r) LIKWID_MARKER_START(r)
+#define LSTOP(r)  LIKWID_MARKER_STOP(r)
+#else
+#define LSTART(r)
+#define LSTOP(r)
+#endif
 void PIC::Step() {
   // gravity directly handle when setting particles speed
+ LSTART("scatter");
   ProjectParticlesOnGrid();
+  LSTOP("scatter");
+
+  LSTART("pressure");
   MakeIncompressible(params, *fields);
+  LSTOP("pressure");
+
+  LSTART("g2p");
   ProjectGridOnParticles();
-  fields->UpdateDivNorm();
+  LSTOP("g2p");
+
+  LSTART("advect");
   Advect();
+  LSTOP("advect");
+
+  LSTART("cellstate");
   UpdateCellState();
-  if (params.refill)
-    RefillParticles();
+  LSTOP("cellstate");
+
+  if (params.refill) RefillParticles();
 }
 
 void PIC::Run() {
@@ -70,5 +90,12 @@ void PIC::Run() {
   //ProjectBCOnParticles();
   ProjectGridOnParticles();
   WriteOutput(0);
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_INIT;
+  LIKWID_MARKER_THREADINIT;
+#endif
   RunLoop(std::max(1, params.nt / 100));
+  #ifdef LIKWID_PERFMON
+  LIKWID_MARKER_CLOSE;
+#endif
 }

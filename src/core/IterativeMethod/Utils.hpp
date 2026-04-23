@@ -23,12 +23,12 @@
  */
 [[nodiscard]] inline varType neighbourSum(const Fields2D &f,
                                           const int i, const int j,
-                                          [[maybe_unused]] double beta) noexcept {
+                                          [[maybe_unused]] varType beta) noexcept {
     assert(i >= 1 && i < f.p.nx - 1);
     assert(j >= 1 && j < f.p.ny - 1);
 
     const varType pC  = f.p.Get(i, j);
-    assert(std::isfinite(static_cast<double>(pC)));
+    assert(std::isfinite(pC));
 
     const labeltype cur = f.Label(i, j);
     varType sumP = static_cast<varType>(0);
@@ -56,16 +56,16 @@
     return sumP;
 }
 
-[[nodiscard]] inline double gsUpdate(const Fields2D &f,
+[[nodiscard]] inline varType gsUpdate(const Fields2D &f,
                                      const int i, const int j,
-                                     const double coef,
-                                     const double beta) noexcept {
-    return (-coef * static_cast<double>(f.div.Get(i - 1, j - 1))
-            + static_cast<double>(neighbourSum(f, i, j, beta))) / 4.0;
+                                     const varType coef,
+                                     const varType beta) noexcept {
+    return (-coef * f.div.Get(i - 1, j - 1)
+            + neighbourSum(f, i, j, beta)) / 4.0;
 }
 
-inline bool checkConvergence(double res, double &res0,
-                              int it, double tol) noexcept {
+inline bool checkConvergence(varType res, varType &res0,
+                              int it, varType tol) noexcept {
     if (it == 0) {
         res0 = res;
         return res0 < 1e-30;

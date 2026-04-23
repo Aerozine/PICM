@@ -6,8 +6,8 @@ void Fields2D::UpdateDivNorm() {
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < ny; ++j)
     for (int i = 0; i < nx; ++i) {
-      const varType x = (static_cast<varType>(i) + REAL_LITERAL(0.5)) * dx;
-      const varType y = (static_cast<varType>(j) + REAL_LITERAL(0.5)) * dy;
+      const varType x = (REAL_LITERAL(0.5) + static_cast<float>(i)) * dx;
+      const varType y = (REAL_LITERAL(0.5) + static_cast<float>(j)) * dy;
       const varType uc = u.interpolate<0>(x, y, dx, dy);
       const varType vc = v.interpolate<1>(x, y, dx, dy);
       normVelocity.Set(i, j, std::sqrt(uc * uc + vc * vc));

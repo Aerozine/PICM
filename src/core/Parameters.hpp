@@ -8,9 +8,9 @@
 class Parameters {
 public:
   // Grid & time
-  double dx = 0.01;
-  double dy = 0.01;
-  double dt = 1e-4;
+  varType dx = 0.01;
+  varType dy = 0.01;
+  varType dt = 1e-4;
   int    nx = 100;
   int    ny = 100;
   int    nt = 100;
@@ -18,7 +18,7 @@ public:
   int ppcy  = 1;
 
   // Physics
-  double density = 1000.0;
+  varType density = 1000.0;
 
   // Output
   int sampling_rate = 1;          ///< Write output every N steps.
