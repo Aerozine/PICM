@@ -59,7 +59,7 @@ void SemiLagrangian::AdvectSmoke() const {
 
             assert(std::isfinite(xDep));
             assert(std::isfinite(yDep));
-            smokeNew.Set(i, j, smokeMap->interpolate(xDep, yDep, dx, dy, 2));
+            smokeNew.Set(i, j, smokeMap->interpolate<2>(xDep, yDep, dx, dy));
         }
     }
   // TODO : pass smokeNew as pointer of fields and avoir copy

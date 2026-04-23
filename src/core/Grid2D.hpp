@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 
@@ -47,6 +48,12 @@ public:
   {
     std::memcpy(A, o.A, static_cast<std::size_t>(nx) * ny * sizeof(varType));
   }
+  [[nodiscard]] inline varType& operator()(int i, int j) noexcept {
+    return A[nx * j + i];
+  }
+  [[nodiscard]] inline varType operator()(int i, int j) const noexcept {
+    return A[nx * j + i];
+  }
   Grid2D &operator=(Grid2D &&o) noexcept {
     if (this == &o) return *this;
     std::free(A);
@@ -70,8 +77,41 @@ public:
    * @param dy    Cell height in y.
    * @param field Stagger type: 0 = u-face, 1 = v-face, other = cell-centre.
    */
-  [[nodiscard]] varType interpolate(varType x, varType y, varType dx,
-                                    varType dy, int field) const;
+template<__uint8_t field>
+varType interpolate(const varType x, const varType y, const varType dx,
+                            const varType dy) const {
+  varType i_real = x / dx;
+  varType j_real = y / dy;
+
+  if constexpr (field == 0)
+    j_real -= REAL_LITERAL(0.5); // u-face: staggered in y
+  if constexpr (field == 1)
+    i_real -= REAL_LITERAL(0.5); // v-face: staggered in x
+  // else no staggering
+
+  int i0 = static_cast<int>(std::floor(i_real));
+  int j0 = static_cast<int>(std::floor(j_real));
+
+  const varType fx = i_real - static_cast<varType>(i0);
+  const varType fy = j_real - static_cast<varType>(j0);
+
+  i0 = std::clamp(i0, 0, nx - 1);
+  j0 = std::clamp(j0, 0, ny - 1);
+
+  const varType f00 = Get(i0, j0);
+  const varType f10 = Get(i0 + 1, j0);
+  const varType f01 = Get(i0, j0 + 1);
+  const varType f11 = Get(i0 + 1, j0 + 1);
+
+  assert(std::isfinite(
+  (REAL_LITERAL(1.0) - fy) *
+           ((REAL_LITERAL(1.0) - fx) * f00 + fx * f10) +
+       fy * ((REAL_LITERAL(1.0) - fx) * f01 + fx * f11)
+       ));
+  return (REAL_LITERAL(1.0) - fy) *
+             ((REAL_LITERAL(1.0) - fx) * f00 + fx * f10) +
+         fy * ((REAL_LITERAL(1.0) - fx) * f01 + fx * f11);
+}
 //private:
 
   varType *A = nullptr;
