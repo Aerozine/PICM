@@ -53,11 +53,8 @@ void PIC::WriteOutput(int step) const {
 }
 #ifdef LIKWID_PERFMON
 #include <likwid-marker.h>
-#define LSTART(r) LIKWID_MARKER_START(r)
-#define LSTOP(r)  LIKWID_MARKER_STOP(r)
-#else
-#define LSTART(r)
-#define LSTOP(r)
+#define LSTART(r) _Pragma("omp parallel") { _Pragma("omp master") LIKWID_MARKER_START(r); }
+#define LSTOP(r)  _Pragma("omp parallel") { _Pragma("omp master") LIKWID_MARKER_STOP(r);  }
 #endif
 void PIC::Step() {
   // gravity directly handle when setting particles speed
@@ -92,7 +89,16 @@ void PIC::Run() {
   WriteOutput(0);
 #ifdef LIKWID_PERFMON
   LIKWID_MARKER_INIT;
-  LIKWID_MARKER_THREADINIT;
+  OMP_PRAGMA(omp parallel)
+  {
+    LIKWID_MARKER_THREADINIT;
+    // register all regions on all threads before the run loop
+    LIKWID_MARKER_REGISTER("scatter");
+    LIKWID_MARKER_REGISTER("pressure");
+    LIKWID_MARKER_REGISTER("g2p");
+    LIKWID_MARKER_REGISTER("advect");
+    LIKWID_MARKER_REGISTER("cellstate");
+  }
 #endif
   RunLoop(std::max(1, params.nt / 100));
   #ifdef LIKWID_PERFMON
