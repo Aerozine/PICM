@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <iostream>
 
-static constexpr int CAPACITY_FACTOR = 3;
 
 PIC::PIC(Parameters &params) : Solver(params) ,particles(std::make_unique<Particles>(params)){
   //particles = new Particles(nx, ny, dx, dy, params.ppcx, params.ppcy);
