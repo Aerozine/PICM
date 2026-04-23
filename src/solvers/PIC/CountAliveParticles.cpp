@@ -1,4 +1,4 @@
-#include "PIC.hpp"
+/*#include "PIC.hpp"
 
 // @todo why not simply do -1 when killing a particle ?
 // and +1 when creating a new one ?
@@ -21,3 +21,4 @@ for (int idx = 0; idx < particles->size(); ++idx) {
   }
 }
 }
+*/

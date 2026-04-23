@@ -17,16 +17,12 @@ void FLIP::SaveOldVelocities() {
 }
 
 void FLIP::Step() {
-  if (params.gravity > 0.0)
-    ApplyGravity();
   ProjectParticlesOnGrid();
   SaveOldVelocities(); // save old veloctiy (!= PIC)
   MakeIncompressible(params, *fields);
   ProjectGridOnParticles(); // based on u_old and u_new (!= PIC)
-  fields->Div();
-  fields->VelocityNormCenterGrid();
+  fields->UpdateDivNorm();
   Advect();
-  CountAliveParticles();
   UpdateCellState();
   if (params.refill)
     RefillParticles();
@@ -52,6 +48,6 @@ void FLIP::ProjectGridOnParticles() {
       particles->SetU(idx, coefPic  * u_new_grid +
                            coefFlip * (up_old + (u_new_grid - u_old_grid)));
       particles->SetV(idx, coefPic  * v_new_grid +
-                           coefFlip * (vp_old + (v_new_grid - v_old_grid)));
+                           coefFlip * (vp_old + (v_new_grid - v_old_grid)) - dt*params.gravity);
     }
 }

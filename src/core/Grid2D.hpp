@@ -36,7 +36,17 @@ public:
   Grid2D(Grid2D &&o) noexcept : nx(o.nx), ny(o.ny), A(o.A) {
     o.nx = 0; o.ny = 0; o.A = nullptr;
   }
-
+  // speed up due to AVX/SSE
+  void reset() noexcept {
+    std::memset(A, 0, static_cast<std::size_t>(nx) * ny * sizeof(varType));
+  }
+  Grid2D(const Grid2D& o)
+    : nx(o.nx), ny(o.ny),
+      A(static_cast<varType*>(std::malloc(
+            static_cast<std::size_t>(o.nx) * o.ny * sizeof(varType))))
+  {
+    std::memcpy(A, o.A, static_cast<std::size_t>(nx) * ny * sizeof(varType));
+  }
   Grid2D &operator=(Grid2D &&o) noexcept {
     if (this == &o) return *this;
     std::free(A);
