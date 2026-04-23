@@ -100,8 +100,8 @@ public:
 
   // ── label accessors ────────────────────────────────────────────────────────
 
-  [[nodiscard]] inline CellType Label(int i, int j) const noexcept {
-    return static_cast<CellType>(Labels[idx(i, j)]);
+  [[nodiscard]] inline labeltype Label(int i, int j) const noexcept {
+    return Labels[idx(i, j)];
   }
 
   /// OR-in a flag (does not clear existing flags).

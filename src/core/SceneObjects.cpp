@@ -258,7 +258,7 @@ parseRectangle(const nlohmann::json &j,
   if (j.contains("condition"))
     obj->condition = j["condition"].get<std::string>();
   if (j.contains("val"))
-    obj->val = j["val"].get<double>();
+    obj->val = j["val"].get<varType>();
   if (j.contains("x1"))
     obj->x1 = resolveInt(j["x1"], vars);
   if (j.contains("y1"))

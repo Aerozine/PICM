@@ -16,6 +16,21 @@ target_include_directories(PIC PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/core/IterativeMethod"
     "${CMAKE_CURRENT_SOURCE_DIR}/solvers")
 
+option(USE_LIKWID "Enable LIKWID performance markers" OFF)
+if(USE_LIKWID)
+    find_library(LIKWID_LIB likwid HINTS /usr/local/lib /usr/lib)
+    find_path(LIKWID_INCLUDE likwid-marker.h
+            HINTS /usr/local/include /usr/include)
+    if(LIKWID_LIB AND LIKWID_INCLUDE)
+        message(STATUS "LIKWID: found at ${LIKWID_LIB}")
+        target_compile_definitions(PIC PRIVATE LIKWID_PERFMON)
+        target_include_directories(PIC PRIVATE ${LIKWID_INCLUDE})
+        target_link_libraries(PIC PRIVATE ${LIKWID_LIB})
+    else()
+        message(WARNING "LIKWID: not found — markers disabled")
+    endif()
+endif()
+
 target_link_libraries(PIC PRIVATE
     nlohmann_json::nlohmann_json
     IterativeMethod_CPU)           # always linked

@@ -1,17 +1,7 @@
 #pragma once
 
-#ifdef USE_HALF // WIP
-#if __has_include(<stdfloat>)
-#include <stdfloat>
-using varType = std::float16_t;
-#define REAL_LITERAL(x) static_cast<varType>(x)
-#elif defined(__GNUC__) || defined(__clang__) // what about apple ?
-using varType = _Float16;
-#define REAL_LITERAL(x) static_cast<varType>(x)
-#else
-#error "No float16 support available"
-#endif
-#elif defined(USE_FLOAT)
+
+#if defined(USE_FLOAT)
 
 using varType = float; ///< Simulation floating-point type (32-bit).
 

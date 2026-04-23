@@ -6,5 +6,5 @@ struct SolverConfig {
   Method method    = Method::SL;
   Type   type      = Type::MICCG0;
   int    maxIters  = 1000;
-  double tolerance = 1e-4;
+  varType tolerance = 1e-4;
 };
