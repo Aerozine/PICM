@@ -5,15 +5,10 @@ FLIP::FLIP(Parameters &params)
       v_old(fields->v.nx, fields->v.ny) {}
 
 void FLIP::SaveOldVelocities() {
-    OMP_PRAGMA(omp parallel for collapse(2))
-    for (int j = 0; j < fields->u.ny; ++j)
-      for (int i = 0; i < fields->u.nx; ++i)
-        u_old.Set(i, j, fields->u.Get(i, j));
-
-    OMP_PRAGMA(omp parallel for collapse(2))
-    for (int j = 0; j < fields->v.ny; ++j)
-      for (int i = 0; i < fields->v.nx; ++i)
-        v_old.Set(i, j, fields->v.Get(i, j));
+    // Grid2D::operator= is a single memcpy under the hood.
+    // No need for two nested OMP loops over individual elements.
+    u_old = fields->u;
+    v_old = fields->v;
 }
 
 void FLIP::Step() {

@@ -77,6 +77,9 @@ public:
    * @param dy    Cell height in y.
    * @param field Stagger type: 0 = u-face, 1 = v-face, other = cell-centre.
    */
+  // template is at compile time , so if we
+  // put 0 in field , it simplify directly in compilation
+  // same for 1 and 2
 template<__uint8_t field>
 varType interpolate(const varType x, const varType y, const varType dx,
                             const varType dy) const {
@@ -95,13 +98,16 @@ varType interpolate(const varType x, const varType y, const varType dx,
   const varType fx = i_real - static_cast<varType>(i0);
   const varType fy = j_real - static_cast<varType>(j0);
 
-  i0 = std::clamp(i0, 0, nx - 1);
-  j0 = std::clamp(j0, 0, ny - 1);
+// Clamp both corners so i1/j1 never exceed nx-1/ny-1.
+    i0 = std::clamp(i0, 0, nx - 1);
+    j0 = std::clamp(j0, 0, ny - 1);
+    const int i1 = std::min(i0 + 1, nx - 1);
+    const int j1 = std::min(j0 + 1, ny - 1);
 
-  const varType f00 = Get(i0, j0);
-  const varType f10 = Get(i0 + 1, j0);
-  const varType f01 = Get(i0, j0 + 1);
-  const varType f11 = Get(i0 + 1, j0 + 1);
+    const varType f00 = Get(i0, j0);
+    const varType f10 = Get(i1, j0);
+    const varType f01 = Get(i0, j1);
+    const varType f11 = Get(i1, j1);
 
   assert(std::isfinite(
   (REAL_LITERAL(1.0) - fy) *
