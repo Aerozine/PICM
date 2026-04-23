@@ -14,7 +14,7 @@ void PIC::ScatterToGrid(varType xg, varType yg, varType val, Grid2D &sum,
 #endif
 
   //int radius = params.kernelOrder;
-  OMP_PRAGMA(omp parallel for collapse(2))
+  //OMP_PRAGMA(omp parallel for collapse(2))
   for (int8_t dj = -radius; dj <= radius; ++dj) {
     for (int di = -radius; di <= radius; ++di) {
       int i = i0 + di, j = j0 + dj;
@@ -22,11 +22,10 @@ void PIC::ScatterToGrid(varType xg, varType yg, varType val, Grid2D &sum,
         continue;
       varType k = hat(xg - varType(i)) * hat(yg - varType(j));
       if (k > varType(0)) {
-    OMP_PRAGMA(omp critical)
-        {
-          sum.Set(i, j, sum.Get(i, j) + k * val);
-          weight.Set(i, j, weight.Get(i, j) + k);
-        }
+        OMP_PRAGMA(omp atomic)
+          sum(i, j) += k * val;
+        OMP_PRAGMA(omp atomic)
+          weight(i, j) += k;
       }
     }
   }
@@ -50,7 +49,7 @@ void PIC::ProjectParticlesOnGrid() {
   fields->v_sum->reset();
   fields->v_weight->reset();
 
-  OMP_PRAGMA(omp parallel for collapse(2))
+  OMP_PRAGMA(omp parallel for  schedule(static))
   for (int idx = 0; idx < particles->size(); ++idx) {
     ProjectParticleOnMAC(idx);
   }
@@ -102,9 +101,9 @@ for (int idx = 0; idx < particles->size(); ++idx) {
   varType x = particles->GetX(idx);
   varType y = particles->GetY(idx);
   particles->SetU(idx,
-    fields->u.interpolate(x,y,dx,dy,0));
+    fields->u.interpolate<0>(x,y,dx,dy));
   particles->SetV(idx,
-    fields->v.interpolate(x,y,dx,dy,1) - dt*params.gravity);
+    fields->v.interpolate<1>(x,y,dx,dy) - dt*params.gravity);
 }
 }
 

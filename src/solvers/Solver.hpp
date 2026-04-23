@@ -66,7 +66,7 @@ void traceParticle(const int i, const int j, varType &x, varType &y,
    * @param[out] v Interpolated v value.
    */
   inline void getVelocity(varType x, varType y, varType &u, varType &v) const {
-    u = fields->u.interpolate(x, y, dx, dy, 0);
-    v = fields->v.interpolate(x, y, dx, dy, 1);
+    u = fields->u.interpolate<0>(x, y, dx, dy);
+    v = fields->v.interpolate<1>(x, y, dx, dy);
   };
 };

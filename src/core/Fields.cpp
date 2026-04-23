@@ -8,8 +8,8 @@ void Fields2D::UpdateDivNorm() {
     for (int i = 0; i < nx; ++i) {
       const varType x = (static_cast<varType>(i) + REAL_LITERAL(0.5)) * dx;
       const varType y = (static_cast<varType>(j) + REAL_LITERAL(0.5)) * dy;
-      const varType uc = u.interpolate(x, y, dx, dy, 0);
-      const varType vc = v.interpolate(x, y, dx, dy, 1);
+      const varType uc = u.interpolate<0>(x, y, dx, dy);
+      const varType vc = v.interpolate<1>(x, y, dx, dy);
       normVelocity.Set(i, j, std::sqrt(uc * uc + vc * vc));
       if (IS_AIR(Label(i + 1, j + 1))){
         div.Set(i, j, 0.0);
@@ -46,8 +46,8 @@ void Fields2D::VelocityNormCenterGrid() {
       const varType x = (static_cast<varType>(i) + REAL_LITERAL(0.5)) * dx;
       const varType y = (static_cast<varType>(j) + REAL_LITERAL(0.5)) * dy;
 
-      const varType uc = u.interpolate(x, y, dx, dy, 0);
-      const varType vc = v.interpolate(x, y, dx, dy, 1);
+      const varType uc = u.interpolate<0>(x, y, dx, dy);
+      const varType vc = v.interpolate<1>(x, y, dx, dy);
 
       normVelocity.Set(i, j, std::sqrt(uc * uc + vc * vc));
     }

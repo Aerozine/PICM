@@ -72,4 +72,5 @@ inline varType dhat(varType r) const {
 private:
   std::unique_ptr<OutputWriter> particlesWriter;
   std::unique_ptr<OutputWriter> countAliveParticles_writer ;
+  std::vector<uint8_t> keep;
 };
