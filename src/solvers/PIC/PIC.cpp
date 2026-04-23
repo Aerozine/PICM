@@ -49,21 +49,17 @@ void PIC::WriteOutput(int step) const {
       std::cerr << "[PIC] Warning: failed to write particles at step " << step
                 << '\n';
   }
-  //if (params.write_countAliveParticles && countAliveParticles)
   if(params.write_countAliveParticles && fields->countAliveParticles)
     countAliveParticles_writer->writeGrid2D(*fields->countAliveParticles, "countAliveParticles");
 }
 
 void PIC::Step() {
-  if (params.gravity > 0.0)
-    ApplyGravity();
+  // gravity directly handle when setting particles speed
   ProjectParticlesOnGrid();
   MakeIncompressible(params, *fields);
   ProjectGridOnParticles();
-  fields->Div();
-  fields->VelocityNormCenterGrid();
+  fields->UpdateDivNorm();
   Advect();
-  CountAliveParticles();
   UpdateCellState();
   if (params.refill)
     RefillParticles();

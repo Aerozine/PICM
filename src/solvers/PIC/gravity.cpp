@@ -1,6 +1,6 @@
 #include "PIC.hpp"
 // gravity through particles -> change order of functions in Step() in PIC.cpp
-//*
+/*
 void PIC::ApplyGravity() const {
   varType g = params.gravity;
 OMP_PRAGMA(omp parallel for)

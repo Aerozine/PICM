@@ -140,7 +140,7 @@ void APIC::ProjectGridOnParticles() {
     }
 
     particles->SetU(idx, uNew);
-    particles->SetV(idx, vNew);
+    particles->SetV(idx, vNew - dt*params.gravity);
     particles->SetCu(idx, cuX, cuY);
     particles->SetCv(idx, cvX, cvY);
   }

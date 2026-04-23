@@ -128,6 +128,8 @@ public:
     return (nx + 2) * j + i;
   }
 
+  void UpdateDivNorm();
+
   // ── field computations ─────────────────────────────────────────────────────
   void Div();
   void VelocityNormCenterGrid();
