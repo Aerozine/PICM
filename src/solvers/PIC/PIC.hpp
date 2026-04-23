@@ -26,7 +26,7 @@ inline varType hat(varType r) const {
     return varType(0);
 #else
     if (varType(-1.5) <= r && r < varType(-0.5))
-        return varType(0.5) * (r + varType(3.0 / 2.0)) * (r + varType(1.5));
+        return varType(0.5) * (r + varType(1.5)) * (r + varType(1.5));
     if (varType(-0.5) <= r && r < varType(0.5))
         return varType(0.75) - r * r;
     if (varType(0.5) <= r && r < varType(1.5))
