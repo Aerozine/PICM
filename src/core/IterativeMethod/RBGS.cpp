@@ -12,6 +12,7 @@ void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, double coef,
                               int maxIters, double tol, double beta) {
     fields.Div();
     double res0 = 1.0;
+    //@todo can be sorted out the RBGS and put in project.cpp
     constexpr double PI = 3.14159265358979323846;
     const int    N_min  = std::max(1, std::min(nx, ny));
     const double omega  = std::min(1.95, 2.0 / (1.0 + std::sin(PI / N_min)));

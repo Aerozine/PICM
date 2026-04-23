@@ -12,7 +12,7 @@ SemiLagrangian::SemiLagrangian(Parameters &params) : Solver(params) ,smokeMap(st
             << "  v  (nx,   ny+1): " << fields->v.nx << " x " << fields->v.ny
             << '\n';
 #endif
-  params.applySmoke(*smokeMap,*fields);
+  params.applySmoke(std::move(*smokeMap),*fields);
   params.applyToFields(*fields);
 
    InitializeOutputWriters();

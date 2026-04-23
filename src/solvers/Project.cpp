@@ -29,9 +29,9 @@ inline void solvePressure(const Parameters &p, Fields2D &f) {
 #endif
       break;
   case SolverConfig::Type::MICCG0:
-    solveMICCG0(f, scale, maxIters, tol);
+   // solveMICCG0(f, scale, maxIters, tol);
     break;
-    case SolverConfig::Type::CG:
+    //case SolverConfig::Type::CG:
 #ifdef USE_CUDA
 #else
       solveCG(f, coef, beta, maxIters, tol);

@@ -1,4 +1,4 @@
-
+/*
 #include "IterativeMethods.hpp"
 #include "Utils.hpp"
 #include "../Precision.hpp"
@@ -135,7 +135,7 @@ static void writeBack(Fields2D &f, int pnx,
 }
 
 //  CG  (unpreconditioned)
-bool solveCG(Fields2D &fields, double coef, double /*beta*/,
+bool solveCG(Fields2D &fields, double coef, double beta,
              int maxIters, double tol) {
     fields.Div();
 
@@ -428,3 +428,4 @@ bool solveMICCG0(Fields2D &fields, double coef, int maxIters, double tol) {
     writeBack(fields, pnx, A, p);
     return converged;
 }
+*/

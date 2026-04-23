@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.18)
 project(PIC)
 
 option(USE_FLOAT_PRECISION "Use float instead of double"       ON)
+option(USE_FAST_ALG "prioritize speed over precision"          ON)
 option(USE_PARALLEL        "Enable OpenMP CPU parallelism"     ON)
 option(USE_GPU             "Enable CUDA GPU pressure solvers"  OFF)
 
