@@ -38,6 +38,9 @@ endif()
 target_compile_definitions(PIC PRIVATE
     $<IF:$<BOOL:${USE_FLOAT_PRECISION}>,USE_FLOAT,USE_DOUBLE>)
 
+target_compile_definitions(PIC PRIVATE
+        $<IF:$<BOOL:${USE_FAST_ALG}>,USE_SPEED,USE_PRECISION>)
+
 target_compile_options(PIC PRIVATE
     $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall -Wextra -Wpedantic>
     $<$<CXX_COMPILER_ID:MSVC>:/W4>)

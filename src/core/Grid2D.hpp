@@ -8,7 +8,8 @@
 #include <vector>
 ///@brief  **ROW-MAJOR 2d grid** @c A[nx*j+i]
 class Grid2D {
-  //@todo do a sparsified version
+  //@todo do a sparsified version and an eigen version if eigen defined
+
 public:
   int nx;
   int ny;
@@ -21,7 +22,6 @@ public:
             std::calloc(static_cast<std::size_t>(nx_) * ny_, sizeof(varType))))
   {}
   ~Grid2D() { std::free(A); }
-  /*
   Grid2D &operator=(const Grid2D &o) {
     if (this == &o) return *this;
     if (nx * ny != o.nx * o.ny) {
@@ -44,7 +44,6 @@ public:
     o.nx = 0; o.ny = 0; o.A = nullptr;
     return *this;
   }
-  */
   /// @brief Read the value at cell (i, j).
   [[nodiscard]] varType Get(const int i, const int j) const {
     return A[nx * j + i];
