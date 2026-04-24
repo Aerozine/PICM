@@ -32,6 +32,7 @@ target_compile_options(IterativeMethod_CPU PRIVATE
         $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall -Wextra -Wpedantic>
         $<$<CXX_COMPILER_ID:MSVC>:/W4>)
 
+if(USE_GPU)
 # GPU library (CUDA)
 if(USE_CUDA_FOUND)
     enable_language(CUDA)
@@ -77,4 +78,5 @@ if(USE_CUDA_FOUND)
     target_compile_options(IterativeMethod_GPU PRIVATE
             $<$<CONFIG:Release>:--use_fast_math -O3>
             $<$<CONFIG:Debug>:-G -g -O0>)
+endif()
 endif()
