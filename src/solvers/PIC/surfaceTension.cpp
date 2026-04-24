@@ -8,11 +8,11 @@
 // add phi field
 // add params.surfaceTension && params.gamma && params.particleRadius
 // modify neighbourSum (if voisin is Air -> p += $\gamma \kappa$)
-// modify Step() to compute $\phi$  
+// modify Step() to compute $\phi$
 
 /*
 void PIC::UpdatePhiFromParticles() const {
-  varType particleRadius = params.particleRadius; 
+  varType particleRadius = params.particleRadius;
   //@todo may use inf ?
   const varType far = static_cast<varType>(1e6);
 
@@ -25,8 +25,9 @@ void PIC::UpdatePhiFromParticles() const {
       // x = (i + 0.5) dx
       // y = (j + 0.5) dy
 
-      const varType x = (static_cast<varType>(i) + static_cast<varType>(0.5)) * dx;
-      const varType y = (static_cast<varType>(j) + static_cast<varType>(0.5)) * dy;
+      const varType x = (static_cast<varType>(i) + static_cast<varType>(0.5)) *
+dx; const varType y = (static_cast<varType>(j) + static_cast<varType>(0.5)) *
+dy;
 
       varType minDist = far;
 
@@ -61,11 +62,11 @@ void PIC::UpdatePhiFromParticles() const {
 }
 
 // @todo uniform prototype
-inline varType SurfaceTensionPressure(int i, int j,const Fields2D &fields, varType gamma)  {
-  const int im = std::clamp(i - 1, 0, fields.phi.nx - 1);
-  const int ip = std::clamp(i + 1, 0, fields.phi.nx - 1);
-  const int jm = std::clamp(j - 1, 0, fields.phi.ny - 1);
-  const int jp = std::clamp(j + 1, 0, fields.phi.ny - 1);
+inline varType SurfaceTensionPressure(int i, int j,const Fields2D &fields,
+varType gamma)  { const int im = std::clamp(i - 1, 0, fields.phi.nx - 1); const
+int ip = std::clamp(i + 1, 0, fields.phi.nx - 1); const int jm = std::clamp(j -
+1, 0, fields.phi.ny - 1); const int jp = std::clamp(j + 1, 0, fields.phi.ny -
+1);
 
   auto normalX = [&](int a, int b) -> varType {
     const int am = std::clamp(a - 1, 0, fields.phi.nx - 1);

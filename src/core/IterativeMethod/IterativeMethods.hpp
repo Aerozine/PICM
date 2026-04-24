@@ -10,8 +10,8 @@
  * @param tol      Relative residual convergence threshold.
  * @param beta     rho * dx / dt  (solid BC correction term).
  */
-void solveJacobi(Fields2D &fields, int nx, int ny, varType coef,
-                 int maxIters, varType tol, varType beta);
+void solveJacobi(Fields2D &fields, int nx, int ny, varType coef, int maxIters,
+                 varType tol, varType beta);
 
 /**
  * @brief Gauss-Seidel pressure solver (sequential, faster convergence).
@@ -27,9 +27,12 @@ void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, varType coef,
 
 /**
  * @brief Modified Incomplete Cholesky CG (MICCG0) pressure solver.
- * Uses an Eigen sparse matrix when available and falls back to RBGS otherwise.
+ * Uses
+ * an Eigen sparse matrix when available and falls back to RBGS otherwise.
+ *
  * The scalar argument matches the existing pressure-system coefficient
- * rho * dx^2 / dt.
+ * rho *
+ * dx^2 / dt.
  * @return true if converged within maxIters.
  */
 bool solveMICCG0(Fields2D &fields, varType coef, int maxIters, varType tol);
@@ -40,8 +43,8 @@ bool solveMICCG0(Fields2D &fields, varType coef, int maxIters, varType tol);
  * @param beta     Kept for API consistency, unused by CG.
  * @return true if converged within maxIters.
  */
-bool solveCG(Fields2D &fields, varType coef, varType beta,
-             int maxIters, varType tol);
+bool solveCG(Fields2D &fields, varType coef, varType beta, int maxIters,
+             varType tol);
 
 #ifdef USE_CUDA
 
@@ -60,7 +63,7 @@ bool solveRedBlackGaussSeidel_GPU(Fields2D &fields, int nx, int ny,
  *
  * Drops in as a replacement for solveCG().
  */
-bool solveCG_GPU(Fields2D &fields, varType coef, varType beta,
-                 int maxIters, varType tol);
+bool solveCG_GPU(Fields2D &fields, varType coef, varType beta, int maxIters,
+                 varType tol);
 
 #endif // USE_CUDA

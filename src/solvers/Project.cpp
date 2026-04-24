@@ -5,11 +5,8 @@
 inline void solvePressure(const Parameters &p, Fields2D &f) {
   varType tol = p.solver.tolerance;
   int maxIters = p.solver.maxIters;
-  const varType coef = p.density *
-                      p.dx * p.dx /
-                      p.dt;
-  const varType beta = p.density *
-                      p.dx /p.dt;
+  const varType coef = p.density * p.dx * p.dx / p.dt;
+  const varType beta = p.density * p.dx / p.dt;
   int nx = p.nx;
   int ny = p.ny;
   switch (p.solver.type) {

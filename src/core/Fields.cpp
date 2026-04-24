@@ -11,7 +11,7 @@ void Fields2D::UpdateDivNorm() {
       const varType uc = u.interpolate<0>(x, y, dx, dy);
       const varType vc = v.interpolate<1>(x, y, dx, dy);
       normVelocity.Set(i, j, std::sqrt(uc * uc + vc * vc));
-      if (IS_AIR(Label(i + 1, j + 1))){
+      if (IS_AIR(Label(i + 1, j + 1))) {
         div.Set(i, j, 0.0);
         continue;
       }
@@ -26,7 +26,7 @@ void Fields2D::Div() {
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < ny; ++j)
     for (int i = 0; i < nx; ++i) {
-      if (IS_AIR(Label(i + 1, j + 1))){
+      if (IS_AIR(Label(i + 1, j + 1))) {
         div.Set(i, j, 0.0);
         continue;
       }

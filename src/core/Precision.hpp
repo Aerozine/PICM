@@ -1,6 +1,5 @@
 #pragma once
 
-
 #if defined(USE_FLOAT)
 
 using varType = float; ///< Simulation floating-point type (32-bit).

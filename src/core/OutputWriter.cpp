@@ -393,8 +393,8 @@ void OutputWriter::finalisePVD() {
 
   pvd_finalised_ = true;
 }
-bool OutputWriter::writeLabels(const uint16_t *labels, int nx,
-                                 int ny, const std::string &id) {
+bool OutputWriter::writeLabels(const uint16_t *labels, int nx, int ny,
+                               const std::string &id) {
   if (pvd_finalised_)
     return false;
 

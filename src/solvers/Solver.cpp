@@ -3,12 +3,10 @@
 #include <iostream>
 
 Solver::Solver(Parameters &params)
-  : params(params), nx(params.nx), ny(params.ny),
-    dx(params.dx), dy(params.dy),
-    dt(params.dt),
-    density(params.density),
-    fields(new Fields2D(nx, ny, density, dt, dx, dy, params.solver,
-                        params.freeSurface)) {
+    : params(params), nx(params.nx), ny(params.ny), dx(params.dx),
+      dy(params.dy), dt(params.dt), density(params.density),
+      fields(new Fields2D(nx, ny, density, dt, dx, dy, params.solver,
+                          params.freeSurface)) {
   InitializeOutputWriters();
 }
 
@@ -24,22 +22,21 @@ void Solver::RunLoop(int reportEvery) {
   for (int t = 1; t <= params.nt; ++t) {
     if (t % reportEvery == 0) {
       varType maxDiv = REAL_LITERAL(0.0);
-      int maxi=-1;
-      int maxj=-1;
+      int maxi = -1;
+      int maxj = -1;
       OMP_PRAGMA(omp parallel for reduction(max:maxDiv))
       for (int j = 0; j < ny; ++j)
-        for (int i = 0; i < nx; ++i){
-          varType a= std::abs(fields->div.Get(i,j));
-          if(a>maxDiv){
-            maxDiv=a;
-            maxi=i;
-            maxj=j;
+        for (int i = 0; i < nx; ++i) {
+          varType a = std::abs(fields->div.Get(i, j));
+          if (a > maxDiv) {
+            maxDiv = a;
+            maxi = i;
+            maxj = j;
           }
         }
       std::cout << "\rStep " << t << " / " << params.nt << " ("
-          << (100 * t / params.nt) << "%) " << "max |div| = " << maxDiv <<
-          " reached at ("<< maxi<< ","<< maxj <<")"
-          << std::flush;
+                << (100 * t / params.nt) << "%) " << "max |div| = " << maxDiv
+                << " reached at (" << maxi << "," << maxj << ")" << std::flush;
     }
     Step();
     WriteOutput(t);
@@ -82,5 +79,5 @@ void Solver::WriteOutput(int step) const {
                                  "label");
   if (!ok)
     std::cerr << "[SemiLagrangian] Warning: failed to write output at step "
-        << step << '\n';
+              << step << '\n';
 }

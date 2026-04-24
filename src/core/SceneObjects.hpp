@@ -14,7 +14,10 @@ struct SceneObject {
   virtual void applyFluid(Fields2D &f) { (void)f; }
   virtual void applyVelocityU(Fields2D &f) { (void)f; }
   virtual void applyVelocityV(Fields2D &f) { (void)f; }
-  virtual void applySmoke(Grid2D &smokeMap, Fields2D &f) { (void)smokeMap;(void)f; }
+  virtual void applySmoke(Grid2D &smokeMap, Fields2D &f) {
+    (void)smokeMap;
+    (void)f;
+  }
   virtual void applyPressure(Fields2D &f) { (void)f; }
 };
 
