@@ -2,8 +2,6 @@
 
 #include <iostream>
 
-//@todo could be simplified by passing directly params to fields and removing dt
-//,dx etc
 Solver::Solver(Parameters &params)
   : params(params), nx(params.nx), ny(params.ny),
     dx(params.dx), dy(params.dy),
@@ -55,7 +53,6 @@ void Solver::InitializeOutputWriters() {
   if (params.write_norm_velocity)
     normVelocityWriter =
         std::make_unique<OutputWriter>(params.folder, "normVelocity");
-  // @todo IFDBG
   labelWriter = std::make_unique<OutputWriter>(params.folder, "label");
 }
 void Solver::WriteOutput(int step) const {

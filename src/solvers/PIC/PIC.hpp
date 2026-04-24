@@ -2,6 +2,8 @@
 #include "../../core/Particles.hpp"
 #include "../../core/Cloud2D.hpp"
 #include "../Solver.hpp"
+#include <algorithm>
+#include <cmath>
 #include <memory>
 
 class PIC : public Solver {
@@ -17,9 +19,7 @@ protected:
 
     inline varType hat(varType r) const {
 #ifdef USE_SPEED
-        if (r >= varType(0) && r <= varType(1))  return varType(1) - r;
-        if (r >= varType(-1) && r < varType(0))  return varType(1) + r;
-        return varType(0);
+        return std::max(varType(0), varType(1) - std::abs(r));
 #else
         if (varType(-1.5) <= r && r < varType(-0.5))
             return varType(0.5) * (r + varType(1.5)) * (r + varType(1.5));
@@ -33,9 +33,8 @@ protected:
 
     inline varType dhat(varType r) const {
 #ifdef USE_SPEED
-        if (r > varType(0) && r < varType(1))   return -varType(1);
-        if (r > varType(-1) && r < varType(0))  return  varType(1);
-        return varType(0);
+        return static_cast<varType>((r > varType(-1)) && (r < varType(0))) -
+               static_cast<varType>((r > varType(0)) && (r < varType(1)));
 #else
         if (varType(-1.5) <= r && r < varType(-0.5)) return r + static_cast<varType>(1.5);
         if (varType(-0.5) <= r && r < varType(0.5))  return -static_cast<varType>(2.0) * r;
@@ -43,15 +42,6 @@ protected:
         return static_cast<varType>(0);
 #endif
     }
-
-    //@todo needs to be patched after
-    // kept for FLIP/APIC subclasses that still use the atomic scatter path
-    void ProjectParticleOnMAC(int idx);
-    void ScatterToGrid(varType xg, varType yg, varType val,
-                       Grid2D &sum, Grid2D &weight, int imax, int jmax);
-
-    // scatter one cell's particles into MAC grid — no atomics, used by the
-    // 4-color pass in ProjectParticlesOnGrid
     void scatterCell(const Particles &cell,
                      Grid2D &u_sum, Grid2D &u_weight,
                      Grid2D &v_sum, Grid2D &v_weight);

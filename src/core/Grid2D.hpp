@@ -92,15 +92,17 @@ varType interpolate(const varType x, const varType y, const varType dx,
     i_real -= REAL_LITERAL(0.5); // v-face: staggered in x
   // else no staggering
 
-  int i0 = static_cast<int>(i_real);
-  int j0 = static_cast<int>(j_real);
+  const varType i_clamped =
+      std::clamp(i_real, REAL_LITERAL(0.0), static_cast<varType>(nx - 1));
+  const varType j_clamped =
+      std::clamp(j_real, REAL_LITERAL(0.0), static_cast<varType>(ny - 1));
 
-  const varType fx = i_real - static_cast<varType>(i0);
-  const varType fy = j_real - static_cast<varType>(j0);
+  const int i0 = static_cast<int>(std::floor(i_clamped));
+  const int j0 = static_cast<int>(std::floor(j_clamped));
 
-// Clamp both corners so i1/j1 never exceed nx-1/ny-1.
-    i0 = std::clamp(i0, 0, nx - 1);
-    j0 = std::clamp(j0, 0, ny - 1);
+  const varType fx = i_clamped - static_cast<varType>(i0);
+  const varType fy = j_clamped - static_cast<varType>(j0);
+
     const int i1 = std::min(i0 + 1, nx - 1);
     const int j1 = std::min(j0 + 1, ny - 1);
 

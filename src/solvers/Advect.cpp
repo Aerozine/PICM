@@ -3,7 +3,6 @@
 #include <cassert>
 #include <cmath>
 
-// TODO: advect in SOLIDS is useless | add if(SOLID) {skip} ?
 // is branching worse than looking in each solid ?
 void Solver::Advect() {
   Grid2D uNew(fields->u.nx, fields->u.ny);
