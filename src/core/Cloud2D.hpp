@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 #include "Particles.hpp"
 #include "Fields.hpp"
 
@@ -66,9 +65,14 @@ public:
     // seed particles into cells from the fields initial state,
     // mirrors the old Particles::InitParticleGrid
     void InitParticleGrid(const Fields2D &fields, int ppcx, int ppcy) {
-        for (auto &c : cells)
+        for (auto &c : cells) {
             c.pos_x.clear(), c.pos_y.clear(),
             c.vel_x.clear(), c.vel_y.clear();
+            if (c.needsAffine) {
+                c.cu_x.clear(), c.cu_y.clear();
+                c.cv_x.clear(), c.cv_y.clear();
+            }
+        }
 
         for (int jcell = 0; jcell < ny; ++jcell) {
             for (int icell = 0; icell < nx; ++icell) {
