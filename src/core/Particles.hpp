@@ -42,16 +42,7 @@ public:
           needsAffine(params.solver.method != SolverConfig::Method::VanillaPIC &&
                       params.solver.method != SolverConfig::Method::FLIP     &&
                       params.solver.method != SolverConfig::Method::SL)
-    {
-        const std::size_t cap =
-            static_cast<std::size_t>(nx) * ny * ppcx * ppcy * 3;
-        pos_x.reserve(cap); pos_y.reserve(cap);
-        vel_x.reserve(cap); vel_y.reserve(cap);
-        if (needsAffine) {
-            cu_x.reserve(cap); cu_y.reserve(cap);
-            cv_x.reserve(cap); cv_y.reserve(cap);
-        }
-    }
+    {}
 
     // ── capacity / size ─────────────────────────────────────────────────────
     [[nodiscard]] int size() const noexcept {

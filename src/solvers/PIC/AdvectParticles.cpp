@@ -2,24 +2,27 @@
 #include <cmath>
 
 void PIC::Advect() {
+    struct PendingParticle {
+        varType x;
+        varType y;
+        varType u;
+        varType v;
+    };
+
     const varType xMax = dx * nx;
     const varType yMax = dy * ny;
+    std::vector<std::vector<PendingParticle>> incoming(
+        static_cast<std::size_t>(nx) * ny);
 
-    // loop over cells — each thread owns its cell exclusively so
-    // reads and in-place updates need no lock.
-    // only cross-boundary transfers lock the destination cell.
+    // Each thread owns its source cell exclusively.
+    // Cross-cell moves are staged into per-destination buffers, then merged
+    // after the parallel loop so we never mutate a destination cell while
+    // another thread is iterating over it.
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
     for (int ci = 0; ci < nx; ++ci) {
         for (int cj = 0; cj < ny; ++cj) {
             Particles &cell = (*cloud)(ci, cj);
             int local_idx = 0;
-            // Capture the number of particles that belong to this cell at the
-            // start of the timestep.  Other threads may call dst.Add() on this
-            // cell while we iterate (transferring particles in), which raises
-            // cell.size().  Without the cap those newly-arrived particles would
-            // be re-advected a second time this step (double-advection bug).
-            // We decrement n whenever a particle leaves the cell (Remove or
-            // transfer) so the swap-and-pop bookkeeping stays correct.
             int n = cell.size();
 
             while (local_idx < n) {
@@ -55,21 +58,32 @@ void PIC::Advect() {
                     continue;
                 }
 
-                // update position in place before a possible transfer
-                cell.SetX(local_idx, x1);
-                cell.SetY(local_idx, y1);
-
                 if (ci1 != ci || cj1 != cj) {
-                    // particle crossed a cell boundary — transfer locks only dst.
-                    // Decrement n — the particle has left this cell.
-                    cloud->transfer(local_idx, ci, cj, ci1, cj1);
+                    const std::size_t dstIdx = static_cast<std::size_t>(ny) * ci1 + cj1;
+#ifdef USE_OPENMP
+                    omp_set_lock(&cloud->cellLocks[dstIdx]);
+#endif
+                    incoming[dstIdx].push_back(PendingParticle{x1, y1, u0, v0});
+#ifdef USE_OPENMP
+                    omp_unset_lock(&cloud->cellLocks[dstIdx]);
+#endif
+
+                    // particle left this source cell
+                    cell.Remove(local_idx);
                     --n;
                     continue;
                 }
 
+                cell.SetX(local_idx, x1);
+                cell.SetY(local_idx, y1);
                 ++local_idx;
             }
         }
     }
-    // countAliveParticles is now cloud->countIn(i,j) — no separate pass needed
+
+    for (std::size_t dstIdx = 0; dstIdx < incoming.size(); ++dstIdx) {
+        Particles &dst = cloud->cells[dstIdx];
+        for (const PendingParticle &p : incoming[dstIdx])
+            dst.Add(p.x, p.y, p.u, p.v, 0);
+    }
 }

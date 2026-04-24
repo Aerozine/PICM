@@ -12,8 +12,7 @@ public:
     void Step() override;
 
 protected:
-    // Cloud2D replaces both the flat Particles array and the
-    // countAliveParticles grid. Each cell owns its own small Particles.
+    // Each grid cell owns its own particle container.
     std::unique_ptr<Cloud2D> cloud;
 
     inline varType hat(varType r) const {
@@ -69,5 +68,4 @@ protected:
 
 private:
     std::unique_ptr<OutputWriter> particlesWriter;
-    std::unique_ptr<OutputWriter> countAliveParticles_writer;
 };

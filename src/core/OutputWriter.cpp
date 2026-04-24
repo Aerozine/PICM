@@ -1,4 +1,5 @@
 #include "OutputWriter.hpp"
+#include "Cloud2D.hpp"
 #include <cmath>
 #include <filesystem>
 #include <iomanip>
@@ -167,20 +168,13 @@ bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
 
 bool OutputWriter::writeParticles(const Particles &particles,
                                   const std::string &id) {
-  if (pvd_finalised_)
-    return false;
-
   const int nAlive = particles.size();
 
   std::vector<varType> normValues;
   std::vector<varType> pointValues;
-  std::vector<int32_t> connectivity;
-  std::vector<int32_t> offsets;
 
   normValues.reserve(nAlive);
   pointValues.reserve(static_cast<std::size_t>(nAlive) * 3);
-  connectivity.reserve(nAlive);
-  offsets.reserve(nAlive);
 
   for (int k = 0; k < nAlive; ++k) {
     const varType x = particles.GetX(k);
@@ -193,7 +187,57 @@ bool OutputWriter::writeParticles(const Particles &particles,
     pointValues.push_back(x);
     pointValues.push_back(y);
     pointValues.push_back(static_cast<varType>(0));
+  }
 
+  return writeParticlePolyData(normValues, pointValues, id);
+}
+
+bool OutputWriter::writeCloud(const Cloud2D &cloud, const std::string &id) {
+  const int nAlive = cloud.totalSize();
+
+  std::vector<varType> normValues;
+  std::vector<varType> pointValues;
+
+  normValues.reserve(nAlive);
+  pointValues.reserve(static_cast<std::size_t>(nAlive) * 3);
+
+  for (int ci = 0; ci < cloud.nx; ++ci) {
+    for (int cj = 0; cj < cloud.ny; ++cj) {
+      const Particles &cell = cloud(ci, cj);
+      for (int p = 0; p < cell.size(); ++p) {
+        const varType x = cell.GetX(p);
+        const varType y = cell.GetY(p);
+        const varType u = cell.GetU(p);
+        const varType v = cell.GetV(p);
+
+        normValues.push_back(std::sqrt(u * u + v * v));
+
+        pointValues.push_back(x);
+        pointValues.push_back(y);
+        pointValues.push_back(static_cast<varType>(0));
+      }
+    }
+  }
+
+  return writeParticlePolyData(normValues, pointValues, id);
+}
+
+bool OutputWriter::writeParticlePolyData(
+    const std::vector<varType> &normValues,
+    const std::vector<varType> &pointValues, const std::string &id) {
+  if (pvd_finalised_)
+    return false;
+
+  const int nAlive = static_cast<int>(normValues.size());
+  if (pointValues.size() != static_cast<std::size_t>(nAlive) * 3)
+    return false;
+
+  std::vector<int32_t> connectivity;
+  std::vector<int32_t> offsets;
+  connectivity.reserve(nAlive);
+  offsets.reserve(nAlive);
+
+  for (int k = 0; k < nAlive; ++k) {
     connectivity.push_back(k);
     offsets.push_back(k + 1);
   }

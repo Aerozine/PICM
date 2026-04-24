@@ -32,7 +32,6 @@ protected:
   std::unique_ptr<OutputWriter> pWriter;
   std::unique_ptr<OutputWriter> divWriter;
   std::unique_ptr<OutputWriter> normVelocityWriter;
-  std::unique_ptr<OutputWriter> countAliveParticles;
   std::unique_ptr<OutputWriter> labelWriter;
   // Shared time-step loop used by Run() in every subclass.
   void RunLoop(int reportEvery);
