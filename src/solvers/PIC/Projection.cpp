@@ -8,7 +8,7 @@ void PIC::ProjectParticlesOnGrid() {
   constexpr int R = 2;
 #endif
 
-    OMP_PRAGMA(omp parallel for collapse(2) schedule(dynamic,8) )
+    OMP_PRAGMA(omp parallel for collapse(2) schedule(dynamic,1) )
     for (int j = 0; j < fields->u.ny; ++j) {
       for (int i = 0; i < fields->u.nx; ++i) {
 
@@ -54,7 +54,7 @@ void PIC::ProjectParticlesOnGrid() {
         fields->u.Set(i, j, wt >= REAL_EPSILON ? sum / wt : varType(0));
       }
     }
-    OMP_PRAGMA(omp parallel for collapse(2) schedule(dynamic,8))
+    OMP_PRAGMA(omp parallel for collapse(2) schedule(dynamic,1))
     for (int j = 0; j < fields->v.ny; ++j) {
       for (int i = 0; i < fields->v.nx; ++i) {
 
