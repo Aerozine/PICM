@@ -8,8 +8,8 @@
 class Solver {
 public:
   explicit Solver(Parameters &params);
-  //virtual ~Solver();
-  // basicaly a if anyone try to copy or assign , bang error
+  // virtual ~Solver();
+  //  basicaly a if anyone try to copy or assign , bang error
   Solver(const Solver &) = delete;
   Solver &operator=(const Solver &) = delete;
 
@@ -54,9 +54,8 @@ protected:
    */
   virtual void Advect();
 
-
-void traceParticle(const int i, const int j, varType &x, varType &y,
-                           uint8_t field) const;
+  void traceParticle(const int i, const int j, varType &x, varType &y,
+                     uint8_t field) const;
   /**
    * @brief Return both velocity components at physical position (x, y).
    * @param[in]  x Physical x-coordinate.

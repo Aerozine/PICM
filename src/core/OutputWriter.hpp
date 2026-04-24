@@ -32,7 +32,7 @@ public:
 private:
   std::string output_dir_;
   std::string base_name_;
-  int  current_step_;
+  int current_step_;
   bool pvd_finalised_;
 
   std::vector<std::string> pvd_entries_;

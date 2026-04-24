@@ -21,8 +21,7 @@ void APIC::ProjectParticlesOnGrid() {
         continue;
 
       const varType xFace = static_cast<varType>(i) * dx;
-      const varType yFace =
-          (static_cast<varType>(j) + varType(0.5)) * dy;
+      const varType yFace = (static_cast<varType>(j) + varType(0.5)) * dy;
 
       varType sum = 0;
       varType wt = 0;
@@ -71,8 +70,7 @@ void APIC::ProjectParticlesOnGrid() {
       if (IS_BC_V(bottom))
         continue;
 
-      const varType xFace =
-          (static_cast<varType>(i) + varType(0.5)) * dx;
+      const varType xFace = (static_cast<varType>(i) + varType(0.5)) * dx;
       const varType yFace = static_cast<varType>(j) * dy;
 
       varType sum = 0;

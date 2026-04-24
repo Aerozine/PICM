@@ -11,17 +11,17 @@ public:
   varType dx = 0.01;
   varType dy = 0.01;
   varType dt = 1e-4;
-  int    nx = 100;
-  int    ny = 100;
-  int    nt = 100;
-  int ppcx  = 1;
-  int ppcy  = 1;
+  int nx = 100;
+  int ny = 100;
+  int nt = 100;
+  int ppcx = 1;
+  int ppcy = 1;
 
   // Physics
   varType density = 1000.0;
 
   // Output
-  int sampling_rate = 1;          ///< Write output every N steps.
+  int sampling_rate = 1; ///< Write output every N steps.
   int kernelOrder = 2;
   std::string folder = "results"; ///< Output directory.
 
@@ -29,14 +29,14 @@ public:
   varType coefPic = 0.05;
   varType max_cfl = REAL_LITERAL(0.75);
 
-  bool write_u             = true;
-  bool write_v             = true;
-  bool write_p             = true;
-  bool write_div           = false;
+  bool write_u = true;
+  bool write_v = true;
+  bool write_p = true;
+  bool write_div = false;
   bool write_norm_velocity = false;
-  bool write_smoke         = false;
-  bool write_particles     = false;
-  bool refill              = false;
+  bool write_smoke = false;
+  bool write_particles = false;
+  bool refill = false;
 
   /// true  → initialise the domain as AIR  (free-surface simulation)
   /// false → initialise as FLUID (fully-filled, incompressible default)
@@ -89,7 +89,6 @@ private:
    * @param j Root JSON object of the config file.
    */
   void loadFromJson(const nlohmann::json &j);
-
 
   /// Print command-line usage to stdout.
   static void printUsage(const char *prog);

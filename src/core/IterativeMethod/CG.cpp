@@ -1,6 +1,6 @@
+#include "../Precision.hpp"
 #include "IterativeMethods.hpp"
 #include "Utils.hpp"
-#include "../Precision.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -182,9 +182,9 @@ void writeBackPressure(Fields2D &fields, const PressureSystem &system,
   return std::max(REAL_EPSILON, std::abs(value) * REAL_LITERAL(1e-4));
 }
 
-[[nodiscard]] varType findLowerValue(
-    const std::vector<IC0Preconditioner::Entry> &row,
-    const int col) noexcept {
+[[nodiscard]] varType
+findLowerValue(const std::vector<IC0Preconditioner::Entry> &row,
+               const int col) noexcept {
   for (const auto &entry : row) {
     if (entry.col == col)
       return entry.value;
@@ -415,8 +415,7 @@ bool solveCG(Fields2D &fields, varType coef, varType beta, int maxIters,
   const double assemblyTime = GET_TIME() - assemblyStart;
   const double solveStart = GET_TIME();
 #endif
-  const bool converged =
-      solveSparseCGSystem(system, b, x, maxIters, tol, "CG");
+  const bool converged = solveSparseCGSystem(system, b, x, maxIters, tol, "CG");
 #ifndef NDEBUG
   DBG_PRINTF("CG: rows=%d, assembly=%.6fs, solve=%.6fs", system.A.rows(),
              assemblyTime, GET_TIME() - solveStart);
