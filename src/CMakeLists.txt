@@ -31,7 +31,7 @@ target_include_directories(PIC PRIVATE
     #endif()
 #endif()
 
-target_link_libraries(PIC PRIVATE
+target_link_libraries(PIC PUBLIC 
     nlohmann_json::nlohmann_json
     IterativeMethod_CPU)           # always linked
 
