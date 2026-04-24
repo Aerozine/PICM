@@ -3,6 +3,7 @@ add_library(IterativeMethod_CPU STATIC
         CG.cpp
         Jacobi-GS.cpp
 )
+target_link_libraries(IterativeMethod_CPU PUBLIC nlohmann_json::nlohmann_json)
 
 target_include_directories(IterativeMethod_CPU PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -31,7 +32,7 @@ target_compile_options(IterativeMethod_CPU PRIVATE
         $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall -Wextra -Wpedantic>
         $<$<CXX_COMPILER_ID:MSVC>:/W4>)
 
-# ── GPU library (CUDA) ────────────────────────────────────────────────────────
+# GPU library (CUDA)
 if(USE_CUDA_FOUND)
     enable_language(CUDA)
 
