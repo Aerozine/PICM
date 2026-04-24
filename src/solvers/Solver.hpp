@@ -24,9 +24,8 @@ protected:
   varType dx, dy, dt;
   varType density;
 
-  //Fields2D *fields = nullptr; ///< @todo Replace with std::unique_ptr<Fields2D>?
   std::unique_ptr<Fields2D> fields;
-  // Output writers — null if the corresponding write_* flag is false.
+  // Output writers null if the corresponding write_* flag is false.
   std::unique_ptr<OutputWriter> uWriter;
   std::unique_ptr<OutputWriter> vWriter;
   std::unique_ptr<OutputWriter> pWriter;

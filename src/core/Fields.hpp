@@ -41,20 +41,13 @@ public:
   int     nx, ny;
   varType density;
   varType dt, dx, dy;
-  //todo use a template for label ? is there an overhead ?
   Grid2D u, v, p, div, normVelocity;
-
   Grid2D *u_sum    = nullptr;
   Grid2D *u_weight = nullptr;
   Grid2D *v_sum    = nullptr;
   Grid2D *v_weight = nullptr;
-  // countAliveParticles removed — use cloud->countIn(i,j) instead
-
   uint16_t *Labels = nullptr;
 
-  // ── constructor  ────────────────────────────────────────────────────────────
-  // freeSurface: true  → initialise all labels to AIR
-  //              false → initialise all labels to FLUID (default, incompressible)
   Fields2D(int nx_, int ny_,
            varType density_, varType dt_, varType dx_, varType dy_,
            const SolverConfig &sol,
@@ -83,7 +76,6 @@ public:
     }
   }
 
-  // ── destructor ─────────────────────────────────────────────────────────────
   ~Fields2D() {
     std::free(Labels);
     delete u_sum;
@@ -95,8 +87,6 @@ public:
   // Non-copyable, non-movable (owns raw resources; add if ever needed)
   Fields2D(const Fields2D &) = delete;
   Fields2D &operator=(const Fields2D &) = delete;
-
-  // ── label accessors ────────────────────────────────────────────────────────
 
   [[nodiscard]] inline labeltype Label(int i, int j) const noexcept {
     return Labels[idx(i, j)];
@@ -126,9 +116,8 @@ public:
     return (nx + 2) * j + i;
   }
 
+  // use this one to improve speed
   void UpdateDivNorm();
-
-  // ── field computations ─────────────────────────────────────────────────────
   void Div();
   void VelocityNormCenterGrid();
 };

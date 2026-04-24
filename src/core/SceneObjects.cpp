@@ -85,7 +85,6 @@ int resolveInt(const nlohmann::json &val,
 }
 // these small function applies into field the adequate flag
 void RectangleObject::applySolid(Fields2D &f) {
-  // @todo handle the case where y2<y1 same for x
   if (x1 > x2)
     std::swap(x1, x2);
   if (y1 > y2)
@@ -101,7 +100,6 @@ void RectangleObject::applySolid(Fields2D &f) {
 }
 
 void RectangleObject::applyAir(Fields2D &f) {
-  // @todo handle the case where y2<y1 same for x
   if (x1 > x2)
     std::swap(x1, x2);
   if (y1 > y2)
@@ -117,7 +115,6 @@ void RectangleObject::applyAir(Fields2D &f) {
 }
 
 void RectangleObject::applyFluid(Fields2D &f) {
-  // @todo handle the case where y2<y1 same for x
   if (x1 > x2)
     std::swap(x1, x2);
   if (y1 > y2)
@@ -136,7 +133,6 @@ void RectangleObject::applyVelocityU(Fields2D &f) {
               << "Available options: initial or boundary.\n";
     return;
   }
-  //@todo for a velocity u we need to check i and i-1 if there is a solid
   // in this case u=0
   if (x1 > x2)
     std::swap(x1, x2);
@@ -203,7 +199,6 @@ void RectangleObject::applySmoke(Grid2D &smokeMap, Fields2D &f) {
               << "Available options: initial or boundary.\n";
     return;
   }
-  // @todo handle the case where y2<y1 same for x
   if (x1 > x2)
     std::swap(x1, x2);
   if (y1 > y2)

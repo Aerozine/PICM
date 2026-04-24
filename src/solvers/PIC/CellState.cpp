@@ -1,8 +1,9 @@
 #include "PIC.hpp"
 #include <iostream>
 
+// we can look at the cloud to see if there is particle
+// it there is we can simply set fluid
 void PIC::UpdateCellState() const {
-    // IN cell referential — cloud->countIn(i,j) replaces countAliveParticles grid
     OMP_PRAGMA(omp parallel for collapse(2))
     for (int i = 0; i < nx; ++i) {
         for (int j = 0; j < ny; ++j) {

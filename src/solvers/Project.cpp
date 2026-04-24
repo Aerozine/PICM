@@ -13,7 +13,6 @@ inline void solvePressure(const Parameters &p, Fields2D &f) {
   int nx = p.nx;
   int ny = p.ny;
   switch (p.solver.type) {
-    // @todo fix JACOBI , GS , RM MICCG0 and do CG
   case SolverConfig::Type::JACOBI:
     solveJacobi(f, nx, ny, coef, maxIters, tol, beta);
     break;

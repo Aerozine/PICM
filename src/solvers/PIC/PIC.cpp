@@ -42,10 +42,12 @@ void PIC::WriteOutput(int step) const {
 }
 
 void PIC::Step() {
-    // gravity is handled directly when setting particle speed in ProjectGridOnParticles
     ProjectParticlesOnGrid();
     MakeIncompressible(params, *fields);
+
+    //Gravity in handle in projection to avoir loop over particles
     ProjectGridOnParticles();
+
     Advect();
     UpdateCellState();
     if (params.refill) RefillParticles();
@@ -56,6 +58,5 @@ void PIC::Run() {
     fields->VelocityNormCenterGrid();
     ProjectGridOnParticles();
     WriteOutput(0);
-
     RunLoop(std::max(1, params.nt / 100));
 }
