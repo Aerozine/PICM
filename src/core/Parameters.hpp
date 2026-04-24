@@ -41,7 +41,6 @@ public:
   /// false → initialise as FLUID (fully-filled, incompressible default)
   bool freeSurface = false;
 
-  bool write_countAliveParticles = true;
   SolverConfig solver;
 
   Parameters() = default;

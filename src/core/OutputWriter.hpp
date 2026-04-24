@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+class Cloud2D;
+
 class OutputWriter {
 public:
   OutputWriter(const std::string &output_dir, const std::string &pvd_name);
@@ -17,6 +19,7 @@ public:
 
   bool writeGrid2D(const Grid2D &grid, const std::string &id);
   bool writeParticles(const Particles &particles, const std::string &id);
+  bool writeCloud(const Cloud2D &cloud, const std::string &id);
 
   /// @param labels  Pointer to a flat (nx*ny) array of uint16_t cell labels.
   /// @param nx      Width  of the label grid.
@@ -40,6 +43,9 @@ private:
 
   [[nodiscard]] static std::vector<unsigned char>
   preparePayload(const std::vector<varType> &values);
+  bool writeParticlePolyData(const std::vector<varType> &normValues,
+                             const std::vector<varType> &pointValues,
+                             const std::string &id);
 
   static constexpr const char *vtkTypeName() noexcept {
 #ifdef USE_FLOAT

@@ -8,7 +8,6 @@
 #endif
 
 // Cloud2D: a nx*ny grid where each cell owns its particles as a small SoA.
-// Replaces the flat Particles + countAliveParticles grid.
 // Indexing: cells[ny * i + j] for cell (i, j).
 class Cloud2D {
 public:
@@ -52,7 +51,6 @@ public:
         return cells[ny * i + j];
     }
 
-    // replaces countAliveParticles->Get(i, j)
     inline int countIn(int i, int j) const {
         return cells[ny * i + j].size();
     }
@@ -63,30 +61,6 @@ public:
         for (const auto &c : cells)
             total += c.size();
         return total;
-    }
-
-    // move particle local_idx from cell (ci_old, cj_old) to cell (ci_new, cj_new).
-    // source cell must be owned by the calling thread (no lock needed on source).
-    // destination cell is locked because another thread may own it.
-    void transfer(int local_idx, int ci_old, int cj_old, int ci_new, int cj_new) {
-        Particles &src = (*this)(ci_old, cj_old);
-        Particles &dst = (*this)(ci_new, cj_new);
-
-        const varType x  = src.GetX(local_idx);
-        const varType y  = src.GetY(local_idx);
-        const varType u  = src.GetU(local_idx);
-        const varType v  = src.GetV(local_idx);
-
-#ifdef USE_OPENMP
-        omp_set_lock(&cellLocks[ny * ci_new + cj_new]);
-#endif
-        dst.Add(x, y, u, v, 0);
-#ifdef USE_OPENMP
-        omp_unset_lock(&cellLocks[ny * ci_new + cj_new]);
-#endif
-
-        // swap-and-pop from source — safe, this thread owns source exclusively
-        src.Remove(local_idx);
     }
 
     // seed particles into cells from the fields initial state,
