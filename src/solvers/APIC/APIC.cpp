@@ -118,9 +118,12 @@ void APIC::accumulateAffineComponent(const Grid2D &grid, varType xg, varType yg,
   const int i0 = static_cast<int>(std::floor(xg));
   const int j0 = static_cast<int>(std::floor(yg));
 
-  value = 0;
-  gradX = 0;
-  gradY = 0;
+  varType valueRaw = 0;
+  varType gradXRaw = 0;
+  varType gradYRaw = 0;
+  varType weightSum = 0;
+  varType dWeightX = 0;
+  varType dWeightY = 0;
 
   for (int dj = -radius; dj <= radius; ++dj) {
     for (int di = -radius; di <= radius; ++di) {
@@ -136,11 +139,29 @@ void APIC::accumulateAffineComponent(const Grid2D &grid, varType xg, varType yg,
         continue;
 
       const varType sample = grid.Get(i, j);
-      value += w * sample;
-      gradX += (dhat(xg - varType(i)) / dx) * wy * sample;
-      gradY += wx * (dhat(yg - varType(j)) / dy) * sample;
+      const varType dwx = (dhat(xg - varType(i)) / dx) * wy;
+      const varType dwy = wx * (dhat(yg - varType(j)) / dy);
+
+      valueRaw += w * sample;
+      gradXRaw += dwx * sample;
+      gradYRaw += dwy * sample;
+      weightSum += w;
+      dWeightX += dwx;
+      dWeightY += dwy;
     }
   }
+
+  if (weightSum <= REAL_EPSILON) {
+    value = 0;
+    gradX = 0;
+    gradY = 0;
+    return;
+  }
+
+  value = valueRaw / weightSum;
+  const varType invWeightSq = varType(1) / (weightSum * weightSum);
+  gradX = (gradXRaw * weightSum - valueRaw * dWeightX) * invWeightSq;
+  gradY = (gradYRaw * weightSum - valueRaw * dWeightY) * invWeightSq;
 }
 
 void APIC::ProjectGridOnParticles() {
