@@ -4,7 +4,7 @@
     "dt": 0.01,
     "nx": 200,
     "ny": 220,
-    "nt": 40t ,
+    "nt": 400 ,
     "ppcx": 5,
     "ppcy": 5,
     "density": 1000,
@@ -15,7 +15,7 @@
     "write_div": false,
     "write_norm_velocity": false,
     "write_smoke": false,
-    "write_particles": true,
+    "write_particles": false,
     "folder": "results/PIC/downBreak",
     "filename": "simulation",
 
