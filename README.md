@@ -1,5 +1,5 @@
 # 🌊 PICM 🌊
-
+[![CMake CI](https://github.com/Aerozine/PICM/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/Aerozine/PICM/actions/workflows/cmake-multi-platform.yml)
 PICM is a 2D fluid simulation playground for comparing several grid and
 particle methods:
 
