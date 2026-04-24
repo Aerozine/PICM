@@ -1,4 +1,3 @@
-/*
 #include "FLIP.hpp"
 
 FLIP::FLIP(Parameters &params)
@@ -6,17 +5,15 @@ FLIP::FLIP(Parameters &params)
       v_old(fields->v.nx, fields->v.ny) {}
 
 void FLIP::SaveOldVelocities() {
-    // Grid2D::operator= is a single memcpy under the hood.
-    // No need for two nested OMP loops over individual elements.
-    u_old = fields->u;
-    v_old = fields->v;
+  u_old = fields->u;
+  v_old = fields->v;
 }
 
 void FLIP::Step() {
   ProjectParticlesOnGrid();
-  SaveOldVelocities(); // save old veloctiy (!= PIC)
+  SaveOldVelocities();
   MakeIncompressible(params, *fields);
-  ProjectGridOnParticles(); // based on u_old and u_new (!= PIC)
+  ProjectGridOnParticles();
   fields->UpdateDivNorm();
   Advect();
   UpdateCellState();
@@ -25,26 +22,32 @@ void FLIP::Step() {
 }
 
 void FLIP::ProjectGridOnParticles() {
-    varType coefPic = params.coefPic;
-    varType coefFlip = 1 - coefPic;
-    OMP_PRAGMA(omp parallel for)
-    for (int idx = 0; idx < particles->size(); ++idx) {
-      const varType x = particles->GetX(idx);
-      const varType y = particles->GetY(idx);
+  const varType coefPic = params.coefPic;
+  const varType coefFlip = varType(1) - coefPic;
 
-      const varType up_old = particles->GetU(idx);
-      const varType vp_old = particles->GetV(idx);
+  OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
+  for (int ci = 0; ci < nx; ++ci) {
+    for (int cj = 0; cj < ny; ++cj) {
+      Particles &cell = (*cloud)(ci, cj);
+      for (int p = 0; p < cell.size(); ++p) {
+        const varType x = cell.GetX(p);
+        const varType y = cell.GetY(p);
 
-      const varType u_new_grid = fields->u.interpolate<0>(x,y,fields->dx,fields->dy); //interpolateU(fields->u, x, y);
-      const varType v_new_grid = fields->v.interpolate<1>(x,y,fields->dx,fields->dy);//interpolateV(fields->v, x, y);
+        const varType up_old = cell.GetU(p);
+        const varType vp_old = cell.GetV(p);
 
-      const varType u_old_grid =u_old.interpolate<0>(x,y,dx,dy); //interpolateU(u_old, x, y);
-      const varType v_old_grid =v_old.interpolate<1>(x,y,dx,dy);// interpolateV(v_old, x, y);
+        const varType u_new_grid = fields->u.interpolate<0>(x, y, dx, dy);
+        const varType v_new_grid = fields->v.interpolate<1>(x, y, dx, dy);
 
-      particles->SetU(idx, coefPic  * u_new_grid +
-                           coefFlip * (up_old + (u_new_grid - u_old_grid)));
-      particles->SetV(idx, coefPic  * v_new_grid +
-                           coefFlip * (vp_old + (v_new_grid - v_old_grid)) - dt*params.gravity);
+        const varType u_old_grid = u_old.interpolate<0>(x, y, dx, dy);
+        const varType v_old_grid = v_old.interpolate<1>(x, y, dx, dy);
+
+        cell.SetU(p, coefPic * u_new_grid +
+                         coefFlip * (up_old + (u_new_grid - u_old_grid)));
+        cell.SetV(p, coefPic * v_new_grid +
+                         coefFlip * (vp_old + (v_new_grid - v_old_grid)) -
+                         dt * params.gravity);
+      }
     }
+  }
 }
-*/

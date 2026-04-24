@@ -1,5 +1,5 @@
-/*
 #pragma once
+
 #include "../PIC/PIC.hpp"
 
 class FLIP : public PIC {
@@ -10,9 +10,10 @@ public:
 
 protected:
   void ProjectGridOnParticles() override;
+
+private:
   Grid2D u_old;
   Grid2D v_old;
 
   void SaveOldVelocities();
 };
-*/

@@ -80,7 +80,6 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   refill          = j.value("refill",          refill);
   kernelOrder = j.value("kernelOrder", kernelOrder);
   coefPic = j.value("coefPic", coefPic);
-  freeSurface = j.value("freeSurface", freeSurface);
   write_particles = j.value("write_particles", write_particles);
   folder          = j.value("folder",          folder);
 

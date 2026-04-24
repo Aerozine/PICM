@@ -56,6 +56,7 @@ void PIC::ProjectParticlesOnGrid() {
             for (int ci = ci_lo; ci <= ci_hi; ++ci) {
                 for (int cj = cj_lo; cj <= cj_hi; ++cj) {
                     const Particles &cell = (*cloud)(ci, cj);
+                    OMP_PRAGMA(omp parallel for reduction(+:sum,wt))
                     for (int p = 0; p < cell.size(); ++p) {
                         const varType xg = cell.GetX(p) / dx;
                         const varType yg = cell.GetY(p) / dy - varType(0.5);
@@ -96,6 +97,7 @@ void PIC::ProjectParticlesOnGrid() {
             for (int ci = ci_lo; ci <= ci_hi; ++ci) {
                 for (int cj = cj_lo; cj <= cj_hi; ++cj) {
                     const Particles &cell = (*cloud)(ci, cj);
+                    OMP_PRAGMA(omp parallel for reduction(+:sum,wt))
                     for (int p = 0; p < cell.size(); ++p) {
                         const varType xg = cell.GetX(p) / dx - varType(0.5);
                         const varType yg = cell.GetY(p) / dy;

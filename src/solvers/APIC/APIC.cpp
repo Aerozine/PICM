@@ -1,144 +1,174 @@
-
-/*
 #include "APIC.hpp"
+
+#include <algorithm>
+#include <cmath>
 
 APIC::APIC(Parameters &params) : PIC(params) {}
 
-// ── per-cell affine scatter (no atomics, writes into caller-owned buffer) ────
-void APIC::scatterToGrid_APIC(varType xg, varType yg,
-                               varType xp, varType yp,
-                               varType baseVal, varType cX, varType cY,
-                               varType faceOffsetX, varType faceOffsetY,
-                               varType* sum, varType* weight,
-                               int imax, int jmax) {
-    const int i0 = static_cast<int>(std::floor(xg));
-    const int j0 = static_cast<int>(std::floor(yg));
-    const int radius = params.kernelOrder;
-
-    for (int dj = -radius; dj <= radius; ++dj) {
-        for (int di = -radius; di <= radius; ++di) {
-            const int i = i0 + di;
-            const int j = j0 + dj;
-            if (i < 0 || i >= imax || j < 0 || j >= jmax) continue;
-
-            const varType w = hat(xg - varType(i)) * hat(yg - varType(j));
-            if (w <= varType(0)) continue;
-
-            const varType xFace = (varType(i) + faceOffsetX) * dx;
-            const varType yFace = (varType(j) + faceOffsetY) * dy;
-            const varType ox    = xFace - xp;
-            const varType oy    = yFace - yp;
-
-            const int flat = imax * j + i;
-            sum[flat]    += w * (baseVal + cX * ox + cY * oy);
-            weight[flat] += w;
-        }
-    }
-}
-
-// ── scatter one particle's u and v (with affine terms) into private buffers ──
-void APIC::scatterParticle_APIC(int idx,
-                                 varType* us, varType* uw,
-                                 varType* vs, varType* vw) {
-    const varType x   = particles->GetX(idx);
-    const varType y   = particles->GetY(idx);
-    const varType up  = particles->GetU(idx);
-    const varType vp  = particles->GetV(idx);
-    const varType cuX = particles->GetCuX(idx);
-    const varType cuY = particles->GetCuY(idx);
-    const varType cvX = particles->GetCvX(idx);
-    const varType cvY = particles->GetCvY(idx);
-
-    scatterToGrid_APIC(x / dx,             y / dy - varType(0.5),
-                       x, y, up, cuX, cuY,
-                       varType(0), varType(0.5),
-                       us, uw, nx + 1, ny);
-
-    scatterToGrid_APIC(x / dx - varType(0.5), y / dy,
-                       x, y, vp, cvX, cvY,
-                       varType(0.5), varType(0),
-                       vs, vw, nx, ny + 1);
-}
-
-// ── full P2G with thread-local buffers (same pattern as PIC) ─────────────────
 void APIC::ProjectParticlesOnGrid() {
-    const int nu = (nx + 1) * ny;
-    const int nv =  nx      * (ny + 1);
+  const int radius = params.kernelOrder;
 
-    int nthreads = 1;
-    OMP_PRAGMA(omp parallel) { OMP_PRAGMA(omp single) {
-#ifdef USE_OPENMP
-        nthreads = omp_get_num_threads();
-#endif
-    }}
+  OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
+  for (int j = 0; j < fields->u.ny; ++j) {
+    for (int i = 0; i < fields->u.nx; ++i) {
+      const labeltype left = fields->Label(i, j + 1);
+      const labeltype right = fields->Label(i + 1, j + 1);
+      if (IS_SOLID(left) || IS_SOLID(right)) {
+        fields->u.Set(i, j, varType(0));
+        continue;
+      }
+      if (IS_BC_U(left))
+        continue;
 
-    std::vector<varType> u_sum_all(nu * nthreads, varType(0));
-    std::vector<varType> u_wgt_all(nu * nthreads, varType(0));
-    std::vector<varType> v_sum_all(nv * nthreads, varType(0));
-    std::vector<varType> v_wgt_all(nv * nthreads, varType(0));
+      const varType xFace = static_cast<varType>(i) * dx;
+      const varType yFace =
+          (static_cast<varType>(j) + varType(0.5)) * dy;
 
-    OMP_PRAGMA(omp parallel for schedule(static))
-    for (int idx = 0; idx < particles->size(); ++idx) {
-        int tid = 0;
-#ifdef USE_OPENMP
-        tid = omp_get_thread_num();
-#endif
-        scatterParticle_APIC(idx,
-            u_sum_all.data() + tid * nu, u_wgt_all.data() + tid * nu,
-            v_sum_all.data() + tid * nv, v_wgt_all.data() + tid * nv);
-    }
+      varType sum = 0;
+      varType wt = 0;
 
-    // reduce
-    OMP_PRAGMA(omp parallel for schedule(static))
-    for (int k = 0; k < nu; ++k) {
-        varType s = varType(0), w = varType(0);
-        for (int t = 0; t < nthreads; ++t) {
-            s += u_sum_all[t * nu + k];
-            w += u_wgt_all[t * nu + k];
+      const int ci_lo = std::max(0, i - radius);
+      const int ci_hi = std::min(nx - 1, i + radius - 1);
+      const int cj_lo = std::max(0, j - radius + 1);
+      const int cj_hi = std::min(ny - 1, j + radius);
+
+      for (int ci = ci_lo; ci <= ci_hi; ++ci) {
+        for (int cj = cj_lo; cj <= cj_hi; ++cj) {
+          const Particles &cell = (*cloud)(ci, cj);
+          for (int p = 0; p < cell.size(); ++p) {
+            const varType x = cell.GetX(p);
+            const varType y = cell.GetY(p);
+            const varType xg = x / dx;
+            const varType yg = y / dy - varType(0.5);
+            const varType k = hat(xg - varType(i)) * hat(yg - varType(j));
+            if (k <= varType(0))
+              continue;
+
+            const varType ox = xFace - x;
+            const varType oy = yFace - y;
+            const varType affine =
+                cell.GetU(p) + cell.GetCuX(p) * ox + cell.GetCuY(p) * oy;
+
+            sum += k * affine;
+            wt += k;
+          }
         }
-        fields->u_sum->A[k] = s;
-        fields->u_weight->A[k] = w;
-    }
-    OMP_PRAGMA(omp parallel for schedule(static))
-    for (int k = 0; k < nv; ++k) {
-        varType s = varType(0), w = varType(0);
-        for (int t = 0; t < nthreads; ++t) {
-            s += v_sum_all[t * nv + k];
-            w += v_wgt_all[t * nv + k];
-        }
-        fields->v_sum->A[k] = s;
-        fields->v_weight->A[k] = w;
-    }
+      }
 
-    // normalise — identical to PIC, copied here since ProjectParticlesOnGrid
-    // is overridden and PIC's version is not called
-    OMP_PRAGMA(omp parallel for collapse(2))
-    for (int j = 0; j < fields->u.ny; ++j) {
-        for (int i = 0; i < fields->u.nx; ++i) {
-            const labeltype left  = fields->Label(i,     j + 1);
-            const labeltype right = fields->Label(i + 1, j + 1);
-            if (IS_SOLID(left) || IS_SOLID(right)) { fields->u.Set(i, j, varType(0)); continue; }
-            if (IS_BC_U(left)) continue;
-            const varType w = fields->u_weight->Get(i, j);
-            fields->u.Set(i, j, w >= REAL_EPSILON ? fields->u_sum->Get(i, j) / w : varType(0));
-        }
+      fields->u.Set(i, j, wt >= REAL_EPSILON ? sum / wt : varType(0));
     }
-    OMP_PRAGMA(omp parallel for collapse(2))
-    for (int j = 0; j < fields->v.ny; ++j) {
-        for (int i = 0; i < fields->v.nx; ++i) {
-            const labeltype bot = fields->Label(i + 1, j);
-            const labeltype top = fields->Label(i + 1, j + 1);
-            if (IS_SOLID(bot) || IS_SOLID(top)) { fields->v.Set(i, j, varType(0)); continue; }
-            if (IS_BC_V(bot)) continue;
-            const varType w = fields->v_weight->Get(i, j);
-            fields->v.Set(i, j, w >= REAL_EPSILON ? fields->v_sum->Get(i, j) / w : varType(0));
+  }
+
+  OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
+  for (int j = 0; j < fields->v.ny; ++j) {
+    for (int i = 0; i < fields->v.nx; ++i) {
+      const labeltype bottom = fields->Label(i + 1, j);
+      const labeltype top = fields->Label(i + 1, j + 1);
+      if (IS_SOLID(bottom) || IS_SOLID(top)) {
+        fields->v.Set(i, j, varType(0));
+        continue;
+      }
+      if (IS_BC_V(bottom))
+        continue;
+
+      const varType xFace =
+          (static_cast<varType>(i) + varType(0.5)) * dx;
+      const varType yFace = static_cast<varType>(j) * dy;
+
+      varType sum = 0;
+      varType wt = 0;
+
+      const int ci_lo = std::max(0, i - radius + 1);
+      const int ci_hi = std::min(nx - 1, i + radius);
+      const int cj_lo = std::max(0, j - radius);
+      const int cj_hi = std::min(ny - 1, j + radius - 1);
+
+      for (int ci = ci_lo; ci <= ci_hi; ++ci) {
+        for (int cj = cj_lo; cj <= cj_hi; ++cj) {
+          const Particles &cell = (*cloud)(ci, cj);
+          for (int p = 0; p < cell.size(); ++p) {
+            const varType x = cell.GetX(p);
+            const varType y = cell.GetY(p);
+            const varType xg = x / dx - varType(0.5);
+            const varType yg = y / dy;
+            const varType k = hat(xg - varType(i)) * hat(yg - varType(j));
+            if (k <= varType(0))
+              continue;
+
+            const varType ox = xFace - x;
+            const varType oy = yFace - y;
+            const varType affine =
+                cell.GetV(p) + cell.GetCvX(p) * ox + cell.GetCvY(p) * oy;
+
+            sum += k * affine;
+            wt += k;
+          }
         }
+      }
+
+      fields->v.Set(i, j, wt >= REAL_EPSILON ? sum / wt : varType(0));
     }
+  }
 }
 
-// ── G2P unchanged from your original ─────────────────────────────────────────
+void APIC::accumulateAffineComponent(const Grid2D &grid, varType xg, varType yg,
+                                     int imax, int jmax, varType &value,
+                                     varType &gradX, varType &gradY) const {
+  const int radius = params.kernelOrder;
+  const int i0 = static_cast<int>(std::floor(xg));
+  const int j0 = static_cast<int>(std::floor(yg));
+
+  value = 0;
+  gradX = 0;
+  gradY = 0;
+
+  for (int dj = -radius; dj <= radius; ++dj) {
+    for (int di = -radius; di <= radius; ++di) {
+      const int i = i0 + di;
+      const int j = j0 + dj;
+      if (i < 0 || i >= imax || j < 0 || j >= jmax)
+        continue;
+
+      const varType wx = hat(xg - varType(i));
+      const varType wy = hat(yg - varType(j));
+      const varType w = wx * wy;
+      if (w <= varType(0))
+        continue;
+
+      const varType sample = grid.Get(i, j);
+      value += w * sample;
+      gradX += (dhat(xg - varType(i)) / dx) * wy * sample;
+      gradY += wx * (dhat(yg - varType(j)) / dy) * sample;
+    }
+  }
+}
+
 void APIC::ProjectGridOnParticles() {
-    // ... your existing implementation unchanged
-}
+  OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
+  for (int ci = 0; ci < nx; ++ci) {
+    for (int cj = 0; cj < ny; ++cj) {
+      Particles &cell = (*cloud)(ci, cj);
+      for (int p = 0; p < cell.size(); ++p) {
+        const varType x = cell.GetX(p);
+        const varType y = cell.GetY(p);
 
-*/
+        varType u = 0;
+        varType cuX = 0;
+        varType cuY = 0;
+        accumulateAffineComponent(fields->u, x / dx, y / dy - varType(0.5),
+                                  fields->u.nx, fields->u.ny, u, cuX, cuY);
+
+        varType v = 0;
+        varType cvX = 0;
+        varType cvY = 0;
+        accumulateAffineComponent(fields->v, x / dx - varType(0.5), y / dy,
+                                  fields->v.nx, fields->v.ny, v, cvX, cvY);
+
+        cell.SetU(p, u);
+        cell.SetV(p, v - dt * params.gravity);
+        cell.SetCu(p, cuX, cuY);
+        cell.SetCv(p, cvX, cvY);
+      }
+    }
+  }
+}
