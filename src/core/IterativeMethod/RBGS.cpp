@@ -46,13 +46,12 @@ void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, varType coef,
         }
         const varType res = (count > 0) ? std::sqrt(sumSq / count) : 0.0;
         if (checkConvergence(res, res0, it, tol)) {
-#ifndef NDEBUG
-            std::cout << "  RedBlackGS converged in " << it + 1
-                      << " iters, rel.res = " << res / res0 << '\n';
-            assert(std::isfinite(res / res0));
-#endif
+            const double relRes =
+                (std::abs(res0) > REAL_EPSILON) ? (res / res0) : 0.0;
+            debugSolverConverged("RedBlackGS", it + 1, relRes);
+            assert(std::isfinite(relRes));
             return;
         }
     }
-    std::cout << "  RedBlackGS: reached maxIters = " << maxIters << '\n';
+    debugSolverMaxIters("RedBlackGS", maxIters);
 }

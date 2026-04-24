@@ -1,7 +1,6 @@
 #include "Particles.hpp"
 #include <random>
 
-// ── thread-safe rand01 ───────────────────────────────────────────────────────
 // Each thread gets its own RNG seeded from a shared device, so RefillParticles
 // can safely be parallelised in the future without a data race.
 varType rand01() {
@@ -12,7 +11,7 @@ varType rand01() {
     return dist(rng);
 }
 
-// ── InitParticleGrid ─────────────────────────────────────────────────────────
+
 void Particles::InitParticleGrid(const Fields2D &fields) {
     pos_x.clear(); pos_y.clear();
     vel_x.clear(); vel_y.clear();

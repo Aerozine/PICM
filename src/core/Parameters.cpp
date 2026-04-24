@@ -38,7 +38,8 @@ std::string solverTypeName(const SolverConfig &cfg) {
 
 SolverConfig::Method solverMethodFromJson(const nlohmann::json &j) {
   const std::string s = j.get<std::string>();
-  if (s == "semilagrangian" || s == "sl")   return SolverConfig::Method::SL;
+  if (s == "semilagrangian" || s == "semi_lagrangian" || s == "sl")
+    return SolverConfig::Method::SL;
   if (s == "vanilla_pic"   || s == "pic")   return SolverConfig::Method::VanillaPIC;
   if (s == "flip")                          return SolverConfig::Method::FLIP;
   if (s == "mixed_flip_pic")                return SolverConfig::Method::Mixed_FLIP_PIC;
@@ -80,6 +81,7 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   refill          = j.value("refill",          refill);
   kernelOrder = j.value("kernelOrder", kernelOrder);
   coefPic = j.value("coefPic", coefPic);
+  max_cfl = j.value("max_cfl", max_cfl);
   write_particles = j.value("write_particles", write_particles);
   folder          = j.value("folder",          folder);
 
@@ -107,7 +109,7 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
       solver.method = solverMethodFromJson(j["method"]);
   }
 }
-void Parameters::applySmoke(Grid2D smoke,Fields2D &f) {
+void Parameters::applySmoke(Grid2D &smoke,Fields2D &f) {
   const std::map<std::string, int> vars = {{"nx", nx}, {"ny", ny}};
   if (!smoke_json.is_null())
     for (const auto &obj : parseSceneObjects(smoke_json, vars)) obj->applySmoke(smoke, f);
@@ -163,6 +165,7 @@ std::ostream &operator<<(std::ostream &os, const Parameters &p) {
      << "  dx=" << p.dx << "  dy=" << p.dy << '\n'
      << "  Time    : nt=" << p.nt << "  dt=" << p.dt << '\n'
      << "  Density : " << p.density << '\n'
+     << "  CFL     : max=" << p.max_cfl << '\n'
      << "  Sampling: every " << p.sampling_rate << " step(s)\n"
      << "  Solver  : " << solverTypeName(p.solver)
      << "  maxIter=" << p.solver.maxIters

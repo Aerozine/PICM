@@ -27,11 +27,12 @@ void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, varType coef,
 
 /**
  * @brief Modified Incomplete Cholesky CG (MICCG0) pressure solver.
- * @param scale  dt / (rho * dx²).
+ * Uses an Eigen sparse matrix when available and falls back to RBGS otherwise.
+ * The scalar argument matches the existing pressure-system coefficient
+ * rho * dx^2 / dt.
  * @return true if converged within maxIters.
  */
-
-bool solveMICCG0(Fields2D &fields, varType scale, int maxIters, varType tol);
+bool solveMICCG0(Fields2D &fields, varType coef, int maxIters, varType tol);
 
 /**
  * @brief Unpreconditioned Conjugate Gradient pressure solver (CPU).

@@ -3,8 +3,8 @@
   "dy": 0.05,
   "dt": 0.01,
   "nx": 300,
-  "ny": 450,
-  "nt": 2500,
+  "ny": 300,
+  "nt": 1000,
   "ppcx": 5,
   "ppcy": 5,
   "density": 1000,
@@ -67,7 +67,7 @@
 
 
   "solver": {
-    "type": "red_black_gauss_seidel",
+    "type": "cg",
     "max_iterations": 1e3,
     "tolerance": 1e-2
   },

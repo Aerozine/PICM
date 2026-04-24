@@ -120,7 +120,7 @@ varType interpolate(const varType x, const varType y, const varType dx,
              ((REAL_LITERAL(1.0) - fx) * f00 + fx * f10) +
          fy * ((REAL_LITERAL(1.0) - fx) * f01 + fx * f11);
 }
-//private:
+
 
   varType *A = nullptr;
 };

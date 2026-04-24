@@ -82,14 +82,10 @@ endif()
 
 set(USE_CUDA_FOUND FALSE)
 if(USE_GPU)
-    # Let CMake find the toolkit itself.  The user can help by setting
-    # CUDAToolkit_ROOT in the environment or on the command line:
-    #   cmake -DCUDAToolkit_ROOT=/opt/cuda ..
-    # or by putting nvcc on PATH.  We do NOT hardcode any path here.
-    # @todo needs to be commented ( for lo use actually)
-    set(CUDAToolkit_ROOT /usr/local/cuda)
-    set(CMAKE_CUDA_ARCHITECTURES 89)
-    set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
+    # Let CMake find the toolkit itself. The active WSL compiler can be
+    # selected with PATH, CUDACXX, CMAKE_CUDA_COMPILER, or CUDAToolkit_ROOT.
+    # Avoid hardcoding /usr/local/cuda so alternate installations (for example
+    # the NVIDIA HPC SDK) can be selected without editing the project.
     find_package(CUDAToolkit QUIET)
     if(CUDAToolkit_FOUND)
         set(USE_CUDA_FOUND TRUE)

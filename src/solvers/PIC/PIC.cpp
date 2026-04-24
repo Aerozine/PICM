@@ -27,6 +27,33 @@ PIC::PIC(Parameters &params)
 #endif
 }
 
+int PIC::computeAdvectionSubsteps() const {
+    if (params.max_cfl <= REAL_EPSILON || dt <= REAL_EPSILON)
+        return 1;
+
+    varType maxCourant = varType(0);
+    const varType gravitySpeed = std::abs(params.gravity) * dt;
+
+    OMP_PRAGMA(omp parallel for collapse(2) reduction(max:maxCourant) schedule(static))
+    for (int ci = 0; ci < nx; ++ci) {
+        for (int cj = 0; cj < ny; ++cj) {
+            const Particles &cell = (*cloud)(ci, cj);
+            for (int p = 0; p < cell.size(); ++p) {
+                const varType courantX = std::abs(cell.GetU(p)) / dx;
+                const varType courantY =
+                    (std::abs(cell.GetV(p)) + gravitySpeed) / dy;
+                maxCourant = std::max(maxCourant, std::max(courantX, courantY));
+            }
+        }
+    }
+
+    if (maxCourant <= REAL_EPSILON)
+        return 1;
+
+    return std::max(
+        1, static_cast<int>(std::ceil((dt * maxCourant) / params.max_cfl)));
+}
+
 void PIC::WriteOutput(int step) const {
     if (step % params.sampling_rate != 0)
         return;
@@ -42,15 +69,30 @@ void PIC::WriteOutput(int step) const {
 }
 
 void PIC::Step() {
-    ProjectParticlesOnGrid();
-    MakeIncompressible(params, *fields);
+    const varType frameDt = dt;
+    const int substeps = computeAdvectionSubsteps();
+    const varType subDt = frameDt / static_cast<varType>(substeps);
 
-    //Gravity in handle in projection to avoir loop over particles
-    ProjectGridOnParticles();
+    if (substeps > 1) {
+        DBG_PRINTF("%s: CFL substepping %d x dt=%g",
+                   solverMethodName(params.solver.method).c_str(), substeps,
+                   static_cast<double>(subDt));
+    }
 
-    Advect();
-    UpdateCellState();
-    if (params.refill) RefillParticles();
+    setTimeStep(subDt);
+    for (int substep = 0; substep < substeps; ++substep) {
+        ProjectParticlesOnGrid();
+        MakeIncompressible(params, *fields);
+
+        // Gravity is applied during grid -> particle transfer.
+        ProjectGridOnParticles();
+
+        Advect();
+        UpdateCellState();
+        if (params.refill)
+            RefillParticles();
+    }
+    setTimeStep(frameDt);
 }
 
 void PIC::Run() {
