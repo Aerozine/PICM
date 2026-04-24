@@ -27,7 +27,7 @@ target_include_directories(PIC PRIVATE
         #target_include_directories(PIC PRIVATE ${LIKWID_INCLUDE})
         #target_link_libraries(PIC PRIVATE ${LIKWID_LIB})
     #else()
-        #message(WARNING "LIKWID: not found — markers disabled")
+        #message(WARNING "LIKWID: not found - markers disabled")
     #endif()
 #endif()
 

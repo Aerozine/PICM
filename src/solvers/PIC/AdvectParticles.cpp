@@ -81,7 +81,7 @@ void PIC::Advect() {
           const varType y1 = y0 + dt * vmid;
 
           // out of bounds: kill particle, swap-and-pop keeps array packed.
-          // Decrement n — one fewer original particle remains.
+          // Decrement n - on fewer original particle remains.
           if (x1 < varType(0) || x1 >= xMax || y1 < varType(0) || y1 >= yMax) {
             cell.Remove(local_idx);
             --n;
