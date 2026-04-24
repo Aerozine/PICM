@@ -10,15 +10,29 @@ void FLIP::SaveOldVelocities() {
 }
 
 void FLIP::Step() {
-  ProjectParticlesOnGrid();
-  SaveOldVelocities();
-  MakeIncompressible(params, *fields);
-  ProjectGridOnParticles();
-  fields->UpdateDivNorm();
-  Advect();
-  UpdateCellState();
-  if (params.refill)
-    RefillParticles();
+  const varType frameDt = dt;
+  const int substeps = computeAdvectionSubsteps();
+  const varType subDt = frameDt / static_cast<varType>(substeps);
+
+  if (substeps > 1) {
+    DBG_PRINTF("%s: CFL substepping %d x dt=%g",
+               solverMethodName(params.solver.method).c_str(), substeps,
+               static_cast<double>(subDt));
+  }
+
+  setTimeStep(subDt);
+  for (int substep = 0; substep < substeps; ++substep) {
+    ProjectParticlesOnGrid();
+    SaveOldVelocities();
+    MakeIncompressible(params, *fields);
+    ProjectGridOnParticles();
+    fields->UpdateDivNorm();
+    Advect();
+    UpdateCellState();
+    if (params.refill)
+      RefillParticles();
+  }
+  setTimeStep(frameDt);
 }
 
 void FLIP::ProjectGridOnParticles() {

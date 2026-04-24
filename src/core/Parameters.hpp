@@ -1,6 +1,6 @@
 #pragma once
 #include "SceneObjects.hpp"
-#include "SolverConfig_io.hpp"   // host-only: pulls in SolverConfig + json + string
+#include "SolverConfig.hpp"
 #include <nlohmann/json.hpp>
 #include <string>
 
@@ -27,6 +27,7 @@ public:
 
   varType gravity = 0.0;
   varType coefPic = 0.05;
+  varType max_cfl = REAL_LITERAL(0.75);
 
   bool write_u             = true;
   bool write_v             = true;
@@ -71,7 +72,7 @@ public:
 
   /// Pretty-print all parameters to @p os (debug builds).
   friend std::ostream &operator<<(std::ostream &os, const Parameters &p);
-  void applySmoke(Grid2D smoke, Fields2D &f);
+  void applySmoke(Grid2D &smoke, Fields2D &f);
 
 private:
   nlohmann::json velocityU_json;

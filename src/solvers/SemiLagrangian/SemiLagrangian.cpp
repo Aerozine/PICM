@@ -1,6 +1,64 @@
 #include "SemiLagrangian.hpp"
 #include <algorithm>
+#include <array>
+#include <cmath>
 #include <iostream>
+
+namespace {
+
+[[nodiscard]] inline bool isSolidSmokeCell(const Fields2D &fields, int i,
+                                           int j) noexcept {
+  return IS_SOLID(fields.Label(i + 1, j + 1));
+}
+
+[[nodiscard]] varType sampleSmokeFreeSpace(const Grid2D &smoke,
+                                           const Fields2D &fields, varType x,
+                                           varType y, varType dx,
+                                           varType dy) {
+  struct WeightedSample {
+    int i;
+    int j;
+    varType weight;
+  };
+
+  const varType iClamped = std::clamp(
+      x / dx - REAL_LITERAL(0.5), REAL_LITERAL(0.0),
+      static_cast<varType>(smoke.nx - 1));
+  const varType jClamped = std::clamp(
+      y / dy - REAL_LITERAL(0.5), REAL_LITERAL(0.0),
+      static_cast<varType>(smoke.ny - 1));
+
+  const int i0 = static_cast<int>(std::floor(iClamped));
+  const int j0 = static_cast<int>(std::floor(jClamped));
+  const int i1 = std::min(i0 + 1, smoke.nx - 1);
+  const int j1 = std::min(j0 + 1, smoke.ny - 1);
+
+  const varType fx = iClamped - static_cast<varType>(i0);
+  const varType fy = jClamped - static_cast<varType>(j0);
+
+  const std::array<WeightedSample, 4> samples = {{
+      {i0, j0, (REAL_LITERAL(1.0) - fx) * (REAL_LITERAL(1.0) - fy)},
+      {i1, j0, fx * (REAL_LITERAL(1.0) - fy)},
+      {i0, j1, (REAL_LITERAL(1.0) - fx) * fy},
+      {i1, j1, fx * fy},
+  }};
+
+  varType weightedSmoke = REAL_LITERAL(0.0);
+  varType weightSum = REAL_LITERAL(0.0);
+  for (const auto &sample : samples) {
+    if (sample.weight <= REAL_LITERAL(0.0) ||
+        isSolidSmokeCell(fields, sample.i, sample.j))
+      continue;
+    weightedSmoke += sample.weight * smoke.Get(sample.i, sample.j);
+    weightSum += sample.weight;
+  }
+
+  if (weightSum <= REAL_EPSILON)
+    return REAL_LITERAL(0.0);
+  return weightedSmoke / weightSum;
+}
+
+} // namespace
 
 SemiLagrangian::SemiLagrangian(Parameters &params) : Solver(params) ,smokeMap(std::make_unique<Grid2D>(params.nx,params.ny)) {
 #ifndef NDEBUG
@@ -12,10 +70,8 @@ SemiLagrangian::SemiLagrangian(Parameters &params) : Solver(params) ,smokeMap(st
             << "  v  (nx,   ny+1): " << fields->v.nx << " x " << fields->v.ny
             << '\n';
 #endif
-  params.applySmoke(std::move(*smokeMap),*fields);
   params.applyToFields(*fields);
-
-   InitializeOutputWriters();
+  params.applySmoke(*smokeMap,*fields);
   if (params.write_smoke)
     smokeWriter = std::make_unique<OutputWriter>(params.folder, "smoke");
 #ifndef NDEBUG
@@ -30,6 +86,11 @@ void SemiLagrangian::AdvectSmoke() const {
     OMP_PRAGMA(omp parallel for collapse(2))
     for (int j = 0; j < smokeMap->ny; ++j) {
         for (int i = 0; i < smokeMap->nx; ++i) {
+            if (isSolidSmokeCell(*fields, i, j)) {
+                smokeNew.Set(i, j, REAL_LITERAL(0.0));
+                continue;
+            }
+
             // if (fields->Label(i, j) & Fields2D::BC_S) {
             if (IS_BC_S(fields->Label(i + 1, j + 1))) {
                 assert(std::isfinite(smokeMap->Get(i, j)));
@@ -52,14 +113,16 @@ void SemiLagrangian::AdvectSmoke() const {
             varType xDep = x0 - dt * uMid;
             varType yDep = y0 - dt * vMid;
 
-            xDep = std::clamp(xDep, REAL_LITERAL(0.0),
-                              static_cast<varType>(nx - 1) * dx);
-            yDep = std::clamp(yDep, REAL_LITERAL(0.0),
-                              static_cast<varType>(ny - 1) * dy);
+            xDep = std::clamp(xDep, REAL_LITERAL(0.5) * dx,
+                              (static_cast<varType>(nx) - REAL_LITERAL(0.5)) * dx);
+            yDep = std::clamp(yDep, REAL_LITERAL(0.5) * dy,
+                              (static_cast<varType>(ny) - REAL_LITERAL(0.5)) * dy);
 
             assert(std::isfinite(xDep));
             assert(std::isfinite(yDep));
-            smokeNew.Set(i, j, smokeMap->interpolate<2>(xDep, yDep, dx, dy));
+            smokeNew.Set(i, j,
+                         sampleSmokeFreeSpace(*smokeMap, *fields, xDep, yDep,
+                                              dx, dy));
         }
     }
   // TODO : pass smokeNew as pointer of fields and avoir copy
@@ -80,11 +143,19 @@ void SemiLagrangian::Step() {
   DBG_PRINTF("step");
 }
 
+void SemiLagrangian::WriteOutput(int step) const {
+  if (step % params.sampling_rate != 0)
+    return;
+
+  Solver::WriteOutput(step);
+
+  if (params.write_smoke && smokeWriter)
+    smokeWriter->writeGrid2D(*smokeMap, "smoke");
+}
+
 void SemiLagrangian::Run() {
   fields->Div();
   fields->VelocityNormCenterGrid();
   WriteOutput(0);
-  if (params.write_smoke && smokeWriter)
-    smokeWriter->writeGrid2D(*smokeMap, "smoke");
   RunLoop(std::max(1, params.nt / 20));
 }

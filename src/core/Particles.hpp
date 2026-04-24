@@ -3,23 +3,9 @@
 #include "Precision.hpp"
 #include "Parameters.hpp"
 #include <vector>
-#include <cstring>  // memcpy
+#include <cstring> 
 
-/**
- * @brief Structure-of-Arrays particle storage.
- *
- * Layout:
- *   pos_x, pos_y   — always present
- *   vel_x, vel_y   — always present
- *   cu_x, cu_y     — present only when needsAffine == true  (APIC / FLIP-affine)
- *   cv_x, cv_y     — present only when needsAffine == true
- *
- * When needsAffine == false the cu/cv vectors have size 0 and are never
- * touched, so they contribute zero cache pressure in the PIC hot loops.
- *
- * The public interface is deliberately kept identical to the old AoS version
- * so that all call-sites compile without changes.
- */
+
 class Particles {
 public:
     int     nx, ny, ppcx, ppcy;
@@ -28,13 +14,13 @@ public:
     /// True when cu/cv are actually stored (APIC, mixed FLIP/affine, …).
     const bool needsAffine;
 
-    // ── SoA arrays ──────────────────────────────────────────────────────────
+    
     std::vector<varType> pos_x, pos_y;
     std::vector<varType> vel_x, vel_y;
     std::vector<varType> cu_x,  cu_y;  ///< empty when !needsAffine
     std::vector<varType> cv_x,  cv_y;  ///< empty when !needsAffine
 
-    // ── constructor ─────────────────────────────────────────────────────────
+
     explicit Particles(Parameters &params)
         : nx(params.nx), ny(params.ny),
           ppcx(params.ppcx), ppcy(params.ppcy),
@@ -44,12 +30,10 @@ public:
                       params.solver.method != SolverConfig::Method::SL)
     {}
 
-    // ── capacity / size ─────────────────────────────────────────────────────
-    [[nodiscard]] int size() const noexcept {
+     [[nodiscard]] int size() const noexcept {
         return static_cast<int>(pos_x.size());
     }
 
-    // ── add / remove ────────────────────────────────────────────────────────
 
     /// Add a particle.  cuX/cuY/cvX/cvY are ignored when !needsAffine.
     void Add(varType x, varType y,
@@ -66,10 +50,7 @@ public:
         }
     }
 
-    /**
-     * @brief Swap-erase particle i (O(1), does NOT preserve order).
-     *        Prefer the bulk compaction in AdvectParticles.cpp for mass removal.
-     */
+
     void Remove(int i) {
         const int last = size() - 1;
         if (i != last) {
@@ -88,11 +69,6 @@ public:
         }
     }
 
-    /**
-     * @brief Compact the particle arrays using a pre-built keep[] mask.
-     *        Replaces the manual compaction loop in AdvectParticles.cpp.
-     *        Returns the new size.
-     */
     int Compact(const std::vector<uint8_t> &keep) {
         const int n = size();
         int write = 0;
@@ -112,7 +88,6 @@ public:
         return write;
     }
 
-    // ── scalar accessors (same names as before) ──────────────────────────────
     [[nodiscard]] varType GetX(int i)   const noexcept { return pos_x[i]; }
     [[nodiscard]] varType GetY(int i)   const noexcept { return pos_y[i]; }
     [[nodiscard]] varType GetU(int i)   const noexcept { return vel_x[i]; }
@@ -135,7 +110,6 @@ public:
 
     void InitParticleGrid(const Fields2D &fields);
 
-    // ── raw SoA pointer access (for SIMD / APIC inner loops) ────────────────
     [[nodiscard]]       varType* PosX()       noexcept { return pos_x.data(); }
     [[nodiscard]] const varType* PosX() const noexcept { return pos_x.data(); }
     [[nodiscard]]       varType* PosY()       noexcept { return pos_y.data(); }

@@ -1,252 +1,237 @@
-
 #ifdef USE_CUDA
 
 #include "IterativeMethods.hpp"
 #include "../Fields.hpp"
 #include "../Precision.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <cuda_runtime.h>
+#include <vector>
 
 #define CUDA_CHECK(call)                                                        \
-    do {                                                                        \
-        cudaError_t _e = (call);                                                \
-        if (_e != cudaSuccess) {                                                \
-            fprintf(stderr, "[CUDA] %s:%d  %s\n",                              \
-                    __FILE__, __LINE__, cudaGetErrorString(_e));                \
-            std::exit(EXIT_FAILURE);                                            \
-        }                                                                       \
-    } while (0)
+  do {                                                                          \
+    cudaError_t _e = (call);                                                    \
+    if (_e != cudaSuccess) {                                                    \
+      fprintf(stderr, "[CUDA] %s:%d  %s\n", __FILE__, __LINE__,                 \
+              cudaGetErrorString(_e));                                          \
+      std::exit(EXIT_FAILURE);                                                  \
+    }                                                                           \
+  } while (0)
 
-__device__ __forceinline__ int pidx(int pnx, int i, int j) {
-    return pnx * j + i;
-}
-//@todo must be rewritten by ourself more simpler
+namespace {
+
 static constexpr int BX = 32;
 static constexpr int BY = 8;
+static constexpr int CHECK_EVERY = 8;
 
-// ── Warp-level max reduction ──────────────────────────────────────────────────
-// Butterfly shuffle: each step exchanges values between lanes that differ by
-// `mask` bits, keeping the running maximum.  After log2(32)=5 steps every
-// lane holds the warp-wide max.
-//
-// atomicMax has no double overload in CUDA, so we reinterpret the bit pattern
-// as uint64.  This is valid for non-negative doubles because IEEE-754 doubles
-// with the same sign sort identically as unsigned integers.
-__device__ __forceinline__ void warpAtomicMaxRes(double *out, double val) {
-    for (int mask = warpSize / 2; mask > 0; mask >>= 1)
-        val = fmax(val, __shfl_xor_sync(0xffffffff, val, mask));
-
-    if ((threadIdx.x % warpSize) == 0)
-        atomicMax(reinterpret_cast<unsigned long long *>(out),
-                  __double_as_longlong(val));
+__host__ __device__ __forceinline__ int pidx(int pnx, int i, int j) {
+  return pnx * j + i;
 }
 
-// ── RBGS kernel ───────────────────────────────────────────────────────────────
-// Each thread owns one interior p-cell.
-// A shared-memory tile of (BX+2)×(BY+2) holds centre values + 1-cell halo
-// so that all four neighbours are read from fast shared memory.
-__global__ void rbgsKernel(
-        int    colour,
-        int    pnx, int pny,
-        double omega,
-        const int    * __restrict__ lbl,
-        const double * __restrict__ b,      // b[id] = -coef * div(i-1, j-1)
-        double       * __restrict__ p,
-        double       * __restrict__ max_res_out,
-        bool           do_check)
-{
-    __shared__ double tile[BY + 2][BX + 2];
+__global__ void rbgsColorKernel(int colour, int pnx, int pny, double omega,
+                                const int *lbl, const double *b, double *p,
+                                double *deltaSq, bool accumulateResidual) {
+  const int i = blockIdx.x * blockDim.x + threadIdx.x + 1;
+  const int j = blockIdx.y * blockDim.y + threadIdx.y + 1;
 
-    const int ti = threadIdx.x;   // 0 .. BX-1
-    const int tj = threadIdx.y;   // 0 .. BY-1
+  if (i >= pnx - 1 || j >= pny - 1)
+    return;
+  if (((i + j) & 1) != colour)
+    return;
 
-    // Map to interior p-space: 1 .. pnx-2, 1 .. pny-2.
-    const int gi = blockIdx.x * BX + ti + 1;
-    const int gj = blockIdx.y * BY + tj + 1;
+  const int id = pidx(pnx, i, j);
+  const int cur = lbl[id];
+  if (IS_SOLID(cur) || IS_AIR(cur) || IS_BC_P(cur))
+    return;
 
-    const bool in_domain = (gi <= pnx - 2) && (gj <= pny - 2);
+  const double pij = p[id];
+  double sumP = 0.0;
 
-    // ── Load tile (centre + four halos) ──────────────────────────────────────
-    tile[tj + 1][ti + 1] = in_domain ? p[pidx(pnx, gi, gj)] : 0.0;
+  // Left.
+  {
+    const int nb = lbl[pidx(pnx, i - 1, j)];
+    if (IS_SOLID(nb) || IS_BC_U(nb))
+      sumP += pij;
+    else if (!IS_AIR(nb))
+      sumP += p[pidx(pnx, i - 1, j)];
+  }
 
-    // Left halo
-    if (ti == 0) {
-        const int xi = blockIdx.x * BX;          // gi - 1
-        tile[tj + 1][0] = (xi >= 1 && xi <= pnx - 2 && gj <= pny - 2)
-                          ? p[pidx(pnx, xi, gj)] : 0.0;
-    }
-    // Right halo
-    if (ti == BX - 1) {
-        const int xi = blockIdx.x * BX + BX + 1; // gi + 1 of last column
-        tile[tj + 1][BX + 1] = (xi >= 1 && xi <= pnx - 2 && gj <= pny - 2)
-                                ? p[pidx(pnx, xi, gj)] : 0.0;
-    }
-    // Bottom halo
-    if (tj == 0) {
-        const int yj = blockIdx.y * BY;           // gj - 1
-        tile[0][ti + 1] = (yj >= 1 && yj <= pny - 2 && gi <= pnx - 2)
-                          ? p[pidx(pnx, gi, yj)] : 0.0;
-    }
-    // Top halo
-    if (tj == BY - 1) {
-        const int yj = blockIdx.y * BY + BY + 1; // gj + 1 of last row
-        tile[BY + 1][ti + 1] = (yj >= 1 && yj <= pny - 2 && gi <= pnx - 2)
-                                ? p[pidx(pnx, gi, yj)] : 0.0;
-    }
-    __syncthreads();
+  // Right.
+  {
+    const int nb = lbl[pidx(pnx, i + 1, j)];
+    if (IS_SOLID(nb) || IS_BC_U(cur))
+      sumP += pij;
+    else if (!IS_AIR(nb))
+      sumP += p[pidx(pnx, i + 1, j)];
+  }
 
-    if (!in_domain)                    return;
-    if ((gi + gj) % 2 != colour)      return;
+  // Bottom.
+  {
+    const int nb = lbl[pidx(pnx, i, j - 1)];
+    if (IS_SOLID(nb) || IS_BC_V(nb))
+      sumP += pij;
+    else if (!IS_AIR(nb))
+      sumP += p[pidx(pnx, i, j - 1)];
+  }
 
-    const int id  = pidx(pnx, gi, gj);
-    const int cur = lbl[id];
-    if (IS_SOLID(cur) || IS_AIR(cur) || IS_BC_P(cur)) return;
-    // same as the CPP
-    const double pij = tile[tj + 1][ti + 1];
-    double sumP = 0.0;
+  // Top.
+  {
+    const int nb = lbl[pidx(pnx, i, j + 1)];
+    if (IS_SOLID(nb) || IS_BC_V(cur))
+      sumP += pij;
+    else if (!IS_AIR(nb))
+      sumP += p[pidx(pnx, i, j + 1)];
+  }
 
-    // Left
-    { const int nb = lbl[pidx(pnx, gi - 1, gj)];
-      if      (IS_SOLID(nb) || IS_BC_U(nb)) sumP += pij;
-      else if (!IS_AIR(nb))                 sumP += tile[tj + 1][ti]; }
+  const double p_gs = (b[id] + sumP) / 4.0;
+  const double p_new = pij + omega * (p_gs - pij);
+  p[id] = p_new;
 
-    // Right
-    { const int nb = lbl[pidx(pnx, gi + 1, gj)];
-      if      (IS_SOLID(nb) || IS_BC_U(cur)) sumP += pij;
-      else if (!IS_AIR(nb))                  sumP += tile[tj + 1][ti + 2]; }
-
-    // Bottom
-    { const int nb = lbl[pidx(pnx, gi, gj - 1)];
-      if      (IS_SOLID(nb) || IS_BC_V(nb)) sumP += pij;
-      else if (!IS_AIR(nb))                 sumP += tile[tj][ti + 1]; }
-
-    // Top
-    { const int nb = lbl[pidx(pnx, gi, gj + 1)];
-      if      (IS_SOLID(nb) || IS_BC_V(cur)) sumP += pij;
-      else if (!IS_AIR(nb))                  sumP += tile[tj + 2][ti + 1]; }
-    const double p_gs  = (b[id] + sumP) / 4.0;
-    const double p_new = pij + omega * (p_gs - pij);
-    p[id] = p_new;
-
-    // Convergence residual
-    if (do_check)
-        warpAtomicMaxRes(max_res_out, fabs(p_new - pij));
+  if (accumulateResidual)
+    deltaSq[id] = (p_new - pij) * (p_new - pij);
 }
+
+} // namespace
 
 bool solveRedBlackGaussSeidel_GPU(Fields2D &fields, int nx, int ny,
-                                  double coef, int maxIters, double tol,
-                                  double /*beta*/) {
-    fields.Div();
+                                  varType coef, int maxIters, varType tol,
+                                  varType /*beta*/) {
+  fields.Div();
 
-    const int pnx = fields.p.nx;   // nx + 2
-    const int pny = fields.p.ny;   // ny + 2
-    const int N   = pnx * pny;
+  const int pnx = fields.p.nx;
+  const int pny = fields.p.ny;
+  const int N = pnx * pny;
 
-    // SOR omega: same formula as CPU.
-    constexpr double PI = 3.14159265358979323846;
-    const int    N_min  = (nx < ny) ? nx : ny;
-    const double omega  = std::min(1.95, 2.0 / (1.0 + std::sin(PI / N_min)));
+  constexpr double PI = 3.14159265358979323846;
+  const int N_min = (nx < ny) ? nx : ny;
+  const double omega =
+      std::min(1.95, 2.0 / (1.0 + std::sin(PI / static_cast<double>(N_min))));
 
-    int    *h_lbl = new int   [N]();
-    double *h_b   = new double[N]();
-    double *h_p   = new double[N]();
-    //@todo to be improved
-    for (int j = 0; j < pny; ++j)
-        for (int i = 0; i < pnx; ++i)
-            h_lbl[pnx * j + i] = static_cast<int>(fields.Label(i, j));
+  std::vector<int> h_lbl(static_cast<std::size_t>(N), 0);
+  std::vector<double> h_b(static_cast<std::size_t>(N), 0.0);
+  std::vector<double> h_p(static_cast<std::size_t>(N), 0.0);
+  std::vector<double> h_deltaSq(static_cast<std::size_t>(N), 0.0);
 
-    double b_norm = 0.0;
-    for (int j = 1; j < pny - 1; ++j)
-        for (int i = 1; i < pnx - 1; ++i) {
-            const int id  = pnx * j + i;
-            const int cur = h_lbl[id];
-            if (IS_SOLID(cur) || IS_AIR(cur) || IS_BC_P(cur)) continue;
-            const double val = -coef * static_cast<double>(
-                                   fields.div.Get(i - 1, j - 1));
-            h_b[id] = val;
-            if (fabs(val) > b_norm) b_norm = fabs(val);
-        }
+  int fluidCount = 0;
+  for (int j = 0; j < pny; ++j) {
+    for (int i = 0; i < pnx; ++i) {
+      h_lbl[pidx(pnx, i, j)] = static_cast<int>(fields.Label(i, j));
+      h_p[pidx(pnx, i, j)] = static_cast<double>(fields.p.Get(i, j));
+    }
+  }
 
-    if (b_norm < 1e-30) {
-#ifndef NDEBUG
-        printf("  RBGS_GPU: RHS negligible.\n");
-#endif
-        delete[] h_lbl; delete[] h_b; delete[] h_p;
-        return true;
+  for (int j = 1; j < pny - 1; ++j) {
+    for (int i = 1; i < pnx - 1; ++i) {
+      const int id = pidx(pnx, i, j);
+      const int cur = h_lbl[id];
+      if (IS_SOLID(cur) || IS_AIR(cur) || IS_BC_P(cur))
+        continue;
+
+      h_b[id] = -coef * static_cast<double>(fields.div.Get(i - 1, j - 1));
+      ++fluidCount;
+    }
+  }
+
+  if (fluidCount == 0) {
+    DBG_PRINTF("RBGS_GPU: no fluid pressure cells");
+    return true;
+  }
+
+  int *d_lbl = nullptr;
+  double *d_b = nullptr;
+  double *d_p = nullptr;
+  double *d_deltaSq = nullptr;
+
+  CUDA_CHECK(cudaMalloc(&d_lbl, static_cast<std::size_t>(N) * sizeof(int)));
+  CUDA_CHECK(cudaMalloc(&d_b, static_cast<std::size_t>(N) * sizeof(double)));
+  CUDA_CHECK(cudaMalloc(&d_p, static_cast<std::size_t>(N) * sizeof(double)));
+  CUDA_CHECK(
+      cudaMalloc(&d_deltaSq, static_cast<std::size_t>(N) * sizeof(double)));
+
+  CUDA_CHECK(cudaMemcpy(d_lbl, h_lbl.data(), static_cast<std::size_t>(N) *
+                                            sizeof(int),
+                        cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_b, h_b.data(), static_cast<std::size_t>(N) *
+                                          sizeof(double),
+                        cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_p, h_p.data(), static_cast<std::size_t>(N) *
+                                          sizeof(double),
+                        cudaMemcpyHostToDevice));
+
+  const dim3 block(BX, BY);
+  const dim3 grid((pnx - 2 + BX - 1) / BX, (pny - 2 + BY - 1) / BY);
+
+  bool converged = false;
+  double res = 0.0;
+  double res0 = -1.0;
+
+  for (int it = 0; it < maxIters; ++it) {
+    const bool check = ((it % CHECK_EVERY) == (CHECK_EVERY - 1));
+    if (check) {
+      CUDA_CHECK(cudaMemset(d_deltaSq, 0,
+                            static_cast<std::size_t>(N) * sizeof(double)));
     }
 
-    // Warm-start from current fields.p.
-    for (int j = 1; j < pny - 1; ++j)
-        for (int i = 1; i < pnx - 1; ++i)
-            h_p[pnx * j + i] = static_cast<double>(fields.p.Get(i, j));
+    rbgsColorKernel<<<grid, block>>>(0, pnx, pny, omega, d_lbl, d_b, d_p,
+                                     d_deltaSq, check);
+    rbgsColorKernel<<<grid, block>>>(1, pnx, pny, omega, d_lbl, d_b, d_p,
+                                     d_deltaSq, check);
+    CUDA_CHECK(cudaGetLastError());
 
-    int    *d_lbl; CUDA_CHECK(cudaMalloc(&d_lbl, N * sizeof(int)));
-    double *d_b;   CUDA_CHECK(cudaMalloc(&d_b,   N * sizeof(double)));
-    double *d_p;   CUDA_CHECK(cudaMalloc(&d_p,   N * sizeof(double)));
-    double *d_res; CUDA_CHECK(cudaMalloc(&d_res, sizeof(double)));
+    if (!check)
+      continue;
 
-    CUDA_CHECK(cudaMemcpy(d_lbl, h_lbl, N * sizeof(int),    cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_b,   h_b,   N * sizeof(double), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(d_p,   h_p,   N * sizeof(double), cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(h_deltaSq.data(), d_deltaSq,
+                          static_cast<std::size_t>(N) * sizeof(double),
+                          cudaMemcpyDeviceToHost));
 
-    const dim3 block(BX, BY);
-    const dim3 grid((pnx + BX - 1) / BX, (pny + BY - 1) / BY);
+    double sumSq = 0.0;
+    for (double v : h_deltaSq)
+      sumSq += v;
 
-    // Pull d_res to host every CHECK_EVERY iters to amortise PCIe latency.
-    static constexpr int CHECK_EVERY = 8;
-    bool   converged = false;
-    double max_res   = 0.0;
-
-    for (int it = 0; it < maxIters; ++it) {
-        const bool check = ((it % CHECK_EVERY) == (CHECK_EVERY - 1));
-
-        if (check) {
-            const double zero = 0.0;
-            CUDA_CHECK(cudaMemcpy(d_res, &zero, sizeof(double),
-                                  cudaMemcpyHostToDevice));
-        }
-
-        rbgsKernel<<<grid, block>>>(0, pnx, pny, omega,
-                                    d_lbl, d_b, d_p, d_res, check);
-        rbgsKernel<<<grid, block>>>(1, pnx, pny, omega,
-                                    d_lbl, d_b, d_p, d_res, check);
-
-        if (check) {
-            CUDA_CHECK(cudaMemcpy(&max_res, d_res, sizeof(double),
-                                  cudaMemcpyDeviceToHost));
-            if (max_res / b_norm <= tol) {
-#ifndef NDEBUG
-                printf("  RBGS_GPU converged in %d iters, rel.res = %g\n",
-                       it + 1, max_res / b_norm);
-#endif
-                converged = true;
-                break;
-            }
-        }
+    res = std::sqrt(sumSq / static_cast<double>(fluidCount));
+    if (res0 < 0.0) {
+      res0 = res;
+      if (res0 < 1e-30) {
+        converged = true;
+        break;
+      }
+      continue;
     }
 
-    if (!converged)
-        printf("  RBGS_GPU: maxIters=%d  rel.res=%g\n",
-               maxIters, max_res / b_norm);
+    if (res0 < 1e-30 || res / res0 <= tol) {
+      DBG_PRINTF("RBGS_GPU converged in %d iters, rel.res = %.6g", it + 1,
+                 res / res0);
+      converged = true;
+      break;
+    }
+  }
 
-    CUDA_CHECK(cudaMemcpy(h_p, d_p, N * sizeof(double), cudaMemcpyDeviceToHost));
+  if (!converged)
+    DBG_PRINTF("RBGS_GPU: reached maxIters = %d", maxIters);
 
-    for (int j = 1; j < pny - 1; ++j)
-        for (int i = 1; i < pnx - 1; ++i) {
-            const int cur = h_lbl[pnx * j + i];
-            if (!IS_SOLID(cur) && !IS_AIR(cur) && !IS_BC_P(cur))
-                fields.p.Set(i, j, static_cast<varType>(h_p[pnx * j + i]));
-        }
+  CUDA_CHECK(cudaMemcpy(h_p.data(), d_p, static_cast<std::size_t>(N) *
+                                          sizeof(double),
+                        cudaMemcpyDeviceToHost));
 
-    CUDA_CHECK(cudaFree(d_lbl));
-    CUDA_CHECK(cudaFree(d_b));
-    CUDA_CHECK(cudaFree(d_p));
-    CUDA_CHECK(cudaFree(d_res));
-    delete[] h_lbl; delete[] h_b; delete[] h_p;
+  for (int j = 1; j < pny - 1; ++j) {
+    for (int i = 1; i < pnx - 1; ++i) {
+      const int id = pidx(pnx, i, j);
+      const int cur = h_lbl[id];
+      if (!IS_SOLID(cur) && !IS_AIR(cur) && !IS_BC_P(cur))
+        fields.p.Set(i, j, static_cast<varType>(h_p[id]));
+    }
+  }
 
-    return converged;
+  CUDA_CHECK(cudaFree(d_lbl));
+  CUDA_CHECK(cudaFree(d_b));
+  CUDA_CHECK(cudaFree(d_p));
+  CUDA_CHECK(cudaFree(d_deltaSq));
+
+  return converged;
 }
 
 #endif // USE_CUDA

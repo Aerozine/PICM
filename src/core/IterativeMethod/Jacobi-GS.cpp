@@ -8,7 +8,6 @@
 #include <cmath>
 #include <iostream>
 
-//@todo to be fixed with the actual config
 void solveJacobi(Fields2D &fields, int /*nx*/, int /*ny*/, varType coef,
                  int maxIters, varType tol, varType beta) {
     fields.Div();
@@ -41,16 +40,13 @@ void solveJacobi(Fields2D &fields, int /*nx*/, int /*ny*/, varType coef,
 
         const varType res = (count > 0) ? std::sqrt(sumSq / count) : 0.0;
         if (checkConvergence(res, res0, it, tol)) {
-#ifndef NDEBUG
-            std::cout << "  Jacobi converged in " << it + 1
-                      << " iters, rel.res = " << res / res0 << '\n';
-#endif
+            const double relRes =
+                (std::abs(res0) > REAL_EPSILON) ? (res / res0) : 0.0;
+            debugSolverConverged("Jacobi", it + 1, relRes);
             return;
         }
     }
-#ifndef NDEBUG
-    std::cout << "  Jacobi: reached maxIters = " << maxIters << '\n';
-#endif
+    debugSolverMaxIters("Jacobi", maxIters);
 }
 
 void solveGaussSeidel(Fields2D &fields, int /*nx*/, int /*ny*/, varType coef,
@@ -77,15 +73,12 @@ void solveGaussSeidel(Fields2D &fields, int /*nx*/, int /*ny*/, varType coef,
 
         const varType res = (count > 0) ? std::sqrt(sumSq / count) : 0.0;
         if (checkConvergence(res, res0, it, tol)) {
-#ifndef NDEBUG
-            std::cout << "  GaussSeidel converged in " << it + 1
-                      << " iters, rel.res = " << res / res0 << '\n';
-#endif
+            const double relRes =
+                (std::abs(res0) > REAL_EPSILON) ? (res / res0) : 0.0;
+            debugSolverConverged("GaussSeidel", it + 1, relRes);
             return;
         }
     }
-#ifndef NDEBUG
-    std::cout << "  GaussSeidel: reached maxIters = " << maxIters << '\n';
-#endif
+    debugSolverMaxIters("GaussSeidel", maxIters);
 }
 

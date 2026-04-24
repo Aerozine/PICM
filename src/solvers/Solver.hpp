@@ -39,6 +39,7 @@ protected:
   void InitializeOutputWriters();
 
   void MakeIncompressible(const Parameters &p, Fields2D &f);
+  void setTimeStep(varType newDt) noexcept;
 
   /**
    * @brief Write all enabled fields at the current step if it falls on a

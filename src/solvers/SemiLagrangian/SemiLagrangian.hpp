@@ -22,6 +22,8 @@ public:
 
   /// @brief Advance the simulation by one time step.
   void Step() override;
+protected:
+  void WriteOutput(int step) const override;
 private:
   std::unique_ptr<Grid2D> smokeMap;
   std::unique_ptr<OutputWriter> smokeWriter;

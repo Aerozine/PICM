@@ -11,6 +11,13 @@ Solver::Solver(Parameters &params)
                         params.freeSurface)) {
   InitializeOutputWriters();
 }
+
+void Solver::setTimeStep(varType newDt) noexcept {
+  dt = newDt;
+  params.dt = newDt;
+  fields->dt = newDt;
+}
+
 void Solver::RunLoop(int reportEvery) {
   const varType start = GET_TIME();
 

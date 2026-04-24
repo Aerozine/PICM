@@ -6,20 +6,28 @@
 #include "../Precision.hpp"
 #include <cassert>
 #include <cmath>
+#include <limits>
 
-/* Stencil geometry (P-space)
- *
+/* small reminder about the geometry
  *           +----------+
- *           |  P i,j+1 |
- * +---------+----V-----+----------+
- * | P i-1,j |  P i,j   | P i+1,j |
- *           U          U
- * +---------+----V-----+----------+
- *           |  P i,j-1 |
+ *           |          |
+ *           |  P       |
+ *           |   i,j+1  |
+ *           |          |
+ *           |          |
+ * +---------+-V--------+----------+
+ * |         |  i-1,j   |          |
+ * | P       |  P       |  P       |
+ * |  i-1,j  |   i,j    |   i+1,j  |
+ * |         U          U          |
+ * |         |i-1,j-1   |i,j-1     |
+ * +---------+-V--------+----------+
+ *           |  i-1,j-1 |
+ *           |          |
+ *           |  P       |
+ *           |   i,j-1  |
+ *           |          |
  *           +----------+
- *
- *  BC_U label lives on the face between (i-1,j) and (i,j)  → Label(i, j)
- *  BC_V label lives on the face between (i,j-1) and (i,j)  → Label(i, j)
  */
 [[nodiscard]] inline varType neighbourSum(const Fields2D &f,
                                           const int i, const int j,
@@ -71,4 +79,33 @@ inline bool checkConvergence(varType res, varType &res0,
         return res0 < 1e-30;
     }
     return (res0 < 1e-30) || (res / res0 < tol);
+}
+
+inline void debugSolverConverged(const char *solverName, const int iterations,
+                                 const double relRes) {
+#ifdef NDEBUG
+  (void)solverName;
+  (void)iterations;
+  (void)relRes;
+#else
+  DBG_PRINTF("%s converged in %d iters, rel.res = %.6g", solverName, iterations,
+             relRes);
+#endif
+}
+
+inline void debugSolverMaxIters(
+    const char *solverName, const int maxIters,
+    const double relRes = std::numeric_limits<double>::quiet_NaN()) {
+#ifdef NDEBUG
+  (void)solverName;
+  (void)maxIters;
+  (void)relRes;
+#else
+  if (std::isfinite(relRes)) {
+    DBG_PRINTF("%s: reached maxIters = %d, rel.res = %.6g", solverName,
+               maxIters, relRes);
+  } else {
+    DBG_PRINTF("%s: reached maxIters = %d", solverName, maxIters);
+  }
+#endif
 }

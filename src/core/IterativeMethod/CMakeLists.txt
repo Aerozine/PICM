@@ -16,6 +16,15 @@ endif()
 target_compile_definitions(IterativeMethod_CPU PUBLIC
         $<IF:$<BOOL:${USE_FLOAT_PRECISION}>,USE_FLOAT,USE_DOUBLE>)
 
+find_package(Eigen3 QUIET NO_MODULE)
+if(TARGET Eigen3::Eigen)
+    target_link_libraries(IterativeMethod_CPU PUBLIC Eigen3::Eigen)
+    target_compile_definitions(IterativeMethod_CPU PUBLIC HAVE_EIGEN)
+    message(STATUS "Eigen3: enabled for CPU CG/MICCG0")
+else()
+    message(STATUS "Eigen3: not found - CPU CG/MICCG0 will fall back to RBGS")
+endif()
+
 target_compile_options(IterativeMethod_CPU PRIVATE
         $<$<AND:$<CONFIG:Release>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:-O3 -march=native>
         $<$<AND:$<CONFIG:Debug>,$<CXX_COMPILER_ID:GNU,Clang,AppleClang>>:-O0 -g>
