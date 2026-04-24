@@ -1,77 +1,73 @@
 #pragma once
 #include "../../core/Particles.hpp"
+#include "../../core/Cloud2D.hpp"
 #include "../Solver.hpp"
 #include <memory>
 
 class PIC : public Solver {
 public:
-  explicit PIC(Parameters &params);
+    explicit PIC(Parameters &params);
 
-  void Run() override;
-  void Step() override;
+    void Run()  override;
+    void Step() override;
 
 protected:
-  //Particles *particles = nullptr;
-  std::unique_ptr<Particles> particles;
-/*inline varType GetW() {
-  return static_cast<varType>(particles->ppcx * particles->ppcy);
-}
-*/
-inline varType hat(varType r) const {
+    // Cloud2D replaces both the flat Particles array and the
+    // countAliveParticles grid. Each cell owns its own small Particles.
+    std::unique_ptr<Cloud2D> cloud;
+
+    inline varType hat(varType r) const {
 #ifdef USE_SPEED
-    if (r >= varType(0) && r <= varType(1))
-        return varType(1) - r;
-    if (r >= varType(-1) && r < varType(0))
-        return varType(1) + r;
-    return varType(0);
+        if (r >= varType(0) && r <= varType(1))  return varType(1) - r;
+        if (r >= varType(-1) && r < varType(0))  return varType(1) + r;
+        return varType(0);
 #else
-    if (varType(-1.5) <= r && r < varType(-0.5))
-        return varType(0.5) * (r + varType(1.5)) * (r + varType(1.5));
-    if (varType(-0.5) <= r && r < varType(0.5))
-        return varType(0.75) - r * r;
-    if (varType(0.5) <= r && r < varType(1.5))
-        return varType(0.5) * (varType(1.5) - r) * (varType(1.5) - r);
-    return varType(0);
+        if (varType(-1.5) <= r && r < varType(-0.5))
+            return varType(0.5) * (r + varType(1.5)) * (r + varType(1.5));
+        if (varType(-0.5) <= r && r < varType(0.5))
+            return varType(0.75) - r * r;
+        if (varType(0.5)  <= r && r < varType(1.5))
+            return varType(0.5) * (varType(1.5) - r) * (varType(1.5) - r);
+        return varType(0);
 #endif
-}
+    }
 
-inline varType dhat(varType r) const {
+    inline varType dhat(varType r) const {
 #ifdef USE_SPEED
-    if (r > varType(0) && r < varType(1))
-        return -varType(1);
-    if (r > varType(-1) && r < varType(0))
-      return varType(1);
-    return varType(0);
+        if (r > varType(0) && r < varType(1))   return -varType(1);
+        if (r > varType(-1) && r < varType(0))  return  varType(1);
+        return varType(0);
 #else
-    if (varType(-1.5) <= r && r < varType(-0.5))
-        return r + static_cast<varType>(1.5);
-    if (varType(-0.5) <= r && r < varType(0.5))
-        return -static_cast<varType>(2.0) * r;
-    if (varType(0.5) <= r && r < varType(1.5))
-        return r - static_cast<varType>(1.5);
-    return static_cast<varType>(0);
+        if (varType(-1.5) <= r && r < varType(-0.5)) return r + static_cast<varType>(1.5);
+        if (varType(-0.5) <= r && r < varType(0.5))  return -static_cast<varType>(2.0) * r;
+        if (varType(0.5)  <= r && r < varType(1.5))  return r - static_cast<varType>(1.5);
+        return static_cast<varType>(0);
 #endif
-}
+    }
 
+    //@todo needs to be patched after
+    // kept for FLIP/APIC subclasses that still use the atomic scatter path
+    void ProjectParticleOnMAC(int idx);
+    void ScatterToGrid(varType xg, varType yg, varType val,
+                       Grid2D &sum, Grid2D &weight, int imax, int jmax);
 
-  virtual void ProjectParticleOnMAC(int idx);
-  void ProjectParticlesOnGrid();
-  void ProjectBCOnParticles();
-  virtual void ProjectGridOnParticles();
+    // scatter one cell's particles into MAC grid — no atomics, used by the
+    // 4-color pass in ProjectParticlesOnGrid
+    void scatterCell(const Particles &cell,
+                     Grid2D &u_sum, Grid2D &u_weight,
+                     Grid2D &v_sum, Grid2D &v_weight);
 
-  void Advect() override; // particle advection — overrides Solver::Advect()
+    virtual void ProjectParticlesOnGrid();
+    virtual void ProjectGridOnParticles();
 
-  void RefillParticles();
+    void Advect() override;
 
-  void UpdateCellState() const;
+    void RefillParticles();
+    void UpdateCellState() const;
 
-  virtual void ScatterToGrid(varType xg, varType yg, varType val, Grid2D &sum,
-                     Grid2D &weight, int imax, int jmax);
-
-  void WriteOutput(int step) const;
+    void WriteOutput(int step) const;
 
 private:
-  std::unique_ptr<OutputWriter> particlesWriter;
-  std::unique_ptr<OutputWriter> countAliveParticles_writer ;
-  std::vector<uint8_t> keep;
+    std::unique_ptr<OutputWriter> particlesWriter;
+    std::unique_ptr<OutputWriter> countAliveParticles_writer;
 };

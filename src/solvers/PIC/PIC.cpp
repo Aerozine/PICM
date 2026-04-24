@@ -2,108 +2,82 @@
 #include <algorithm>
 #include <iostream>
 
-
-PIC::PIC(Parameters &params) : Solver(params) ,particles(std::make_unique<Particles>(params)){
-  //particles = new Particles(nx, ny, dx, dy, params.ppcx, params.ppcy);
-
-  // Base opened the standard writers; add the PIC-only one here,
-  // where the vtable is fully active and particlesWriter exists.
-  if (params.write_particles)
-    particlesWriter =
-        std::make_unique<OutputWriter>(params.folder, "particles");
-  if (params.write_countAliveParticles)
-    countAliveParticles_writer =
-        std::make_unique<OutputWriter>(params.folder, "particles");
+PIC::PIC(Parameters &params)
+    : Solver(params),
+      cloud(std::make_unique<Cloud2D>(params))
+{
+    if (params.write_particles)
+        particlesWriter =
+            std::make_unique<OutputWriter>(params.folder, "particles");
+    if (params.write_countAliveParticles)
+        countAliveParticles_writer =
+            std::make_unique<OutputWriter>(params.folder, "countAliveParticles");
 
 #ifndef NDEBUG
-  std::cout << "Grid dimensions:\n"
-            << "  p  (nx,   ny  ): " << fields->p.nx << " x " << fields->p.ny
-            << '\n'
-            << "  u  (nx+1, ny  ): " << fields->u.nx << " x " << fields->u.ny
-            << '\n'
-            << "  v  (nx,   ny+1): " << fields->v.nx << " x " << fields->v.ny
-            << '\n';
+    std::cout << "Grid dimensions:\n"
+              << "  p  (nx,   ny  ): " << fields->p.nx << " x " << fields->p.ny << '\n'
+              << "  u  (nx+1, ny  ): " << fields->u.nx << " x " << fields->u.ny << '\n'
+              << "  v  (nx,   ny+1): " << fields->v.nx << " x " << fields->v.ny << '\n';
 #endif
 
-  params.applyToFields(*fields);
-  particles->InitParticleGrid(*fields);
+    params.applyToFields(*fields);
+    cloud->InitParticleGrid(*fields, params.ppcx, params.ppcy);
 
 #ifndef NDEBUG
-  std::cout << "PIC initialised: " << nx << " x " << ny << " grid, "
-            << params.nt << " time steps.\n\n";
+    std::cout << "PIC initialised: " << nx << " x " << ny << " grid, "
+              << params.nt << " time steps, "
+              << cloud->totalSize() << " particles.\n\n";
 #endif
 }
-
 
 void PIC::WriteOutput(int step) const {
-  if (step % params.sampling_rate != 0)
-    return;
+    if (step % params.sampling_rate != 0)
+        return;
 
-  Solver::WriteOutput(step); // writes all standard fields
+    Solver::WriteOutput(step);
 
-  if (params.write_particles && particlesWriter) {
-    bool ok = particlesWriter->writeParticles(*particles, "particles");
-  
-    if (!ok)
-      std::cerr << "[PIC] Warning: failed to write particles at step " << step
-                << '\n';
-  }
-  if(params.write_countAliveParticles && fields->countAliveParticles)
-    countAliveParticles_writer->writeGrid2D(*fields->countAliveParticles, "countAliveParticles");
+    if (params.write_particles && particlesWriter) {
+        // flatten cloud into a temporary Particles for the writer
+        // @todo consider a dedicated Cloud2D writer to avoid the copy
+        Particles flat(params);
+        for (int ci = 0; ci < nx; ++ci)
+            for (int cj = 0; cj < ny; ++cj) {
+                const Particles &cell = (*cloud)(ci, cj);
+                for (int p = 0; p < cell.size(); ++p)
+                    flat.Add(cell.GetX(p), cell.GetY(p),
+                             cell.GetU(p), cell.GetV(p), 0);
+            }
+        const bool ok = particlesWriter->writeParticles(flat, "particles");
+        if (!ok)
+            std::cerr << "[PIC] Warning: failed to write particles at step "
+                      << step << '\n';
+    }
+
+    if (params.write_countAliveParticles && countAliveParticles_writer) {
+        // build a temporary Grid2D of counts for the writer
+        Grid2D countGrid(nx, ny);
+        for (int ci = 0; ci < nx; ++ci)
+            for (int cj = 0; cj < ny; ++cj)
+                countGrid.Set(ci, cj, static_cast<varType>(cloud->countIn(ci, cj)));
+        countAliveParticles_writer->writeGrid2D(countGrid, "countAliveParticles");
+    }
 }
-#ifdef LIKWID_PERFMON
-#include <likwid-marker.h>
-#define LSTART(r) LIKWID_MARKER_START(r)
-#define LSTOP(r)  LIKWID_MARKER_STOP(r)
-#else
-#define LSTART(r)
-#define LSTOP(r)
-#endif
+
 void PIC::Step() {
-  // gravity directly handle when setting particles speed
- LSTART("scatter");
-  ProjectParticlesOnGrid();
-  LSTOP("scatter");
-
-  LSTART("pressure");
-  MakeIncompressible(params, *fields);
-  LSTOP("pressure");
-
-  LSTART("g2p");
-  ProjectGridOnParticles();
-  LSTOP("g2p");
-
-  LSTART("advect");
-  Advect();
-  LSTOP("advect");
-
-  LSTART("cellstate");
-  UpdateCellState();
-  LSTOP("cellstate");
-
-  if (params.refill) RefillParticles();
+    // gravity is handled directly when setting particle speed in ProjectGridOnParticles
+    ProjectParticlesOnGrid();
+    MakeIncompressible(params, *fields);
+    ProjectGridOnParticles();
+    Advect();
+    UpdateCellState();
+    if (params.refill) RefillParticles();
 }
 
 void PIC::Run() {
-  fields->Div();
-  fields->VelocityNormCenterGrid();
-  //ProjectBCOnParticles();
-  ProjectGridOnParticles();
-  WriteOutput(0);
-#ifdef LIKWID_PERFMON
-  LIKWID_MARKER_INIT;
-  OMP_PRAGMA(omp parallel)
-  {
-    LIKWID_MARKER_THREADINIT;
-    LIKWID_MARKER_REGISTER("scatter");
-    LIKWID_MARKER_REGISTER("pressure");
-    LIKWID_MARKER_REGISTER("g2p");
-    LIKWID_MARKER_REGISTER("advect");
-    LIKWID_MARKER_REGISTER("cellstate");
-  }
-#endif
-  RunLoop(std::max(1, params.nt / 100));
-#ifdef LIKWID_PERFMON
-  LIKWID_MARKER_CLOSE;
-#endif
+    fields->Div();
+    fields->VelocityNormCenterGrid();
+    ProjectGridOnParticles();
+    WriteOutput(0);
+
+    RunLoop(std::max(1, params.nt / 100));
 }

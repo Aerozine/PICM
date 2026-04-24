@@ -44,11 +44,11 @@ public:
   //todo use a template for label ? is there an overhead ?
   Grid2D u, v, p, div, normVelocity;
 
-  Grid2D *u_sum             = nullptr;
-  Grid2D *u_weight          = nullptr;
-  Grid2D *v_sum             = nullptr;
-  Grid2D *v_weight          = nullptr;
-  Grid2D *countAliveParticles = nullptr;
+  Grid2D *u_sum    = nullptr;
+  Grid2D *u_weight = nullptr;
+  Grid2D *v_sum    = nullptr;
+  Grid2D *v_weight = nullptr;
+  // countAliveParticles removed — use cloud->countIn(i,j) instead
 
   uint16_t *Labels = nullptr;
 
@@ -76,11 +76,10 @@ public:
       Labels[k] = initLabel;
 
     if (sol.method != SolverConfig::Method::SL) {
-      u_sum              = new Grid2D(nx_ + 1, ny_);
-      u_weight           = new Grid2D(nx_ + 1, ny_);
-      v_sum              = new Grid2D(nx_,     ny_ + 1);
-      v_weight           = new Grid2D(nx_,     ny_ + 1);
-      countAliveParticles = new Grid2D(nx_,    ny_);
+      u_sum    = new Grid2D(nx_ + 1, ny_);
+      u_weight = new Grid2D(nx_ + 1, ny_);
+      v_sum    = new Grid2D(nx_,     ny_ + 1);
+      v_weight = new Grid2D(nx_,     ny_ + 1);
     }
   }
 
@@ -91,7 +90,6 @@ public:
     delete u_weight;
     delete v_sum;
     delete v_weight;
-    delete countAliveParticles;
   }
 
   // Non-copyable, non-movable (owns raw resources; add if ever needed)

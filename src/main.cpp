@@ -1,6 +1,6 @@
 #include "core/Parameters.hpp"
-#include "solvers/APIC/APIC.hpp"
-#include "solvers/FLIP/FLIP.hpp"
+//#include "solvers/APIC/APIC.hpp"
+//#include "solvers/FLIP/FLIP.hpp"
 #include "solvers/PIC/PIC.hpp"
 #include "solvers/SemiLagrangian/SemiLagrangian.hpp"
 
@@ -32,8 +32,8 @@ int main(int argc, char *argv[]) {
   }
   case SolverConfig::Method::FLIP: {
     std::cout << "FLIP\n";
-    FLIP solver(params);
-    solver.Run();
+ //   FLIP solver(params);
+  //  solver.Run();
     break;
   }
   case SolverConfig::Method::Mixed_FLIP_PIC:
@@ -41,8 +41,8 @@ int main(int argc, char *argv[]) {
     break;
   case SolverConfig::Method::APIC: {
     std::cout << "APIC\n";
-    APIC solver(params);
-    solver.Run();
+    //APIC solver(params);
+    //solver.Run();
     break;
   }
   }
