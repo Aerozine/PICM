@@ -3,8 +3,8 @@ project(PIC)
 
 option(USE_FLOAT_PRECISION "Use float instead of double"       ON)
 option(USE_FAST_ALG "prioritize speed over precision"          OFF)
-option(USE_PARALLEL        "Enable OpenMP CPU parallelism"     ON)
-option(USE_GPU             "Enable CUDA GPU pressure solvers"  OFF)
+option(USE_PARALLEL        "Enable OpenMP CPU parallelism"     OFF)
+option(USE_GPU             "Enable CUDA GPU pressure solvers"  ON)
 
 # Optional: user can set -DGPU_ARCH=89 or -DGPU_ARCH=sm_89 on the command line.
 # Leave empty for CMake native auto-detect.
@@ -45,7 +45,8 @@ endif()
 set(OpenMP_CXX_FOUND FALSE)
 if(USE_PARALLEL)
     find_package(OpenMP QUIET)
-    # macOS Homebrew libomp fallback.
+
+    # macOS Homebrew libomp fallback
     if(NOT OpenMP_CXX_FOUND AND APPLE)
         find_program(BREW brew)
         if(BREW)
@@ -61,6 +62,31 @@ if(USE_PARALLEL)
             target_link_libraries(OpenMP::OpenMP_CXX INTERFACE
                 -L${LIBOMP_PREFIX}/lib -lomp)
             set(OpenMP_CXX_FOUND TRUE)
+        endif()
+    endif()
+
+    # Linux Clang fallback clang needs -fopenmp and explicit -lomp
+    if(NOT OpenMP_CXX_FOUND AND UNIX AND NOT APPLE
+       AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        find_path(LIBOMP_INCLUDE_DIR omp.h
+            PATHS /usr/lib/llvm-${CMAKE_CXX_COMPILER_VERSION}/include
+                  /usr/include
+                  /usr/local/include)
+        find_library(LIBOMP_LIBRARY
+            NAMES omp gomp
+            PATHS /usr/lib/llvm-${CMAKE_CXX_COMPILER_VERSION}/lib
+                  /usr/lib/x86_64-linux-gnu
+                  /usr/local/lib)
+        if(LIBOMP_INCLUDE_DIR AND LIBOMP_LIBRARY)
+            message(STATUS "OpenMP: using libomp for Clang on Linux at ${LIBOMP_LIBRARY}")
+            add_library(OpenMP::OpenMP_CXX INTERFACE IMPORTED)
+            target_compile_options(OpenMP::OpenMP_CXX INTERFACE
+                -fopenmp -I${LIBOMP_INCLUDE_DIR})
+            target_link_libraries(OpenMP::OpenMP_CXX INTERFACE
+                ${LIBOMP_LIBRARY})
+            set(OpenMP_CXX_FOUND TRUE)
+        else()
+            message(WARNING "OpenMP: Clang on Linux - libomp not found, try: apt install libomp-dev")
         endif()
     endif()
 

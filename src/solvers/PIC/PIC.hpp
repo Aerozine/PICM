@@ -57,7 +57,7 @@ protected:
   void RefillParticles();
   void UpdateCellState() const;
 
-  void WriteOutput(int step) const;
+  void WriteOutput(int step) const override;
 
 private:
   std::unique_ptr<OutputWriter> particlesWriter;

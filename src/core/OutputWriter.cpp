@@ -138,7 +138,7 @@ bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
       << "    </Piece>\n"
       << "  </ImageData>\n"
       << "  <AppendedData encoding=\"raw\">\n"
-      << "  _"; // mandatory VTK separator — binary data follows immediately
+      << "  _"; // mandatory VTK separator binary data follows immediately
 
   const std::string xmlStr = xml.str();
   out.write(xmlStr.data(), static_cast<std::streamsize>(xmlStr.size()));

@@ -417,7 +417,7 @@ bool solveCG(Fields2D &fields, varType coef, varType beta, int maxIters,
 #endif
   const bool converged = solveSparseCGSystem(system, b, x, maxIters, tol, "CG");
 #ifndef NDEBUG
-  DBG_PRINTF("CG: rows=%d, assembly=%.6fs, solve=%.6fs", system.A.rows(),
+  DBG_PRINTF("CG: rows=%ld, assembly=%.6fs, solve=%.6fs", system.A.rows(),
              assemblyTime, GET_TIME() - solveStart);
 #endif
   writeBackPressure(fields, system, x);
@@ -470,7 +470,7 @@ bool solveMICCG0(Fields2D &fields, varType coef, int maxIters, varType tol) {
   const bool converged =
       solveSparsePCGSystem(system, precon, b, x, maxIters, tol);
 #ifndef NDEBUG
-  DBG_PRINTF("MICCG0: IC(0) rows=%d, assembly=%.6fs, factor=%.6fs, solve=%.6fs",
+  DBG_PRINTF("MICCG0: IC(0) rows=%ld, assembly=%.6fs, factor=%.6fs, solve=%.6fs",
              system.A.rows(), assemblyTime, ic0Time, GET_TIME() - solveStart);
 #endif
   writeBackPressure(fields, system, x);

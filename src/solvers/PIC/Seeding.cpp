@@ -4,7 +4,7 @@
 void PIC::RefillParticles() {
   const int targetPPC = params.ppcx * params.ppcy;
 
-  // single-threaded per cell — each Add goes directly into the right cell,
+  // single-threaded per cell each Add goes directly into the right cell,
   // no lock needed since we are not parallel here
   for (int ci = 0; ci < nx; ci++) {
     for (int cj = 0; cj < ny; cj++) {

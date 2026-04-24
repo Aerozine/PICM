@@ -1,6 +1,4 @@
 #pragma once
-// utils.hpp  —  stencil helpers shared by RBGS.cpp and CG.cpp (CPU only).
-// Do NOT include from .cu files.
 
 #include "../Fields.hpp"
 #include "../Precision.hpp"
