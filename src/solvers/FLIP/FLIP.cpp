@@ -1,3 +1,4 @@
+/*
 #include "FLIP.hpp"
 
 FLIP::FLIP(Parameters &params)
@@ -46,3 +47,4 @@ void FLIP::ProjectGridOnParticles() {
                            coefFlip * (vp_old + (v_new_grid - v_old_grid)) - dt*params.gravity);
     }
 }
+*/

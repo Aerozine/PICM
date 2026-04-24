@@ -92,8 +92,8 @@ varType interpolate(const varType x, const varType y, const varType dx,
     i_real -= REAL_LITERAL(0.5); // v-face: staggered in x
   // else no staggering
 
-  int i0 = static_cast<int>(std::floor(i_real));
-  int j0 = static_cast<int>(std::floor(j_real));
+  int i0 = static_cast<int>(i_real);
+  int j0 = static_cast<int>(j_real);
 
   const varType fx = i_real - static_cast<varType>(i0);
   const varType fy = j_real - static_cast<varType>(j0);

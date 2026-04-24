@@ -62,7 +62,7 @@
         "tolerance": 1e-2
     },
     "method": "apic",
-    "freeSurface": "yes",
+    "freeSurface": true,
     "gravity": 9.81,
     "refill": false,
     "kernelOrder": 2
