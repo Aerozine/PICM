@@ -1,4 +1,4 @@
-# PICM
+# 🌊 PICM 🌊
 
 PICM is a 2D fluid simulation playground for comparing several grid and
 particle methods:
