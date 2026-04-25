@@ -1,12 +1,12 @@
 {
-    "dx": 0.007,
-    "dy": 0.007,
+    "dx": 0.0007,
+    "dy": 0.0007,
     "dt": 0.001,
-    "nx": 20,
-    "ny": 20,
+    "nx": 300,
+    "ny": 300,
     "nt": 500,
-    "ppcx": 10,
-    "ppcy": 10,
+    "ppcx": 3,
+    "ppcy": 3,
     "density": 1000,
     "sampling_rate": 2,
     "write_u": true,
@@ -20,11 +20,10 @@
     "filename": "simulation",
 
     "fluid": {
-        "rectangle":{
-            "x1": "4*nx/10",
-            "y1": "4*ny/10",
-            "x2": "6*nx/10",
-            "y2": "6*ny/10"
+        "cylinder": {
+            "x": "nx/2",
+            "y": "ny/4",
+            "r": "ny/8"
         }
     },
 
@@ -66,5 +65,6 @@
     "gravity": 0.0,
     "refill": false,
     "surfaceTension": true,
-    "gamma": 0.073
+    "interactionStiffness": 15.0,
+    "interactionExponent": 2.0
 }

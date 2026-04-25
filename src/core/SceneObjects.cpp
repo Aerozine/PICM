@@ -231,6 +231,19 @@ void CylinderObject::applySolid(Fields2D &f) {
   }
 }
 
+void CylinderObject::applyFluid(Fields2D &f) {
+  const int r2 = r * r;
+  for (int j = 0; j < f.p.ny; ++j) {
+    const int ddy = j - cy;
+    for (int i = 0; i < f.p.nx; ++i) {
+      const int ddx = i - cx;
+      if (ddx * ddx + ddy * ddy <= r2) {
+        f.setFluid(i, j);
+      }
+    }
+  }
+}
+
 void CylinderObject::applyAir(Fields2D &f) {
   const int r2 = r * r;
   for (int j = 0; j < f.ny; ++j) {

@@ -8,8 +8,6 @@
 #include <cmath>
 #include <iostream>
 
-namespace {
-
 varType computeRhsNorm(Fields2D &fields, varType coef) {
   const int pnx = fields.p.nx;
   const int pny = fields.p.ny;
@@ -30,7 +28,6 @@ varType computeRhsNorm(Fields2D &fields, varType coef) {
 
   return std::sqrt(norm) + REAL_EPSILON;
 }
-} 
 
 void solveJacobi(Fields2D &fields, int /*nx*/, int /*ny*/, varType coef,
                  int maxIters, varType tol, varType beta) {

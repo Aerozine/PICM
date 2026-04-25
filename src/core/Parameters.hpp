@@ -27,7 +27,10 @@ public:
 
   varType gravity = 0.0;
   varType coefPic = 0.05;
+  varType particleRadius = dx/4;
   varType max_cfl = REAL_LITERAL(0.95);
+  varType interactionStiffness = 0.0;
+  varType interactionExponent = 0.0;
 
   bool write_u = true;
   bool write_v = true;
@@ -41,6 +44,7 @@ public:
   /// true  → initialise the domain as AIR  (free-surface simulation)
   /// false → initialise as FLUID (fully-filled, incompressible default)
   bool freeSurface = false;
+  bool surfaceTension = false;
 
   SolverConfig solver;
 

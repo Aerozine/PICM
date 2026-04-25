@@ -57,6 +57,8 @@ protected:
   void RefillParticles();
   void UpdateCellState() const;
 
+  void particleInteraction();
+
   void WriteOutput(int step) const override;
 
 private:

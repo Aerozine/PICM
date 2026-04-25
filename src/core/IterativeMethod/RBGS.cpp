@@ -34,7 +34,7 @@ void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, varType coef,
 
   norm = std::sqrt(norm) + REAL_EPSILON;
 
-  // Each colour sweep is data-race-free → safe for OpenMP collapse.
+  // Each colour sweep is data-race-free : safe for OpenMP collapse.
   for (int it = 0; it < maxIters; ++it) {
     varType sumSq = 0.0;
     for (int colour = 0; colour < 2; ++colour) {
@@ -51,12 +51,12 @@ void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, varType coef,
           const varType p_old = fields.p.Get(i, j);
           const varType p_gs = gsUpdate(fields, i, j, coef, beta);
 
-          const varType r = p_old - p_gs;
-          sumSq += r * r;
-
           const varType p_new = p_old + omega * (p_gs - p_old);
           assert(std::isfinite(p_new));
           fields.p.Set(i, j, p_new);
+
+          const varType r = p_old - p_new;
+          sumSq += r * r;
         }
       }
     }
