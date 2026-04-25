@@ -69,8 +69,8 @@
 
     "solver": {
         "type": "red_black_gauss_seidel",
-        "max_iterations": 1e5,
-        "tolerance": 1e-3
+        "max_iterations": 1e4,
+        "tolerance": 1e-2
     },
     "method": "flip",
     "coefPic": 0.05,
