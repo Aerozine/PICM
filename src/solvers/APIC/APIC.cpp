@@ -31,8 +31,8 @@ void APIC::ProjectParticlesOnGrid() {
       const int cj_lo = std::max(0, j - radius + 1);
       const int cj_hi = std::min(ny - 1, j + radius);
 
-      for (int ci = ci_lo; ci <= ci_hi; ++ci) {
-        for (int cj = cj_lo; cj <= cj_hi; ++cj) {
+      for (int cj = cj_lo; cj <= cj_hi; ++cj) {
+        for (int ci = ci_lo; ci <= ci_hi; ++ci) {
           const Particles &cell = (*cloud)(ci, cj);
           for (int p = 0; p < cell.size(); ++p) {
             const varType x = cell.GetX(p);
@@ -81,8 +81,8 @@ void APIC::ProjectParticlesOnGrid() {
       const int cj_lo = std::max(0, j - radius);
       const int cj_hi = std::min(ny - 1, j + radius - 1);
 
-      for (int ci = ci_lo; ci <= ci_hi; ++ci) {
-        for (int cj = cj_lo; cj <= cj_hi; ++cj) {
+      for (int cj = cj_lo; cj <= cj_hi; ++cj) {
+        for (int ci = ci_lo; ci <= ci_hi; ++ci) {
           const Particles &cell = (*cloud)(ci, cj);
           for (int p = 0; p < cell.size(); ++p) {
             const varType x = cell.GetX(p);
@@ -164,8 +164,8 @@ void APIC::accumulateAffineComponent(const Grid2D &grid, varType xg, varType yg,
 
 void APIC::ProjectGridOnParticles() {
   OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
-  for (int ci = 0; ci < nx; ++ci) {
-    for (int cj = 0; cj < ny; ++cj) {
+  for (int cj = 0; cj < ny; ++cj) {
+    for (int ci = 0; ci < nx; ++ci) {
       Particles &cell = (*cloud)(ci, cj);
       for (int p = 0; p < cell.size(); ++p) {
         const varType x = cell.GetX(p);
