@@ -9,9 +9,8 @@ void PIC::particleInteraction() {
       params.particleRadius > REAL_EPSILON
           ? params.particleRadius
           : REAL_LITERAL(0.5) * nominalParticleSpacing;
-  const varType interactionRadius =
-      std::max(REAL_LITERAL(6.0) * particleRadius,
-               REAL_LITERAL(2.0) * cellSize);
+  const varType interactionRadius = std::max(REAL_LITERAL(6.0) * particleRadius,
+                                             REAL_LITERAL(2.0) * cellSize);
   const int neighborCellRadius =
       std::max(1, static_cast<int>(std::ceil(interactionRadius / cellSize)));
   const int interfaceBandCells = 2;

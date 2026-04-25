@@ -67,11 +67,12 @@
 
 
     "solver": {
-        "type": "red_black_gauss_seidel",
-        "max_iterations": 1e5,
-        "tolerance": 1e-2
+        "type": "cg",
+        "max_iterations": 1e6,
+        "tolerance": 1e-3
     },
-    "method": "pic",
+    "method": "flip",
+    "coefPic": 0.95,
     "freeSurface": "yes",
     "gravity": 0.0,
     "refill": false,

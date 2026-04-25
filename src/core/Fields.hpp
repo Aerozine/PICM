@@ -45,7 +45,7 @@ public:
   uint16_t *Labels = nullptr;
 
   Fields2D(int nx_, int ny_, varType density_, varType dt_, varType dx_,
-           varType dy_,  bool freeSurface = false)
+           varType dy_, bool freeSurface = false)
       : nx(nx_), ny(ny_), density(density_), dt(dt_), dx(dx_), dy(dy_),
         u(nx_ + 1, ny_), v(nx_, ny_ + 1), p(nx_ + 2, ny_ + 2), div(nx_, ny_),
         normVelocity(nx_, ny_) {
@@ -57,12 +57,9 @@ public:
         freeSurface ? static_cast<uint16_t>(AIR) : static_cast<uint16_t>(FLUID);
     for (std::size_t k = 0; k < labelCount; ++k)
       Labels[k] = initLabel;
-
   }
 
-  ~Fields2D() {
-    std::free(Labels);
-  }
+  ~Fields2D() { std::free(Labels); }
 
   // Non-copyable, non-movable (owns raw resources; add if ever needed)
   Fields2D(const Fields2D &) = delete;

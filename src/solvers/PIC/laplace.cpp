@@ -1,7 +1,7 @@
 #include "PIC.hpp"
+#include <algorithm>
 #include <cmath>
 #include <vector>
-#include <algorithm>
 /*
 // ============================================================
 //  Surface tension CSF — Brackbill et al. (1992)
@@ -144,8 +144,9 @@ void PIC::particleInteraction()
         for (int i = 1; i <= nx; ++i) {
             if (!IS_FLUID(fields->Label(i,j))) continue;
 
-            const varType dnx_dx = (nx_field[IDX(i+1,j)] - nx_field[IDX(i-1,j)]) / (2.0 * dx);
-            const varType dny_dy = (ny_field[IDX(i,j+1)] - ny_field[IDX(i,j-1)]) / (2.0 * dy);
+            const varType dnx_dx = (nx_field[IDX(i+1,j)] - nx_field[IDX(i-1,j)])
+/ (2.0 * dx); const varType dny_dy = (ny_field[IDX(i,j+1)] -
+ny_field[IDX(i,j-1)]) / (2.0 * dy);
 
             kappa[IDX(i,j)] = -(dnx_dx + dny_dy);
         }
@@ -190,10 +191,9 @@ void PIC::particleInteraction()
 
                 // Interpolation bilinéaire de κ et ∇C à la position (xp, yp)
                 // Indices des 4 cellules voisines encadrantes
-                const int il = std::max(1, static_cast<int>(std::floor(xp / dx)));
-                const int ir = std::min(nx, il + 1);
-                const int jd = std::max(1, static_cast<int>(std::floor(yp / dy)));
-                const int ju = std::min(ny, jd + 1);
+                const int il = std::max(1, static_cast<int>(std::floor(xp /
+dx))); const int ir = std::min(nx, il + 1); const int jd = std::max(1,
+static_cast<int>(std::floor(yp / dy))); const int ju = std::min(ny, jd + 1);
 
                 const varType tx = (xp - (il - 0.5) * dx) / dx;
                 const varType ty = (yp - (jd - 0.5) * dy) / dy;
@@ -222,9 +222,10 @@ void PIC::particleInteraction()
                 const varType fx = gamma * kap * gcx;
                 const varType fy = gamma * kap * gcy;
 
-                // Δv = f / ρ  (par unité de temps, supposé dt=1 intégré ailleurs)
-                const varType du = std::clamp(fx / rho_local, -maxDeltaV, maxDeltaV);
-                const varType dv = std::clamp(fy / rho_local, -maxDeltaV, maxDeltaV);
+                // Δv = f / ρ  (par unité de temps, supposé dt=1 intégré
+ailleurs) const varType du = std::clamp(fx / rho_local, -maxDeltaV, maxDeltaV);
+                const varType dv = std::clamp(fy / rho_local, -maxDeltaV,
+maxDeltaV);
 
                 cell.SetU(p, cell.GetU(p) + du);
                 cell.SetV(p, cell.GetV(p) + dv);
