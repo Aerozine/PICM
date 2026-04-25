@@ -42,14 +42,10 @@ public:
   varType density;
   varType dt, dx, dy;
   Grid2D u, v, p, div, normVelocity;
-  Grid2D *u_sum = nullptr;
-  Grid2D *u_weight = nullptr;
-  Grid2D *v_sum = nullptr;
-  Grid2D *v_weight = nullptr;
   uint16_t *Labels = nullptr;
 
   Fields2D(int nx_, int ny_, varType density_, varType dt_, varType dx_,
-           varType dy_, const SolverConfig &sol, bool freeSurface = false)
+           varType dy_,  bool freeSurface = false)
       : nx(nx_), ny(ny_), density(density_), dt(dt_), dx(dx_), dy(dy_),
         u(nx_ + 1, ny_), v(nx_, ny_ + 1), p(nx_ + 2, ny_ + 2), div(nx_, ny_),
         normVelocity(nx_, ny_) {
@@ -62,20 +58,10 @@ public:
     for (std::size_t k = 0; k < labelCount; ++k)
       Labels[k] = initLabel;
 
-    if (sol.method != SolverConfig::Method::SL) {
-      u_sum = new Grid2D(nx_ + 1, ny_);
-      u_weight = new Grid2D(nx_ + 1, ny_);
-      v_sum = new Grid2D(nx_, ny_ + 1);
-      v_weight = new Grid2D(nx_, ny_ + 1);
-    }
   }
 
   ~Fields2D() {
     std::free(Labels);
-    delete u_sum;
-    delete u_weight;
-    delete v_sum;
-    delete v_weight;
   }
 
   // Non-copyable, non-movable (owns raw resources; add if ever needed)
