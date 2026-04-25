@@ -5,10 +5,10 @@
     "nx": 100,
     "ny": 100,
     "nt": 1000,
-    "ppcx": 15,
-    "ppcy": 15,
+    "ppcx": 7,
+    "ppcy": 7,
     "density": 1000,
-    "sampling_rate": 1,
+    "sampling_rate": 5,
     "write_u": true,
     "write_v": true,
     "write_p": true,
@@ -16,22 +16,26 @@
     "write_norm_velocity": true,
     "write_smoke": true,
     "write_particles": true,
-    "folder": "results/PIC/surfaceTension/square",
+    "folder": "results/APIC/surfaceTension/square",
     "filename": "simulation",
 
     "fluid": {
-        "cylinder": [{
-            "x": "nx/2",
-            "y": "ny/4",
-            "r": "ny/8"
+        "rectangle": {
+            "x1": "nx/2-12",
+            "y1": "ny/4-8",
+            "x2": "nx/2+14",
+            "y2": "ny/4+8"
         },
-            {
-
-                "x": "nx/2+5",
-                "y": "ny/4",
-                "r": "ny/8"
-            }
-        ]
+        "cylinder": [{
+            "x": "nx/2-12",
+            "y": "ny/4",
+            "r": "8"
+        },
+        {
+            "x": "nx/2+12",
+            "y": "ny/4",
+            "r": "8"
+        }]
     },
 
     "solid": {
@@ -72,6 +76,6 @@
     "gravity": 0.0,
     "refill": false,
     "surfaceTension": true,
-    "interactionStiffness": 4.0,
+    "interactionStiffness": 6.0,
     "interactionExponent": 2.0
 }
