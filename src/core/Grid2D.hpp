@@ -85,7 +85,7 @@ public:
   // template is at compile time , so if we
   // put 0 in field , it simplify directly in compilation
   // same for 1 and 2
-  template <__uint8_t field>
+  template <unsigned char field>
   varType interpolate(const varType x, const varType y, const varType dx,
                       const varType dy) const {
     varType i_real = x / dx;

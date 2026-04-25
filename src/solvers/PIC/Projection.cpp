@@ -8,7 +8,7 @@ void PIC::ProjectParticlesOnGrid() {
   constexpr int R = 2;
 #endif
 
-    OMP_PRAGMA(omp parallel for collapse(2) schedule(static,8))
+    OMP_PRAGMA(omp parallel for collapse(2) schedule(dynamic,1) )
     for (int j = 0; j < fields->u.ny; ++j) {
       for (int i = 0; i < fields->u.nx; ++i) {
 
@@ -39,8 +39,6 @@ void PIC::ProjectParticlesOnGrid() {
           for (int cj = cj_lo; cj <= cj_hi; ++cj) {
             const Particles &cell = (*cloud)(ci, cj);
             const int particleCount = cell.size();
-            // nested omp only for large ppcx ppcy
-            OMP_PRAGMA(omp parallel for reduction(+:sum,wt))
             for (int p = 0; p < particleCount; ++p) {
               const varType xg = cell.GetX(p) / dx;
               const varType yg = cell.GetY(p) / dy - varType(0.5);
@@ -56,7 +54,7 @@ void PIC::ProjectParticlesOnGrid() {
         fields->u.Set(i, j, wt >= REAL_EPSILON ? sum / wt : varType(0));
       }
     }
-    OMP_PRAGMA(omp parallel for collapse(2) schedule(static,8))
+    OMP_PRAGMA(omp parallel for collapse(2) schedule(dynamic,1))
     for (int j = 0; j < fields->v.ny; ++j) {
       for (int i = 0; i < fields->v.nx; ++i) {
 
@@ -87,7 +85,6 @@ void PIC::ProjectParticlesOnGrid() {
           for (int cj = cj_lo; cj <= cj_hi; ++cj) {
             const Particles &cell = (*cloud)(ci, cj);
             const int particleCount = cell.size();
-             OMP_PRAGMA(omp parallel for reduction(+:sum,wt))
             for (int p = 0; p < particleCount; ++p) {
               const varType xg = cell.GetX(p) / dx - varType(0.5);
               const varType yg = cell.GetY(p) / dy;
