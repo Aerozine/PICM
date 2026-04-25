@@ -7,7 +7,7 @@
 #endif
 
 // Cloud2D: a nx*ny grid where each cell owns its particles as a small SoA.
-// Indexing: cells[ny * i + j] for cell (i, j).
+// Indexing matches Grid2D row-major storage: cells[nx * j + i] for cell (i, j).
 class Cloud2D {
 public:
   int nx, ny;
@@ -41,12 +41,16 @@ public:
   Cloud2D(const Cloud2D &) = delete;
   Cloud2D &operator=(const Cloud2D &) = delete;
 
-  inline Particles &operator()(int i, int j) { return cells[ny * i + j]; }
-  inline const Particles &operator()(int i, int j) const {
-    return cells[ny * i + j];
+  [[nodiscard]] inline std::size_t idx(int i, int j) const noexcept {
+    return static_cast<std::size_t>(nx) * j + i;
   }
 
-  inline int countIn(int i, int j) const { return cells[ny * i + j].size(); }
+  inline Particles &operator()(int i, int j) { return cells[idx(i, j)]; }
+  inline const Particles &operator()(int i, int j) const {
+    return cells[idx(i, j)];
+  }
+
+  inline int countIn(int i, int j) const { return cells[idx(i, j)].size(); }
 
   // total particle count across all cells
   int totalSize() const {

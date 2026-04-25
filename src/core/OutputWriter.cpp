@@ -201,8 +201,8 @@ bool OutputWriter::writeCloud(const Cloud2D &cloud, const std::string &id) {
   normValues.reserve(nAlive);
   pointValues.reserve(static_cast<std::size_t>(nAlive) * 3);
 
-  for (int ci = 0; ci < cloud.nx; ++ci) {
-    for (int cj = 0; cj < cloud.ny; ++cj) {
+  for (int cj = 0; cj < cloud.ny; ++cj) {
+    for (int ci = 0; ci < cloud.nx; ++ci) {
       const Particles &cell = cloud(ci, cj);
       for (int p = 0; p < cell.size(); ++p) {
         const varType x = cell.GetX(p);
