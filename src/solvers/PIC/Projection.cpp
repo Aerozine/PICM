@@ -59,8 +59,8 @@ void PIC::ProjectParticlesOnGrid() {
                 weightU += ku;
               }
 
-              const varType kv = hat(xg - varType(ci) - varType(0.5)) *
-                                 hat(yg - varType(cj));
+              const varType kv =
+                  hat(xg - varType(ci) - varType(0.5)) * hat(yg - varType(cj));
               if (kv > varType(0)) {
                 sumV += kv * cell.GetV(p);
                 weightV += kv;
@@ -93,8 +93,8 @@ void PIC::ProjectParticlesOnGrid() {
             for (int p = 0; p < particleCount; ++p) {
               const varType xg = cell.GetX(p) / dx;
               const varType yg = cell.GetY(p) / dy;
-              const varType kv = hat(xg - varType(ci) - varType(0.5)) *
-                                 hat(yg - varType(cj));
+              const varType kv =
+                  hat(xg - varType(ci) - varType(0.5)) * hat(yg - varType(cj));
               if (kv > varType(0)) {
                 sumV += kv * cell.GetV(p);
                 weightV += kv;
@@ -155,8 +155,7 @@ void PIC::ProjectParticlesOnGrid() {
       }
     }
 
-    fields->u.Set(nx, cj,
-                  weight >= REAL_EPSILON ? sum / weight : varType(0));
+    fields->u.Set(nx, cj, weight >= REAL_EPSILON ? sum / weight : varType(0));
   }
 
   OMP_PRAGMA(omp parallel for schedule(static))
@@ -201,8 +200,7 @@ void PIC::ProjectParticlesOnGrid() {
       }
     }
 
-    fields->v.Set(ci, ny,
-                  weight >= REAL_EPSILON ? sum / weight : varType(0));
+    fields->v.Set(ci, ny, weight >= REAL_EPSILON ? sum / weight : varType(0));
   }
 }
 

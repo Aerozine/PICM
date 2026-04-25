@@ -470,8 +470,9 @@ bool solveMICCG0(Fields2D &fields, varType coef, int maxIters, varType tol) {
   const bool converged =
       solveSparsePCGSystem(system, precon, b, x, maxIters, tol);
 #ifndef NDEBUG
-  DBG_PRINTF("MICCG0: IC(0) rows=%ld, assembly=%.6fs, factor=%.6fs, solve=%.6fs",
-             system.A.rows(), assemblyTime, ic0Time, GET_TIME() - solveStart);
+  DBG_PRINTF(
+      "MICCG0: IC(0) rows=%ld, assembly=%.6fs, factor=%.6fs, solve=%.6fs",
+      system.A.rows(), assemblyTime, ic0Time, GET_TIME() - solveStart);
 #endif
   writeBackPressure(fields, system, x);
   return converged;

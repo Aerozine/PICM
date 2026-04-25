@@ -123,7 +123,8 @@ void PIC::Advect() {
     }
     OMP_PRAGMA(omp parallel for schedule(dynamic))
     for (std::size_t dstIdx = 0; dstIdx < incoming.size(); ++dstIdx) {
-      if(incoming[dstIdx].empty()) continue;
+      if (incoming[dstIdx].empty())
+        continue;
       Particles &dst = cloud->cells[dstIdx];
       for (const PendingParticle &p : incoming[dstIdx])
         dst.Add(p.x, p.y, p.u, p.v, 0, p.cuX, p.cuY, p.cvX, p.cvY);
