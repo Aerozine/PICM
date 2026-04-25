@@ -53,7 +53,7 @@ void PIC::Advect() {
   // Cross-cell moves are staged into per-destination buffers, then merged
   // after the parallel loop so we never mutate a destination cell while
   // another thread is iterating over it.
-    OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
+    OMP_PRAGMA(omp parallel for collapse(2) schedule(dynamic,1))
     for (int ci = 0; ci < nx; ++ci) {
       for (int cj = 0; cj < ny; ++cj) {
         Particles &cell = (*cloud)(ci, cj);
