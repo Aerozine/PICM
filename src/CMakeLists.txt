@@ -34,11 +34,12 @@ target_include_directories(PIC PRIVATE
 target_link_libraries(PIC PUBLIC 
     nlohmann_json::nlohmann_json
     IterativeMethod_CPU)           # always linked
-
+if(USE_GPU)
 if(USE_CUDA_FOUND)
     target_link_libraries(PIC PRIVATE IterativeMethod_GPU CUDA::cudart)
     target_compile_definitions(PIC PRIVATE USE_CUDA)
 endif()
+endif ()
 
 if(ZLIB_FOUND)
     target_link_libraries(PIC PRIVATE ZLIB::ZLIB)
