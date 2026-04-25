@@ -27,7 +27,7 @@ public:
 
   varType gravity = 0.0;
   varType coefPic = 0.05;
-  varType max_cfl = REAL_LITERAL(0.75);
+  varType max_cfl = REAL_LITERAL(0.95);
 
   bool write_u = true;
   bool write_v = true;

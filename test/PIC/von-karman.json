@@ -23,7 +23,7 @@
     "velocityu": {
         "rectangle": {
             "condition": "boundary",
-            "val": 1,
+            "val": 3,
             "x1": "0",
             "y1": "0",
             "x2": "0",
