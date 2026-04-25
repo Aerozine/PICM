@@ -86,7 +86,8 @@ void PIC::Step() {
 
     // Gravity is applied during grid -> particle transfer.
     ProjectGridOnParticles();
-
+    if (params.surfaceTension)
+      particleInteraction();
     Advect();
     UpdateCellState();
     if (params.refill)
