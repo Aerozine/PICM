@@ -6,8 +6,8 @@ void PIC::RefillParticles() {
 
   // single-threaded per cell each Add goes directly into the right cell,
   // no lock needed since we are not parallel here
-  for (int ci = 0; ci < nx; ci++) {
-    for (int cj = 0; cj < ny; cj++) {
+  for (int cj = 0; cj < ny; cj++) {
+    for (int ci = 0; ci < nx; ci++) {
       if (IS_SOLID(fields->Label(ci + 1, cj + 1)))
         continue;
 

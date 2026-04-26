@@ -103,7 +103,8 @@ void solveGaussSeidel(Fields2D &fields, int /*nx*/, int /*ny*/, varType coef,
         const varType p_gs = gsUpdate(fields, i, j, coef, beta);
 
         // Same convergence criterion as RBGS:
-        // L2 norm of (current pressure - Gauss-Seidel target), normalized by ||coef * div||_2.
+        // L2 norm of (current pressure - Gauss-Seidel target), normalized by
+        // ||coef * div||_2.
         const varType r = p_old - p_gs;
         sumSq += r * r;
 

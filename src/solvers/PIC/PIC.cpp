@@ -36,8 +36,8 @@ int PIC::computeAdvectionSubsteps() const {
   const varType gravitySpeed = std::abs(params.gravity) * dt;
 
     OMP_PRAGMA(omp parallel for collapse(2) reduction(max:maxCourant) schedule(static))
-    for (int ci = 0; ci < nx; ++ci) {
-      for (int cj = 0; cj < ny; ++cj) {
+    for (int cj = 0; cj < ny; ++cj) {
+      for (int ci = 0; ci < nx; ++ci) {
         const Particles &cell = (*cloud)(ci, cj);
         for (int p = 0; p < cell.size(); ++p) {
           const varType courantX = std::abs(cell.GetU(p)) / dx;
@@ -86,6 +86,14 @@ void PIC::Step() {
       LaplacePressure();
     MakeIncompressible(params, *fields);
     ProjectGridOnParticles();
+    /*
+    if (params.surfaceTension) {
+      particleInteraction();
+      // Surface tension updates particle velocities. Reproject them so the
+      // particle advection in this same substep sees the capillary kick.
+    ProjectParticlesOnGrid();
+    }
+    //*/
     Advect();
     UpdateCellState();
     if (params.refill)

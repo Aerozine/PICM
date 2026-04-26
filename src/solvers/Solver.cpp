@@ -5,8 +5,7 @@
 Solver::Solver(Parameters &params)
     : params(params), nx(params.nx), ny(params.ny), dx(params.dx),
       dy(params.dy), dt(params.dt), density(params.density),
-      fields(new Fields2D(nx, ny, density, dt, dx, dy, params.solver,
-                          params.freeSurface)) {
+      fields(new Fields2D(nx, ny, density, dt, dx, dy, params.freeSurface)) {
   InitializeOutputWriters();
 }
 

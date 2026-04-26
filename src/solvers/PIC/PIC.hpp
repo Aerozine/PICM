@@ -45,8 +45,6 @@ protected:
     return static_cast<varType>(0);
 #endif
   }
-  void scatterCell(const Particles &cell, Grid2D &u_sum, Grid2D &u_weight,
-                   Grid2D &v_sum, Grid2D &v_weight);
   int computeAdvectionSubsteps() const;
 
   virtual void ProjectParticlesOnGrid();

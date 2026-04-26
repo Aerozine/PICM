@@ -41,7 +41,7 @@ struct CylinderObject : public SceneObject {
   int r{0};         ///< Radius in cells.
 
   void applySolid(Fields2D &f) override;
-  void applyFluid(Fields2D &f);
+  void applyFluid(Fields2D &f) override;
   void applyAir(Fields2D &f) override;
 };
 
