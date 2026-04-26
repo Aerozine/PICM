@@ -41,19 +41,24 @@ public:
   int nx, ny;
   varType density;
   varType dt, dx, dy;
-  Grid2D u, v, p, div, normVelocity, phi, kappa, normalX, normalY, interface_u, interface_v;
+  Grid2D u, v, p, div, normVelocity;
   Grid2D *u_sum = nullptr;
   Grid2D *u_weight = nullptr;
   Grid2D *v_sum = nullptr;
   Grid2D *v_weight = nullptr;
+  Grid2D *phi= nullptr;
+  Grid2D *kappa = nullptr;
+  Grid2D *normalX = nullptr;
+  Grid2D *normalY = nullptr;
+  Grid2D *interface_u = nullptr;
+  Grid2D *interface_v = nullptr;
   uint16_t *Labels = nullptr;
 
   Fields2D(int nx_, int ny_, varType density_, varType dt_, varType dx_,
            varType dy_, const SolverConfig &sol, bool freeSurface = false)
       : nx(nx_), ny(ny_), density(density_), dt(dt_), dx(dx_), dy(dy_),
         u(nx_ + 1, ny_), v(nx_, ny_ + 1), p(nx_ + 2, ny_ + 2), div(nx_, ny_),
-        normVelocity(nx_, ny_), phi(nx_, ny_), kappa(nx_, ny_), normalX(nx_, ny_), normalY(nx_, ny_),
-        interface_u(nx_ + 1, ny_), interface_v(nx_, ny_ + 1) {
+        normVelocity(nx_, ny_) {
     const std::size_t labelCount =
         static_cast<std::size_t>(nx_ + 2) * (ny_ + 2);
     Labels =
@@ -69,6 +74,15 @@ public:
       v_sum = new Grid2D(nx_, ny_ + 1);
       v_weight = new Grid2D(nx_, ny_ + 1);
     }
+
+    if (sol.surfaceTension) {
+      phi = new Grid2D(nx_, ny_);
+      kappa = new Grid2D(nx_, ny_);
+      normalX = new Grid2D(nx_, ny_);
+      normalY = new Grid2D(nx_, ny_);
+      interface_u = new Grid2D(nx_ + 1, ny_);
+      interface_v = new Grid2D(nx_, ny_ + 1); 
+    }
   }
 
   ~Fields2D() {
@@ -77,6 +91,12 @@ public:
     delete u_weight;
     delete v_sum;
     delete v_weight;
+    delete phi;
+    delete kappa;
+    delete normalX;
+    delete normalY;
+    delete interface_u;
+    delete interface_v;
   }
 
   // Non-copyable, non-movable (owns raw resources; add if ever needed)
