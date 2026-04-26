@@ -104,6 +104,7 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   gravity = j.value("gravity", gravity);
   gamma = j.value("gamma", gamma);
   surfaceTension = j.value("surfaceTension", surfaceTension);
+  particleInteraction= j.value("particleInteraction", particleInteraction);
   particleRadius = j.value("particleRadius", particleRadius);
   interactionStiffness = j.value("interactionStiffness", interactionStiffness);
   interactionExponent = j.value("interactionExponent", interactionExponent);

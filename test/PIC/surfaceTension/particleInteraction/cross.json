@@ -16,7 +16,7 @@
     "write_norm_velocity": true,
     "write_smoke": true,
     "write_particles": true,
-    "folder": "results/PIC/surfaceTension/laplace/cross",
+    "folder": "results/PIC/surfaceTension/particleInteraction/cross",
     "filename": "simulation",
 
     "fluid": {
@@ -75,6 +75,9 @@
     "gravity": 0.0,
     "refill": false,
     "surfaceTension": true,
-    "particleInteraction": false,
-    "gamma": 10.073
+    "particleInteraction": true,
+    "interactionStiffness": 1.00,
+    "interactionExponent": 2.0
+
+    
 }

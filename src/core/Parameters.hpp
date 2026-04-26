@@ -46,6 +46,7 @@ public:
   /// false → initialise as FLUID (fully-filled, incompressible default)
   bool freeSurface = false;
   bool surfaceTension = false;
+  bool particleInteraction = false;
 
   SolverConfig solver;
 
