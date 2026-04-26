@@ -65,9 +65,9 @@ inline void updateVelocities(const Parameters &params, Fields2D &fields) {
 
       if (params.surfaceTension) {
         if (IS_AIR(left) && IS_FLUID(right)) {
-            pLeft = fields.interface_u.Get(i, j);
+            pLeft = fields.interface_u->Get(i, j);
         } else if (IS_FLUID(left) && IS_AIR(right)) {
-            pRight = fields.interface_u.Get(i, j);
+            pRight = fields.interface_u->Get(i, j);
         }
       }
       fields.u.Set(i, j, fields.u.Get(i, j) - coef * (pRight - pLeft));
@@ -93,9 +93,9 @@ inline void updateVelocities(const Parameters &params, Fields2D &fields) {
 
       if (params.surfaceTension) {
         if (IS_AIR(down) && IS_FLUID(up)) {
-            pDown = fields.interface_v.Get(i, j);
+            pDown = fields.interface_v->Get(i, j);
         } else if (IS_FLUID(down) && IS_AIR(up)) {
-            pUp = fields.interface_v.Get(i, j);
+            pUp = fields.interface_v->Get(i, j);
         }
       }
       fields.v.Set(i, j, fields.v.Get(i, j) - coef * (pUp - pDown));

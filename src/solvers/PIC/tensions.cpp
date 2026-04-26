@@ -32,10 +32,10 @@ void PIC::UpdatePhiFromParticles() const
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
     for (int j = 0; j < ny; ++j) {
         for (int i = 0; i < nx; ++i) {
-            fields->phi.Set(i, j, 0.0);
-            fields->kappa.Set(i, j, 0.0);
-            fields->normalX.Set(i, j, 0.0);
-            fields->normalY.Set(i, j, 0.0);
+            fields->phi->Set(i, j, 0.0);
+            fields->kappa->Set(i, j, 0.0);
+            fields->normalX->Set(i, j, 0.0);
+            fields->normalY->Set(i, j, 0.0);
         }
     }
 
@@ -64,7 +64,7 @@ void PIC::UpdatePhiFromParticles() const
                     }
                 }
             }
-            fields->phi.Set(i, j, cval);
+            fields->phi->Set(i, j, cval);
         }
     }
 
@@ -73,21 +73,21 @@ void PIC::UpdatePhiFromParticles() const
     OMP_PRAGMA(omp parallel for collapse(2) reduction(max:Cmax) schedule(static))
     for (int j = 0; j < ny; ++j)
         for (int i = 0; i < nx; ++i)
-            Cmax = std::max(Cmax, fields->phi.Get(i, j));
+            Cmax = std::max(Cmax, fields->phi->Get(i, j));
 
     if (Cmax < REAL_EPSILON) return;
 
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
     for (int j = 0; j < ny; ++j)
         for (int i = 0; i < nx; ++i)
-            fields->phi.Set(i, j, fields->phi.Get(i, j) / Cmax);
+            fields->phi->Set(i, j, fields->phi->Get(i, j) / Cmax);
 
     //   phi < 0 : FLUIDE,  phi > 0 : AIR
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
     for (int j = 0; j < ny; ++j) {
         for (int i = 0; i < nx; ++i) {
-            const varType val = fields->phi.Get(i, j);
-            fields->phi.Set(i, j, IS_FLUID(fields->Label(i + 1, j + 1))
+            const varType val = fields->phi->Get(i, j);
+            fields->phi->Set(i, j, IS_FLUID(fields->Label(i + 1, j + 1))
                                   ? -std::abs(val)
                                   :  std::abs(val));
         }
@@ -104,14 +104,14 @@ void PIC::ComputeSurfaceTensionOnFaces() const
 
     // back to 0
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
-    for (int j = 0; j < fields->interface_u.ny; ++j)
-        for (int i = 0; i < fields->interface_u.nx; ++i)
-            fields->interface_u.Set(i, j, 0.0);
+    for (int j = 0; j < fields->interface_u->ny; ++j)
+        for (int i = 0; i < fields->interface_u->nx; ++i)
+            fields->interface_u->Set(i, j, 0.0);
 
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
-    for (int j = 0; j < fields->interface_v.ny; ++j)
-        for (int i = 0; i < fields->interface_v.nx; ++i)
-            fields->interface_v.Set(i, j, 0.0);
+    for (int j = 0; j < fields->interface_v->ny; ++j)
+        for (int i = 0; i < fields->interface_v->nx; ++i)
+            fields->interface_v->Set(i, j, 0.0);
 
     // normal n = grad(phi)/|grad(phi)| at cell centers grad(phi)
     // using finite differences. Borders clamped to nearest valid cell
@@ -120,18 +120,18 @@ void PIC::ComputeSurfaceTensionOnFaces() const
     for (int j = 0; j < ny; ++j) {
         for (int i = 0; i < nx; ++i) {
 
-            const varType phi_xp = fields->phi.Get(std::min(i + 1, nx - 1), j);
-            const varType phi_xm = fields->phi.Get(std::max(i - 1, 0),       j);
-            const varType phi_yp = fields->phi.Get(i, std::min(j + 1, ny - 1));
-            const varType phi_ym = fields->phi.Get(i, std::max(j - 1, 0)      );
+            const varType phi_xp = fields->phi->Get(std::min(i + 1, nx - 1), j);
+            const varType phi_xm = fields->phi->Get(std::max(i - 1, 0),       j);
+            const varType phi_yp = fields->phi->Get(i, std::min(j + 1, ny - 1));
+            const varType phi_ym = fields->phi->Get(i, std::max(j - 1, 0)      );
 
             const varType gx = (phi_xp - phi_xm) / (2.0 * dx);
             const varType gy = (phi_yp - phi_ym) / (2.0 * dy);
             const varType gn = std::hypot(gx, gy);
 
             if (gn > REAL_EPSILON) {
-                fields->normalX.Set(i, j, gx / gn);
-                fields->normalY.Set(i, j, gy / gn);
+                fields->normalX->Set(i, j, gx / gn);
+                fields->normalY->Set(i, j, gy / gn);
             }
         }
     }
@@ -145,14 +145,14 @@ void PIC::ComputeSurfaceTensionOnFaces() const
             if (!IS_FLUID(fields->Label(i + 1, j + 1))) continue;
 
             const varType dnx_dx =
-                (fields->normalX.Get(std::min(i + 1, nx - 1), j) -
-                 fields->normalX.Get(std::max(i - 1, 0),       j)) / (2.0 * dx);
+                (fields->normalX->Get(std::min(i + 1, nx - 1), j) -
+                 fields->normalX->Get(std::max(i - 1, 0),       j)) / (2.0 * dx);
 
             const varType dny_dy =
-                (fields->normalY.Get(i, std::min(j + 1, ny - 1)) -
-                 fields->normalY.Get(i, std::max(j - 1, 0)      )) / (2.0 * dy);
+                (fields->normalY->Get(i, std::min(j + 1, ny - 1)) -
+                 fields->normalY->Get(i, std::max(j - 1, 0)      )) / (2.0 * dy);
 
-            fields->kappa.Set(i, j, -(dnx_dx + dny_dy));
+            fields->kappa->Set(i, j, -(dnx_dx + dny_dy));
         }
     }
 
@@ -173,9 +173,9 @@ void PIC::ComputeSurfaceTensionOnFaces() const
             if (IS_SOLID(left)) continue;
             if (IS_SOLID(right)) continue;
 
-            const varType kappa_face = leftFluid ? fields->kappa.Get(i - 1, j)  
-                                                 : fields->kappa.Get(i, j); 
-            fields->interface_u.Set(i, j, -gamma * kappa_face);
+            const varType kappa_face = leftFluid ? fields->kappa->Get(i - 1, j)  
+                                                 : fields->kappa->Get(i, j); 
+            fields->interface_u->Set(i, j, -gamma * kappa_face);
         }
     }
 
@@ -195,9 +195,9 @@ void PIC::ComputeSurfaceTensionOnFaces() const
             if (IS_SOLID(labelBot))   continue;
             if (IS_SOLID(labelTop))   continue;
 
-            const varType kappa_face = botFluid ? fields->kappa.Get(i, j - 1)   
-                                                : fields->kappa.Get(i, j);      
-            fields->interface_v.Set(i, j, -gamma * kappa_face);
+            const varType kappa_face = botFluid ? fields->kappa->Get(i, j - 1)   
+                                                : fields->kappa->Get(i, j);      
+            fields->interface_v->Set(i, j, -gamma * kappa_face);
         }
     }
 }
