@@ -16,7 +16,7 @@
     "write_norm_velocity": true,
     "write_smoke": true,
     "write_particles": true,
-    "folder": "results/PIC/surfaceTension/square",
+    "folder": "results/PIC/surfaceTension/laplace/drop",
     "filename": "simulation",
 
     "fluid": {
@@ -65,6 +65,6 @@
     "gravity": 0.0,
     "refill": false,
     "surfaceTension": true,
-    "interactionStiffness": 1.00,
-    "interactionExponent": 2.0
+    "particleInteraction": false,
+    "gamma": 0.073
 }

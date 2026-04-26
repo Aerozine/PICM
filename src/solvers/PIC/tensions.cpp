@@ -29,15 +29,11 @@ void PIC::UpdatePhiFromParticles() const
     const varType h_smooth = CSF_KERNEL_RADIUS_FACTOR * dx;
     const int     Rsmooth  = static_cast<int>(std::ceil(h_smooth / dx)) + 1;
 
-    OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
-    for (int j = 0; j < ny; ++j) {
-        for (int i = 0; i < nx; ++i) {
-            fields->phi->Set(i, j, 0.0);
-            fields->kappa->Set(i, j, 0.0);
-            fields->normalX->Set(i, j, 0.0);
-            fields->normalY->Set(i, j, 0.0);
-        }
-    }
+
+    fields->phi->reset();
+    fields->kappa->reset();
+    fields->normalX->reset();
+    fields->normalY->reset();
 
     //  color function phi(i,j) = sum on p [ kernel(|xc - xp|, h)]
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
@@ -103,15 +99,8 @@ void PIC::ComputeSurfaceTensionOnFaces() const
     const varType gamma = params.gamma;
 
     // back to 0
-    OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
-    for (int j = 0; j < fields->interface_u->ny; ++j)
-        for (int i = 0; i < fields->interface_u->nx; ++i)
-            fields->interface_u->Set(i, j, 0.0);
-
-    OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
-    for (int j = 0; j < fields->interface_v->ny; ++j)
-        for (int i = 0; i < fields->interface_v->nx; ++i)
-            fields->interface_v->Set(i, j, 0.0);
+    fields->interface_u->reset();
+    fields->interface_v->reset();
 
     // normal n = grad(phi)/|grad(phi)| at cell centers grad(phi)
     // using finite differences. Borders clamped to nearest valid cell
