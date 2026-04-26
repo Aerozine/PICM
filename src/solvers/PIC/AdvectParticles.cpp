@@ -54,8 +54,8 @@ void PIC::Advect() {
   // after the parallel loop so we never mutate a destination cell while
   // another thread is iterating over it.
     OMP_PRAGMA(omp parallel for collapse(2) schedule(dynamic,1))
-    for (int ci = 0; ci < nx; ++ci) {
-      for (int cj = 0; cj < ny; ++cj) {
+    for (int cj = 0; cj < ny; ++cj) {
+      for (int ci = 0; ci < nx; ++ci) {
         Particles &cell = (*cloud)(ci, cj);
         int local_idx = 0;
         int n = cell.size();
@@ -99,7 +99,7 @@ void PIC::Advect() {
               std::clamp(static_cast<int>(std::floor(yAdv / dy)), 0, ny - 1);
 
           if (ci1 != ci || cj1 != cj) {
-            const std::size_t dstIdx = static_cast<std::size_t>(ny) * ci1 + cj1;
+            const std::size_t dstIdx = cloud->idx(ci1, cj1);
 #ifdef USE_OPENMP
             omp_set_lock(&cloud->cellLocks[dstIdx]);
 #endif
@@ -123,7 +123,8 @@ void PIC::Advect() {
     }
     OMP_PRAGMA(omp parallel for schedule(dynamic))
     for (std::size_t dstIdx = 0; dstIdx < incoming.size(); ++dstIdx) {
-      if(incoming[dstIdx].empty()) continue;
+      if (incoming[dstIdx].empty())
+        continue;
       Particles &dst = cloud->cells[dstIdx];
       for (const PendingParticle &p : incoming[dstIdx])
         dst.Add(p.x, p.y, p.u, p.v, 0, p.cuX, p.cuY, p.cvX, p.cvY);

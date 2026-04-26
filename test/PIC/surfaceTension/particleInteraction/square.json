@@ -1,14 +1,14 @@
 {
-    "dx": 0.02,
-    "dy": 0.02,
-    "dt": 0.025,
+    "dx": 0.0007,
+    "dy": 0.0007,
+    "dt": 0.001,
     "nx": 100,
     "ny": 100,
-    "nt": 1500,
-    "ppcx": 5,
-    "ppcy": 5,
+    "nt": 1000,
+    "ppcx": 7,
+    "ppcy": 7,
     "density": 1000,
-    "sampling_rate": 10,
+    "sampling_rate": 5,
     "write_u": true,
     "write_v": true,
     "write_p": true,
@@ -16,16 +16,26 @@
     "write_norm_velocity": true,
     "write_smoke": true,
     "write_particles": true,
-    "folder": "results/PIC/surfaceTension/square",
+    "folder": "results/APIC/surfaceTension/square",
     "filename": "simulation",
 
     "fluid": {
         "rectangle": {
-            "x1": "4*nx/10",
-            "y1": "4*ny/10",
-            "x2": "7*nx/10",
-            "y2": "7*ny/10"
-        }
+            "x1": "nx/2-12",
+            "y1": "ny/4-8",
+            "x2": "nx/2+14",
+            "y2": "ny/4+8"
+        },
+        "cylinder": [{
+            "x": "nx/2-12",
+            "y": "ny/4",
+            "r": "8"
+        },
+        {
+            "x": "nx/2+12",
+            "y": "ny/4",
+            "r": "8"
+        }]
     },
 
     "solid": {
@@ -57,15 +67,16 @@
 
 
     "solver": {
-        "type": "red_black_gauss_seidel",
-        "max_iterations": 1e5,
-        "tolerance": 1e-2
+        "type": "cg",
+        "max_iterations": 1e6,
+        "tolerance": 1e-3
     },
-    "method": "pic",
+    "method": "flip",
+    "coefPic": 0.95,
     "freeSurface": "yes",
     "gravity": 0.0,
     "refill": false,
     "surfaceTension": true,
-    "interactionStiffness": 1.00,
+    "interactionStiffness": 6.0,
     "interactionExponent": 2.0
 }

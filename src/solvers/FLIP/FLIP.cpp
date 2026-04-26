@@ -26,6 +26,12 @@ void FLIP::Step() {
     SaveOldVelocities();
     MakeIncompressible(params, *fields);
     ProjectGridOnParticles();
+    if (params.surfaceTension) {
+      particleInteraction();
+      // Surface tension updates particle velocities. Reproject them so the
+      // particle advection in this same substep sees the capillary kick.
+      ProjectParticlesOnGrid();
+    }
     fields->UpdateDivNorm();
     Advect();
     UpdateCellState();
@@ -40,8 +46,8 @@ void FLIP::ProjectGridOnParticles() {
   const varType coefFlip = varType(1) - coefPic;
 
   OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
-  for (int ci = 0; ci < nx; ++ci) {
-    for (int cj = 0; cj < ny; ++cj) {
+  for (int cj = 0; cj < ny; ++cj) {
+    for (int ci = 0; ci < nx; ++ci) {
       Particles &cell = (*cloud)(ci, cj);
       for (int p = 0; p < cell.size(); ++p) {
         const varType x = cell.GetX(p);

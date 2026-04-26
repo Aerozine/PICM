@@ -5,8 +5,8 @@
 // it there is we can simply set fluid
 void PIC::UpdateCellState() const {
     OMP_PRAGMA(omp parallel for collapse(2))
-    for (int i = 0; i < nx; ++i) {
-      for (int j = 0; j < ny; ++j) {
+    for (int j = 0; j < ny; ++j) {
+      for (int i = 0; i < nx; ++i) {
         // early exit
         const labeltype current = fields->Label(i + 1, j + 1);
         if (IS_SOLID(current) || IS_BC_U(current) || IS_BC_V(current))
