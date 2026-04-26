@@ -41,7 +41,7 @@ public:
   int nx, ny;
   varType density;
   varType dt, dx, dy;
-  Grid2D u, v, p, div, normVelocity;
+  Grid2D u, v, p, div, normVelocity, phi, kappa, normalX, normalY, interface_u, interface_v;
   Grid2D *u_sum = nullptr;
   Grid2D *u_weight = nullptr;
   Grid2D *v_sum = nullptr;
@@ -52,7 +52,8 @@ public:
            varType dy_, const SolverConfig &sol, bool freeSurface = false)
       : nx(nx_), ny(ny_), density(density_), dt(dt_), dx(dx_), dy(dy_),
         u(nx_ + 1, ny_), v(nx_, ny_ + 1), p(nx_ + 2, ny_ + 2), div(nx_, ny_),
-        normVelocity(nx_, ny_) {
+        normVelocity(nx_, ny_), phi(nx_, ny_), kappa(nx_, ny_), normalX(nx_, ny_), normalY(nx_, ny_),
+        interface_u(nx_ + 1, ny_), interface_v(nx_, ny_ + 1) {
     const std::size_t labelCount =
         static_cast<std::size_t>(nx_ + 2) * (ny_ + 2);
     Labels =

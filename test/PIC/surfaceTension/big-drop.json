@@ -4,7 +4,7 @@
     "dt": 0.025,
     "nx": 100,
     "ny": 100,
-    "nt": 1500,
+    "nt": 500,
     "ppcx": 5,
     "ppcy": 5,
     "density": 1000,
@@ -20,11 +20,10 @@
     "filename": "simulation",
 
     "fluid": {
-        "rectangle": {
-            "x1": "4*nx/10",
-            "y1": "4*ny/10",
-            "x2": "7*nx/10",
-            "y2": "7*ny/10"
+        "cylinder": {
+            "x": "nx/2",
+            "y": "ny/4",
+            "r": "ny/4"
         }
     },
 

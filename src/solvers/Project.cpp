@@ -49,36 +49,56 @@ inline void updateVelocities(const Parameters &params, Fields2D &fields) {
   OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
   for (int j = 0; j < fields.u.ny; ++j) {
     for (int i = 0; i < fields.u.nx; ++i) {
-      if (IS_BC_U(fields.Label(i, j + 1))) {
+
+      labeltype left = fields.Label(i, j + 1);
+      labeltype right = fields.Label(i + 1, j + 1);
+
+      if (IS_BC_U(left)) {
         continue;
-      } else if (IS_SOLID(fields.Label(i + 1, j + 1)) ||
-                 IS_SOLID(fields.Label(i, j + 1))) {
+      } else if (IS_SOLID(right) || IS_SOLID(left)) {
         fields.u.Set(i, j, 0.0);
         continue;
+      } 
+
+      varType pLeft = fields.p.Get(i, j + 1);
+      varType pRight = fields.p.Get(i + 1, j + 1);
+
+      if (params.surfaceTension) {
+        if (IS_AIR(left) && IS_FLUID(right)) {
+            pLeft = fields.interface_u.Get(i, j);
+        } else if (IS_FLUID(left) && IS_AIR(right)) {
+            pRight = fields.interface_u.Get(i, j);
+        }
       }
-      fields.u.Set(i, j,
-                   fields.u.Get(i, j) - coef * (fields.p.Get(i + 1, j + 1) -
-                                                fields.p.Get(i, j + 1)));
+      fields.u.Set(i, j, fields.u.Get(i, j) - coef * (pRight - pLeft));
     }
   }
 
   OMP_PRAGMA( omp parallel for collapse(2) schedule(static))
   for (int j = 0; j < fields.v.ny; ++j) {
     for (int i = 0; i < fields.v.nx; ++i) {
-      // bc is applied on p1,0 for v0,0
-      if (IS_BC_V(fields.Label(i + 1, j))) {
+
+      labeltype down = fields.Label(i + 1, j);
+      labeltype up = fields.Label(i + 1, j + 1);
+
+      if (IS_BC_V(down)) {
         continue;
-      } else if (IS_SOLID(fields.Label(i + 1, j + 1)) ||
-                 IS_SOLID(fields.Label(i + 1, j))) {
+      } else if (IS_SOLID(up) || IS_SOLID(down)) {
         fields.v.Set(i, j, 0.0);
         continue;
       }
-      assert(std::isfinite(
-          fields.v.Get(i, j) -
-          coef * (fields.p.Get(i + 1, j + 1) - fields.p.Get(i + 1, j))));
-      fields.v.Set(i, j,
-                   fields.v.Get(i, j) - coef * (fields.p.Get(i + 1, j + 1) -
-                                                fields.p.Get(i + 1, j)));
+
+      varType pDown = fields.p.Get(i + 1, j);
+      varType pUp = fields.p.Get(i + 1, j + 1);
+
+      if (params.surfaceTension) {
+        if (IS_AIR(down) && IS_FLUID(up)) {
+            pDown = fields.interface_v.Get(i, j);
+        } else if (IS_FLUID(down) && IS_AIR(up)) {
+            pUp = fields.interface_v.Get(i, j);
+        }
+      }
+      fields.v.Set(i, j, fields.v.Get(i, j) - coef * (pUp - pDown));
     }
   }
 }
