@@ -82,12 +82,10 @@ void PIC::Step() {
   setTimeStep(subDt);
   for (int substep = 0; substep < substeps; ++substep) {
     ProjectParticlesOnGrid();
-    MakeIncompressible(params, *fields);
-
-    // Gravity is applied during grid -> particle transfer.
-    ProjectGridOnParticles();
     if (params.surfaceTension)
-      particleInteraction();
+      LaplacePressure();
+    MakeIncompressible(params, *fields);
+    ProjectGridOnParticles();
     Advect();
     UpdateCellState();
     if (params.refill)
