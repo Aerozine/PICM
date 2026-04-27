@@ -90,6 +90,9 @@ void PIC::UpdatePhiFromParticles() const
     }
 }
 
+// Paramètre à ajouter dans params (ou en constante pour tester)
+// params.contactAngle en radians  (ex: M_PI/4 = 45°, M_PI/2 = 90°, 2*M_PI/3 = 120°)
+
 void PIC::ComputeSurfaceTensionOnFaces() const
 {
     const int nx = fields->nx;
@@ -97,22 +100,55 @@ void PIC::ComputeSurfaceTensionOnFaces() const
     const varType dx = fields->dx;
     const varType dy = fields->dy;
     const varType gamma = params.gamma;
+    const varType cosTheta = std::cos(params.contactAngle); // NOUVEAU
 
-    // back to 0
     fields->interface_u->reset();
     fields->interface_v->reset();
 
-    // normal n = grad(phi)/|grad(phi)| at cell centers grad(phi)
-    // using finite differences. Borders clamped to nearest valid cell
-    // i.e. d(phi)/d(n) = 0 at domain borders
+    // ----------------------------------------------------------------
+    // Helpers : phi fantôme au bord solide
+    //
+    // Si le voisin est solide, on ne clampe plus phi(voisin) = phi(i,j)
+    // On utilise à la place :  phi_ghost = phi(i,j) - d * cosTheta
+    // où d est le pas dans la direction normale au solide (dx ou dy).
+    //
+    // Cela impose ∂φ/∂n_solide = -cosTheta au premier ordre.
+    // ----------------------------------------------------------------
+
+    // phi fantôme en X : voisin (i+di, j), solide ou hors domaine
+    auto phiGhostX = [&](int i, int j, int di) -> varType {
+        int ni = i + di;
+        // hors domaine
+        if (ni < 0 || ni >= nx)
+            return fields->phi->Get(i, j) - di * dx * cosTheta;
+        // voisin solide
+        if (IS_SOLID(fields->Label(ni + 1, j + 1)))
+            return fields->phi->Get(i, j) - di * dx * cosTheta;
+        // cas normal
+        return fields->phi->Get(ni, j);
+    };
+
+    // phi fantôme en Y : voisin (i, j+dj), solide ou hors domaine
+    auto phiGhostY = [&](int i, int j, int dj) -> varType {
+        int nj = j + dj;
+        if (nj < 0 || nj >= ny)
+            return fields->phi->Get(i, j) - dj * dy * cosTheta;
+        if (IS_SOLID(fields->Label(i + 1, nj + 1)))
+            return fields->phi->Get(i, j) - dj * dy * cosTheta;
+        return fields->phi->Get(i, nj);
+    };
+
+    // ----------------------------------------------------------------
+    // Normales — même structure qu'avant, mais via les helpers
+    // ----------------------------------------------------------------
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
     for (int j = 0; j < ny; ++j) {
         for (int i = 0; i < nx; ++i) {
 
-            const varType phi_xp = fields->phi->Get(std::min(i + 1, nx - 1), j);
-            const varType phi_xm = fields->phi->Get(std::max(i - 1, 0),       j);
-            const varType phi_yp = fields->phi->Get(i, std::min(j + 1, ny - 1));
-            const varType phi_ym = fields->phi->Get(i, std::max(j - 1, 0)      );
+            const varType phi_xp = phiGhostX(i, j, +1); // MODIFIÉ
+            const varType phi_xm = phiGhostX(i, j, -1); // MODIFIÉ
+            const varType phi_yp = phiGhostY(i, j, +1); // MODIFIÉ
+            const varType phi_ym = phiGhostY(i, j, -1); // MODIFIÉ
 
             const varType gx = (phi_xp - phi_xm) / (2.0 * dx);
             const varType gy = (phi_yp - phi_ym) / (2.0 * dy);
@@ -125,67 +161,70 @@ void PIC::ComputeSurfaceTensionOnFaces() const
         }
     }
 
-    // curvature kappa = -(d(nx)/d(x) + d(ny)/d(y)) at cell centers
-    // normalX(i±1, j) & normalY(i, j±1) clamped as above
+    // ----------------------------------------------------------------
+    // Courbure — idem, on skip les cellules solides comme avant
+    // ----------------------------------------------------------------
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
     for (int j = 0; j < ny; ++j) {
         for (int i = 0; i < nx; ++i) {
 
             if (!IS_FLUID(fields->Label(i + 1, j + 1))) continue;
 
-            const varType dnx_dx =
-                (fields->normalX->Get(std::min(i + 1, nx - 1), j) -
-                 fields->normalX->Get(std::max(i - 1, 0),       j)) / (2.0 * dx);
+            // Pour la divergence des normales on utilise aussi les fantômes,
+            // mais on travaille sur normalX/normalY déjà calculés.
+            // Pour les voisins solides de normalX/normalY, on n'a pas de valeur :
+            // on clampe à 0 (normal tangente au solide → divergence nulle là).
+            auto nxVal = [&](int ii, int jj) -> varType {
+                if (ii < 0 || ii >= nx) return 0.0;
+                if (IS_SOLID(fields->Label(ii + 1, jj + 1))) return 0.0;
+                return fields->normalX->Get(ii, jj);
+            };
+            auto nyVal = [&](int ii, int jj) -> varType {
+                if (jj < 0 || jj >= ny) return 0.0;
+                if (IS_SOLID(fields->Label(ii + 1, jj + 1))) return 0.0;
+                return fields->normalY->Get(ii, jj);
+            };
 
+            const varType dnx_dx =
+                (nxVal(i + 1, j) - nxVal(i - 1, j)) / (2.0 * dx);
             const varType dny_dy =
-                (fields->normalY->Get(i, std::min(j + 1, ny - 1)) -
-                 fields->normalY->Get(i, std::max(j - 1, 0)      )) / (2.0 * dy);
+                (nyVal(i, j + 1) - nyVal(i, j - 1)) / (2.0 * dy);
 
             fields->kappa->Set(i, j, -(dnx_dx + dny_dy));
         }
     }
 
-    // Face U: interface_u(i,j) btw phi(i-1,j) & phi(i,j)
-    // phi(i-1, j) <-> Label(i,   j+1)
-    // phi(i,   j) <-> Label(i+1, j+1)
+    // ----------------------------------------------------------------
+    // Faces U et V — inchangées
+    // ----------------------------------------------------------------
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
     for (int j = 0; j < ny; ++j) {
-        for (int i = 1; i < nx; ++i) {   
-
+        for (int i = 1; i < nx; ++i) {
             const labeltype left  = fields->Label(i,     j + 1);
             const labeltype right = fields->Label(i + 1, j + 1);
-
             const bool leftFluid  = IS_FLUID(left);
             const bool rightFluid = IS_FLUID(right);
-
             if (leftFluid == rightFluid) continue;
-            if (IS_SOLID(left)) continue;
+            if (IS_SOLID(left))  continue;
             if (IS_SOLID(right)) continue;
-
-            const varType kappa_face = leftFluid ? fields->kappa->Get(i - 1, j)  
-                                                 : fields->kappa->Get(i, j); 
+            const varType kappa_face = leftFluid ? fields->kappa->Get(i - 1, j)
+                                                 : fields->kappa->Get(i,     j);
             fields->interface_u->Set(i, j, -gamma * kappa_face);
         }
     }
 
-    // faces V: interface_v(i,j) btw phi(i,j-1) & phi(i,j)
-    // phi(i, j-1) <-> Label(i+1, j)
-    // phi(i, j) <-> Label(i+1, j+1)
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
     for (int j = 1; j < ny; ++j) {
         for (int i = 0; i < nx; ++i) {
             const labeltype labelBot = fields->Label(i + 1, j);
             const labeltype labelTop = fields->Label(i + 1, j + 1);
-
             const bool botFluid = IS_FLUID(labelBot);
             const bool topFluid = IS_FLUID(labelTop);
-
             if (botFluid == topFluid) continue;
             if (IS_SOLID(labelBot))   continue;
             if (IS_SOLID(labelTop))   continue;
-
-            const varType kappa_face = botFluid ? fields->kappa->Get(i, j - 1)   
-                                                : fields->kappa->Get(i, j);      
+            const varType kappa_face = botFluid ? fields->kappa->Get(i, j - 1)
+                                                : fields->kappa->Get(i, j);
             fields->interface_v->Set(i, j, -gamma * kappa_face);
         }
     }
