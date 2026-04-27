@@ -90,9 +90,6 @@ void PIC::UpdatePhiFromParticles() const
     }
 }
 
-// Paramètre à ajouter dans params (ou en constante pour tester)
-// params.contactAngle en radians  (ex: M_PI/4 = 45°, M_PI/2 = 90°, 2*M_PI/3 = 120°)
-
 void PIC::ComputeSurfaceTensionOnFaces() const
 {
     const int nx = fields->nx;
@@ -100,35 +97,20 @@ void PIC::ComputeSurfaceTensionOnFaces() const
     const varType dx = fields->dx;
     const varType dy = fields->dy;
     const varType gamma = params.gamma;
-    const varType cosTheta = std::cos(params.contactAngle); // NOUVEAU
+    const varType cosTheta = std::cos(params.contactAngle);
 
     fields->interface_u->reset();
     fields->interface_v->reset();
 
-    // ----------------------------------------------------------------
-    // Helpers : phi fantôme au bord solide
-    //
-    // Si le voisin est solide, on ne clampe plus phi(voisin) = phi(i,j)
-    // On utilise à la place :  phi_ghost = phi(i,j) - d * cosTheta
-    // où d est le pas dans la direction normale au solide (dx ou dy).
-    //
-    // Cela impose ∂φ/∂n_solide = -cosTheta au premier ordre.
-    // ----------------------------------------------------------------
-
-    // phi fantôme en X : voisin (i+di, j), solide ou hors domaine
     auto phiGhostX = [&](int i, int j, int di) -> varType {
         int ni = i + di;
-        // hors domaine
         if (ni < 0 || ni >= nx)
             return fields->phi->Get(i, j) - di * dx * cosTheta;
-        // voisin solide
         if (IS_SOLID(fields->Label(ni + 1, j + 1)))
             return fields->phi->Get(i, j) - di * dx * cosTheta;
-        // cas normal
         return fields->phi->Get(ni, j);
     };
 
-    // phi fantôme en Y : voisin (i, j+dj), solide ou hors domaine
     auto phiGhostY = [&](int i, int j, int dj) -> varType {
         int nj = j + dj;
         if (nj < 0 || nj >= ny)
@@ -138,17 +120,14 @@ void PIC::ComputeSurfaceTensionOnFaces() const
         return fields->phi->Get(i, nj);
     };
 
-    // ----------------------------------------------------------------
-    // Normales — même structure qu'avant, mais via les helpers
-    // ----------------------------------------------------------------
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
     for (int j = 0; j < ny; ++j) {
         for (int i = 0; i < nx; ++i) {
 
-            const varType phi_xp = phiGhostX(i, j, +1); // MODIFIÉ
-            const varType phi_xm = phiGhostX(i, j, -1); // MODIFIÉ
-            const varType phi_yp = phiGhostY(i, j, +1); // MODIFIÉ
-            const varType phi_ym = phiGhostY(i, j, -1); // MODIFIÉ
+            const varType phi_xp = phiGhostX(i, j, +1); 
+            const varType phi_xm = phiGhostX(i, j, -1); 
+            const varType phi_yp = phiGhostY(i, j, +1); 
+            const varType phi_ym = phiGhostY(i, j, -1); 
 
             const varType gx = (phi_xp - phi_xm) / (2.0 * dx);
             const varType gy = (phi_yp - phi_ym) / (2.0 * dy);
@@ -161,19 +140,12 @@ void PIC::ComputeSurfaceTensionOnFaces() const
         }
     }
 
-    // ----------------------------------------------------------------
-    // Courbure — idem, on skip les cellules solides comme avant
-    // ----------------------------------------------------------------
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
     for (int j = 0; j < ny; ++j) {
         for (int i = 0; i < nx; ++i) {
 
             if (!IS_FLUID(fields->Label(i + 1, j + 1))) continue;
 
-            // Pour la divergence des normales on utilise aussi les fantômes,
-            // mais on travaille sur normalX/normalY déjà calculés.
-            // Pour les voisins solides de normalX/normalY, on n'a pas de valeur :
-            // on clampe à 0 (normal tangente au solide → divergence nulle là).
             auto nxVal = [&](int ii, int jj) -> varType {
                 if (ii < 0 || ii >= nx) return 0.0;
                 if (IS_SOLID(fields->Label(ii + 1, jj + 1))) return 0.0;
@@ -194,9 +166,6 @@ void PIC::ComputeSurfaceTensionOnFaces() const
         }
     }
 
-    // ----------------------------------------------------------------
-    // Faces U et V — inchangées
-    // ----------------------------------------------------------------
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
     for (int j = 0; j < ny; ++j) {
         for (int i = 1; i < nx; ++i) {
