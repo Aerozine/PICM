@@ -20,6 +20,18 @@ static inline varType smoothingKernel(varType r, varType h)
     return s * s * s;
 }
 
+/* // Muller's smoothing kernel -> reference paper on level sets
+static inline varType smoothingKernel(varType r, varType h)
+{
+    const varType q = r / h;
+
+    if (q >= 1.0) return 0.0;
+
+    const varType s = 1.0 - q * q;
+
+    return s * s * s;
+}*/
+
 void PIC::UpdatePhiFromParticles() const
 {
     const int     nx       = fields->nx;

@@ -1,0 +1,78 @@
+{
+    "dx": 0.02,
+    "dy": 0.02,
+    "dt": 0.001,
+    "nx": 100,
+    "ny": 100,
+    "nt": 5000,
+    "ppcx": 5,
+    "ppcy": 5,
+    "density": 1000,
+    "sampling_rate": 5,
+    "write_u": true,
+    "write_v": true,
+    "write_p": true,
+    "write_div": true,
+    "write_norm_velocity": true,
+    "write_smoke": true,
+    "write_particles": true,
+    "folder": "results/PIC/surfaceTension/drop-in-water",
+    "filename": "simulation",
+
+    "fluid": {
+        "cylinder": {
+            "x": "nx/2",
+            "y": "3*ny/4",
+            "r": "ny/20"
+        },
+        "rectangle": [
+        {
+            "x1": "1",
+            "y1": "1",
+            "x2": "nx",
+            "y2": "ny/4"
+        }
+        ]
+    },
+
+    "solid": {
+        "rectangle":[{
+            "x1": "0",
+            "y1": "0",
+            "x2": "nx+1",
+            "y2": "0"
+        },
+        {
+            "x1": "0",
+            "y1": "ny+1",
+            "x2": "nx+1",
+            "y2": "ny+1"
+        },
+        {
+            "x1": "0",
+            "y1": "0",
+            "x2": "0",
+            "y2": "ny+1"
+        },
+        {
+            "x1": "nx+1",
+            "y1": "0",
+            "x2": "nx+1",
+            "y2": "ny+1"
+        }]
+    },
+
+
+    "solver": {
+        "type": "red_black_gauss_seidel",
+        "max_iterations": 1e3,
+        "tolerance": 1e-2
+    },
+    "method": "flip",
+    "freeSurface": "yes",
+    "gravity": 9.81,
+    "refill": false,
+    "surfaceTension": true,
+    "particleInteraction": false,
+    "gamma": 0.073
+}

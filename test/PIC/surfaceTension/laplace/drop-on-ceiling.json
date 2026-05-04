@@ -1,0 +1,54 @@
+{
+  "dx": 0.0001,
+  "dy": 0.0001,
+  "dt": 0.00005,
+  "nx": 300,
+  "ny": 400,
+  "nt": 80000,
+  "ppcx": 4,
+  "ppcy": 4,
+  "density": 1000,
+  "sampling_rate": 2,
+  "write_u": true,
+  "write_v": true,
+  "write_p": true,
+  "write_div": true,
+  "write_norm_velocity": true,
+  "write_smoke": true,
+  "write_particles": true,
+  "folder": "results/PIC/surfaceTension/drop-on-ceiling",
+  "filename": "simulation",
+
+  "fluid": {
+    "rectangle": {
+      "x1": "5",
+      "y1": "ny-3",
+      "x2": "nx-5",
+      "y2": "ny-1"
+    }
+  },
+
+  "solid": {
+    "rectangle": [
+      { "x1": "0", "y1": "0", "x2": "nx+1", "y2": "0" },
+      { "x1": "0", "y1": "ny+1", "x2": "nx+1", "y2": "ny+1" },
+      { "x1": "0", "y1": "0", "x2": "0", "y2": "ny+1" },
+      { "x1": "nx+1", "y1": "0", "x2": "nx+1", "y2": "ny+1" }
+    ]
+  },
+
+  "solver": {
+    "type": "red_black_gauss_seidel",
+    "max_iterations": 1e4,
+    "tolerance": 1e-2
+  },
+
+  "method": "pic",
+  "freeSurface": "yes",
+  "gravity": 9.81,
+  "refill": false,
+  "surfaceTension": true,
+  "particleInteraction": false,
+  "gamma": 0.073,
+  "contactAngle": 2.8
+}
