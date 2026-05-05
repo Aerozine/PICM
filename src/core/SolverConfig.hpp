@@ -10,6 +10,7 @@ struct SolverConfig {
 
   Method method = Method::SL;
   Type type = Type::MICCG0;
+  bool surfaceTension = false;
   int maxIters = 1000;
   varType tolerance = 1e-4;
 };

@@ -44,6 +44,8 @@ neighbourSum(const Fields2D &f, const int i, const int j,
     const labeltype nb = f.Label(i - 1, j);
     if (IS_SOLID(nb) || IS_BC_U(nb))
       sumP += pC;
+    else if (IS_AIR(nb) && f.phi != nullptr) // !! ajouter un params ou quoi ?? surfaceTension ?
+      sumP += f.interface_u->Get(i - 1, j - 1); 
     else if (!IS_AIR(nb))
       sumP += f.p.Get(i - 1, j);
   }
@@ -53,6 +55,8 @@ neighbourSum(const Fields2D &f, const int i, const int j,
     const labeltype nb = f.Label(i + 1, j);
     if (IS_SOLID(nb) || IS_BC_U(cur))
       sumP += pC;
+    else if (IS_AIR(nb) && f.phi != nullptr) // !! ajouter un params ou quoi ?? surfaceTension ?
+      sumP += f.interface_u->Get(i, j - 1);
     else if (!IS_AIR(nb))
       sumP += f.p.Get(i + 1, j);
   }
@@ -62,6 +66,8 @@ neighbourSum(const Fields2D &f, const int i, const int j,
     const labeltype nb = f.Label(i, j - 1);
     if (IS_SOLID(nb) || IS_BC_V(nb))
       sumP += pC;
+    else if (IS_AIR(nb) && f.phi != nullptr) // !! ajouter un params ou quoi ?? surfaceTension ?
+      sumP += f.interface_v->Get(i - 1, j - 1);
     else if (!IS_AIR(nb))
       sumP += f.p.Get(i, j - 1);
   }
@@ -71,6 +77,8 @@ neighbourSum(const Fields2D &f, const int i, const int j,
     const labeltype nb = f.Label(i, j + 1);
     if (IS_SOLID(nb) || IS_BC_V(cur))
       sumP += pC;
+    else if (IS_AIR(nb) && f.phi != nullptr) // !! ajouter un params ou quoi ?? surfaceTension ?
+      sumP += f.interface_v->Get(i - 1, j);
     else if (!IS_AIR(nb))
       sumP += f.p.Get(i, j + 1);
   }

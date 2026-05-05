@@ -1,0 +1,83 @@
+{
+    "dx": 0.0007,
+    "dy": 0.0007,
+    "dt": 0.001,
+    "nx": 100,
+    "ny": 100,
+    "nt": 1000,
+    "ppcx": 7,
+    "ppcy": 7,
+    "density": 1000,
+    "sampling_rate": 5,
+    "write_u": true,
+    "write_v": true,
+    "write_p": true,
+    "write_div": true,
+    "write_norm_velocity": true,
+    "write_smoke": true,
+    "write_particles": true,
+    "folder": "results/APIC/surfaceTension/particleInteraction/square",
+    "filename": "simulation",
+
+    "fluid": {
+        "rectangle": {
+            "x1": "nx/2-12",
+            "y1": "ny/4-8",
+            "x2": "nx/2+14",
+            "y2": "ny/4+8"
+        },
+        "cylinder": [{
+            "x": "nx/2-12",
+            "y": "ny/4",
+            "r": "8"
+        },
+        {
+            "x": "nx/2+12",
+            "y": "ny/4",
+            "r": "8"
+        }]
+    },
+
+    "solid": {
+        "rectangle":[{
+            "x1": "0",
+            "y1": "0",
+            "x2": "nx+1",
+            "y2": "0"
+        },
+        {
+            "x1": "0",
+            "y1": "ny+1",
+            "x2": "nx+1",
+            "y2": "ny+1"
+        },
+        {
+            "x1": "0",
+            "y1": "0",
+            "x2": "0",
+            "y2": "ny+1"
+        },
+        {
+            "x1": "nx+1",
+            "y1": "0",
+            "x2": "nx+1",
+            "y2": "ny+1"
+        }]
+    },
+
+
+    "solver": {
+        "type": "cg",
+        "max_iterations": 1e6,
+        "tolerance": 1e-3
+    },
+    "method": "pic",
+    "coefPic": 0.95,
+    "freeSurface": "yes",
+    "gravity": 0.0,
+    "refill": false,
+    "surfaceTension": true,
+    "particleInteraction": true,
+    "interactionStiffness": 6.0,
+    "interactionExponent": 2.0
+}

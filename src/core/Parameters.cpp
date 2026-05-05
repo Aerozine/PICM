@@ -9,6 +9,7 @@ SolverConfig solverConfigFromJson(const nlohmann::json &j) {
   cfg.tolerance = j.value("tolerance", 1e-4);
   cfg.type = SolverConfig::Type::MICCG0;
   cfg.method = SolverConfig::Method::SL;
+  cfg.surfaceTension = false;
 
   if (j.contains("type")) {
     const std::string t = j["type"].get<std::string>();
@@ -28,6 +29,8 @@ SolverConfig solverConfigFromJson(const nlohmann::json &j) {
   }
   if (j.contains("method"))
     cfg.method = solverMethodFromJson(j["method"]);
+  if (j.contains("surfaceTension"))
+    cfg.surfaceTension = j.value("surfaceTension", false);
   return cfg;
 }
 
@@ -99,7 +102,10 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   ppcy = j.value("ppcy", ppcy);
   ppcx = j.value("ppcx", ppcx);
   gravity = j.value("gravity", gravity);
+  gamma = j.value("gamma", gamma);
+  contactAngle = j.value("contactAngle", contactAngle);
   surfaceTension = j.value("surfaceTension", surfaceTension);
+  particleInteraction= j.value("particleInteraction", particleInteraction);
   particleRadius = j.value("particleRadius", particleRadius);
   interactionStiffness = j.value("interactionStiffness", interactionStiffness);
   interactionExponent = j.value("interactionExponent", interactionExponent);
@@ -118,6 +124,14 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
       freeSurface = fs.get<bool>();
     else if (fs.is_string())
       freeSurface = (fs.get<std::string>() == "yes");
+  }
+
+  if (j.contains("surfaceTension")) {
+    const auto &fs = j["surfaceTension"];
+    if (fs.is_boolean())
+      surfaceTension = fs.get<bool>();
+    else if (fs.is_string())
+      surfaceTension = (fs.get<std::string>() == "yes");
   }
 
   if (j.contains("velocityu"))

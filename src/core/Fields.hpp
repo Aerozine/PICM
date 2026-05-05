@@ -42,10 +42,16 @@ public:
   varType density;
   varType dt, dx, dy;
   Grid2D u, v, p, div, normVelocity;
+  Grid2D *phi= nullptr;
+  Grid2D *kappa = nullptr;
+  Grid2D *normalX = nullptr;
+  Grid2D *normalY = nullptr;
+  Grid2D *interface_u = nullptr;
+  Grid2D *interface_v = nullptr;
   uint16_t *Labels = nullptr;
 
   Fields2D(int nx_, int ny_, varType density_, varType dt_, varType dx_,
-           varType dy_, bool freeSurface = false)
+           varType dy_, bool freeSurface = false, bool surfaceTension = false)
       : nx(nx_), ny(ny_), density(density_), dt(dt_), dx(dx_), dy(dy_),
         u(nx_ + 1, ny_), v(nx_, ny_ + 1), p(nx_ + 2, ny_ + 2), div(nx_, ny_),
         normVelocity(nx_, ny_) {
@@ -57,9 +63,26 @@ public:
         freeSurface ? static_cast<uint16_t>(AIR) : static_cast<uint16_t>(FLUID);
     for (std::size_t k = 0; k < labelCount; ++k)
       Labels[k] = initLabel;
+
+    if (surfaceTension) {
+      phi = new Grid2D(nx_, ny_);
+      kappa = new Grid2D(nx_, ny_);
+      normalX = new Grid2D(nx_, ny_);
+      normalY = new Grid2D(nx_, ny_);
+      interface_u = new Grid2D(nx_ + 1, ny_);
+      interface_v = new Grid2D(nx_, ny_ + 1); 
+    }
   }
 
-  ~Fields2D() { std::free(Labels); }
+  ~Fields2D() {
+    std::free(Labels);
+    delete phi;
+    delete kappa;
+    delete normalX;
+    delete normalY;
+    delete interface_u;
+    delete interface_v;
+  }
 
   // Non-copyable, non-movable (owns raw resources; add if ever needed)
   Fields2D(const Fields2D &) = delete;

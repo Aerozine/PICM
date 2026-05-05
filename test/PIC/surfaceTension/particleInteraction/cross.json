@@ -1,0 +1,83 @@
+{
+    "dx": 0.02,
+    "dy": 0.02,
+    "dt": 0.025,
+    "nx": 200,
+    "ny": 200,
+    "nt": 1500,
+    "ppcx": 5,
+    "ppcy": 5,
+    "density": 1000,
+    "sampling_rate": 10,
+    "write_u": true,
+    "write_v": true,
+    "write_p": true,
+    "write_div": true,
+    "write_norm_velocity": true,
+    "write_smoke": true,
+    "write_particles": true,
+    "folder": "results/PIC/surfaceTension/particleInteraction/cross",
+    "filename": "simulation",
+
+    "fluid": {
+        "rectangle": [
+        {
+            "x1": "2*nx/20",
+            "y1": "19*ny/40",
+            "x2": "18*nx/20",
+            "y2": "21*ny/40"
+        },
+        {
+            "x1": "19*nx/40",
+            "y1": "2*ny/20",
+            "x2": "21*nx/40",
+            "y2": "18*ny/20"
+        }
+
+        ]
+    },
+
+    "solid": {
+        "rectangle":[{
+            "x1": "0",
+            "y1": "0",
+            "x2": "nx+1",
+            "y2": "0"
+        },
+        {
+            "x1": "0",
+            "y1": "ny+1",
+            "x2": "nx+1",
+            "y2": "ny+1"
+        },
+        {
+            "x1": "0",
+            "y1": "0",
+            "x2": "0",
+            "y2": "ny+1"
+        },
+        {
+            "x1": "nx+1",
+            "y1": "0",
+            "x2": "nx+1",
+            "y2": "ny+1"
+        }]
+    },
+
+
+    "solver": {
+        "type": "red_black_gauss_seidel",
+        "max_iterations": 1e5,
+        "tolerance": 1e-2
+    },
+    "method": "pic",
+    "freeSurface": "yes",
+    "gravity": 0.0,
+    "refill": false,
+    "surfaceTension": true,
+    "particleInteraction": true,
+    "interactionStiffness": 1.00,
+    "interactionExponent": 2.0
+
+    
+}

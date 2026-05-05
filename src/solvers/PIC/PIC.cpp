@@ -82,14 +82,12 @@ void PIC::Step() {
   setTimeStep(subDt);
   for (int substep = 0; substep < substeps; ++substep) {
     ProjectParticlesOnGrid();
+    if (params.surfaceTension && !params.particleInteraction)
+      LaplacePressure();
     MakeIncompressible(params, *fields);
-
-    // Gravity is applied during grid -> particle transfer.
     ProjectGridOnParticles();
-    if (params.surfaceTension) {
+    if (params.surfaceTension && params.particleInteraction) {
       particleInteraction();
-      // Surface tension updates particle velocities. Reproject them so the
-      // particle advection in this same substep sees the capillary kick.
       ProjectParticlesOnGrid();
     }
     Advect();
