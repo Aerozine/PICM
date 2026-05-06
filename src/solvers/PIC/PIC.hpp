@@ -59,9 +59,11 @@ protected:
 
   void WriteOutput(int step) const override;
 
-private:
-  std::unique_ptr<OutputWriter> particlesWriter;
   void UpdatePhiFromParticles() const;
   void ComputeSurfaceTensionOnFaces() const;
   void LaplacePressure();
+
+private:
+  std::unique_ptr<OutputWriter> particlesWriter;
+
 };

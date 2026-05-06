@@ -24,6 +24,8 @@ void FLIP::Step() {
   for (int substep = 0; substep < substeps; ++substep) {
     ProjectParticlesOnGrid();
     SaveOldVelocities();
+    if (params.surfaceTension && !params.particleInteraction)
+      LaplacePressure();
     MakeIncompressible(params, *fields);
     ProjectGridOnParticles();
     if (params.surfaceTension) {
