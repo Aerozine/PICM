@@ -5,8 +5,8 @@
   "nx": 100,
   "ny": 250,
   "nt": 2500,
-  "ppcx": 5,
-  "ppcy": 5,
+  "ppcx": 3,
+  "ppcy": 3,
   "density": 1000,
   "sampling_rate": 10,
   "write_u": true,
@@ -31,20 +31,21 @@
   },
   "fluid": {
     "rectangle": {
-        "x1": "1",
-        "y1": "1",
-        "x2": "nx",
-        "y2": "30"
-      }
+      "x1": "1",
+      "y1": "1",
+      "x2": "nx",
+      "y2": "30"
+    }
   },
 
   "solid": {
-    "rectangle":[{
-      "x1": "0",
-      "y1": "0",
-      "x2": "nx+1",
-      "y2": "0"
-    },
+    "rectangle": [
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "0"
+      },
       {
         "x1": "0",
         "y1": "ny+1",
@@ -62,9 +63,9 @@
         "y1": "0",
         "x2": "nx+1",
         "y2": "ny+1"
-      }]
+      }
+    ]
   },
-
 
   "solver": {
     "type": "red_black_gauss_seidel",
@@ -76,5 +77,3 @@
   "gravity": 1.0,
   "refill": false
 }
-
-
