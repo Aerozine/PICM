@@ -3,6 +3,9 @@
 #include "solvers/FLIP/FLIP.hpp"
 #include "solvers/PIC/PIC.hpp"
 #include "solvers/SemiLagrangian/SemiLagrangian.hpp"
+#ifdef USE_CUDA
+#include "solvers/GPIC/GPIC.hpp"
+#endif
 
 #include <iostream>
 
@@ -38,13 +41,25 @@ int main(int argc, char *argv[]) {
   }
   case SolverConfig::Method::Mixed_FLIP_PIC:
     std::cerr << "Mixed_FLIP_PIC not yet implemented\n";
-    break;
+    return 1;
   case SolverConfig::Method::APIC: {
     std::cout << "APIC\n";
     APIC solver(params);
     solver.Run();
     break;
   }
+#ifdef USE_CUDA
+  case SolverConfig::Method::GPIC: {
+    std::cout << "GPIC (GPU PIC)\n";
+    GPIC solver(params);
+    solver.Run();
+    break;
+  }
+#else
+  case SolverConfig::Method::GPIC:
+    std::cerr << "[GPIC] Requires -DUSE_GPU=ON build.\n";
+    return 1;
+#endif
   }
   std::cout << "Simulation completed successfully!\n";
   return 0;

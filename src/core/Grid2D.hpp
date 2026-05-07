@@ -1,71 +1,74 @@
 #pragma once
 #include <algorithm>
-#include <cstdlib>
-#include <cstring>
-
-#include "Precision.hpp"
 #include <cassert>
 #include <cmath>
-#include <vector>
+
+#include "Precision.hpp"
+
 ///@brief  **ROW-MAJOR 2d grid** @c A[nx*j+i]
 class Grid2D {
 public:
-  int nx;
-  int ny;
+  int nx = 0;
+  int ny = 0;
+
   Grid2D() = default;
 
-  // calloc is just malloc but init at 0
   Grid2D(int nx_, int ny_)
       : nx(nx_), ny(ny_),
-        A(static_cast<varType *>(std::calloc(
-            static_cast<std::size_t>(nx_) * ny_, sizeof(varType)))) {}
-  ~Grid2D() { std::free(A); }
+        A(new varType[static_cast<std::size_t>(nx_) * ny_]()) {}
+
+  ~Grid2D() { delete[] A; }
+
+  Grid2D(const Grid2D &o)
+      : nx(o.nx), ny(o.ny),
+        A(new varType[static_cast<std::size_t>(o.nx) * o.ny]) {
+    std::copy(o.A, o.A + static_cast<std::size_t>(nx) * ny, A);
+  }
+
   Grid2D &operator=(const Grid2D &o) {
     if (this == &o)
       return *this;
     if (nx * ny != o.nx * o.ny) {
-      std::free(A);
-      A = static_cast<varType *>(
-          std::malloc(static_cast<std::size_t>(o.nx) * o.ny * sizeof(varType)));
+      delete[] A;
+      A = new varType[static_cast<std::size_t>(o.nx) * o.ny];
     }
     nx = o.nx;
     ny = o.ny;
-    std::memcpy(A, o.A, static_cast<std::size_t>(nx) * ny * sizeof(varType));
+    std::copy(o.A, o.A + static_cast<std::size_t>(nx) * ny, A);
     return *this;
   }
+
   Grid2D(Grid2D &&o) noexcept : nx(o.nx), ny(o.ny), A(o.A) {
     o.nx = 0;
     o.ny = 0;
-    o.A = nullptr;
+    o.A  = nullptr;
   }
-  // speed up due to AVX/SSE
+
+  Grid2D &operator=(Grid2D &&o) noexcept {
+    if (this == &o)
+      return *this;
+    delete[] A;
+    nx  = o.nx;
+    ny  = o.ny;
+    A   = o.A;
+    o.nx = 0;
+    o.ny = 0;
+    o.A  = nullptr;
+    return *this;
+  }
+
+  // std::fill on a trivial type gets auto-vectorised by the compiler
   void reset() noexcept {
-    std::memset(A, 0, static_cast<std::size_t>(nx) * ny * sizeof(varType));
+    std::fill(A, A + static_cast<std::size_t>(nx) * ny, varType{});
   }
-  Grid2D(const Grid2D &o)
-      : nx(o.nx), ny(o.ny),
-        A(static_cast<varType *>(std::malloc(static_cast<std::size_t>(o.nx) *
-                                             o.ny * sizeof(varType)))) {
-    std::memcpy(A, o.A, static_cast<std::size_t>(nx) * ny * sizeof(varType));
-  }
+
   [[nodiscard]] inline varType &operator()(int i, int j) noexcept {
     return A[nx * j + i];
   }
   [[nodiscard]] inline varType operator()(int i, int j) const noexcept {
     return A[nx * j + i];
   }
-  Grid2D &operator=(Grid2D &&o) noexcept {
-    if (this == &o)
-      return *this;
-    std::free(A);
-    nx = o.nx;
-    ny = o.ny;
-    A = o.A;
-    o.nx = 0;
-    o.ny = 0;
-    o.A = nullptr;
-    return *this;
-  }
+
   /// @brief Read the value at cell (i, j).
   [[nodiscard]] varType Get(const int i, const int j) const {
     return A[nx * j + i];
@@ -82,9 +85,6 @@ public:
    * @param dy    Cell height in y.
    * @param field Stagger type: 0 = u-face, 1 = v-face, other = cell-centre.
    */
-  // template is at compile time , so if we
-  // put 0 in field , it simplify directly in compilation
-  // same for 1 and 2
   template <unsigned char field>
   varType interpolate(const varType x, const varType y, const varType dx,
                       const varType dy) const {
@@ -95,7 +95,6 @@ public:
       j_real -= REAL_LITERAL(0.5); // u-face: staggered in y
     if constexpr (field == 1)
       i_real -= REAL_LITERAL(0.5); // v-face: staggered in x
-    // else no staggering
 
     const varType i_clamped =
         std::clamp(i_real, REAL_LITERAL(0.0), static_cast<varType>(nx - 1));

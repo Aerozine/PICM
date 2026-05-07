@@ -68,9 +68,6 @@ void PIC::RefillParticles() {
 
       } else if (IS_FLUID(fields->Label(ci + 1, cj + 1))) {
         int alive = cloud->countIn(ci, cj);
-        if (alive <= 0)
-          continue;
-
         int missing = targetPPC - alive;
         if (missing <= 0)
           continue;

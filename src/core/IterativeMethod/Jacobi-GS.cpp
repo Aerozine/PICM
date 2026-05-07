@@ -21,7 +21,7 @@ varType computeRhsNorm(Fields2D &fields, varType coef) {
       if (IS_SOLID(lbl) || IS_BC_P(lbl) || IS_AIR(lbl))
         continue;
 
-      const varType b = coef * fields.div.Get(i, j);
+      const varType b = coef * fields.div.Get(i - 1, j - 1);
       norm += b * b;
     }
   }
@@ -50,9 +50,9 @@ void solveJacobi(Fields2D &fields, int /*nx*/, int /*ny*/, varType coef,
           continue;
 
         const varType p_old = fields.p.Get(i, j);
-        const varType p_gs = gsUpdate(fields, i, j, coef, beta);
+        const varType p_gs = gsUpdate(fields, i, j, coef);
 
-        const varType r = p_old - p_gs;
+        const varType r = varType(4) * (p_gs - p_old);
         sumSq += r * r;
 
         pNew.Set(i, j, static_cast<varType>(p_gs));
@@ -100,12 +100,9 @@ void solveGaussSeidel(Fields2D &fields, int /*nx*/, int /*ny*/, varType coef,
           continue;
 
         const varType p_old = fields.p.Get(i, j);
-        const varType p_gs = gsUpdate(fields, i, j, coef, beta);
+        const varType p_gs = gsUpdate(fields, i, j, coef);
 
-        // Same convergence criterion as RBGS:
-        // L2 norm of (current pressure - Gauss-Seidel target), normalized by
-        // ||coef * div||_2.
-        const varType r = p_old - p_gs;
+        const varType r = varType(4) * (p_gs - p_old);
         sumSq += r * r;
 
         assert(std::isfinite(p_gs));

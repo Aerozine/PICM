@@ -1,10 +1,10 @@
 #pragma once
 #include "Grid2D.hpp"
 #include "SolverConfig.hpp"
+#include <algorithm>
 #include <cmath> // NAN
 #include <cstdint>
-#include <cstdlib> // malloc, free, calloc
-#include <cstring> // memset
+#include <memory>
 
 #define FIELD_USOLID NAN
 
@@ -26,66 +26,64 @@ public:
   enum CellType : uint16_t {
     FLUID = 0,
     SOLID = 1 << 0,
-    AIR = 1 << 1,
-    BC_U = 1 << 2,
-    BC_V = 1 << 3,
-    BC_P = 1 << 4,
-    BC_S = 1 << 5,
-    IC_U = 1 << 6,
-    IC_V = 1 << 7,
-    IC_P = 1 << 8,
-    IC_S = 1 << 9,
+    AIR   = 1 << 1,
+    BC_U  = 1 << 2,
+    BC_V  = 1 << 3,
+    BC_P  = 1 << 4,
+    BC_S  = 1 << 5,
+    IC_U  = 1 << 6,
+    IC_V  = 1 << 7,
+    IC_P  = 1 << 8,
+    IC_S  = 1 << 9,
   };
   static constexpr uint16_t CELL_TYPE_MASK = SOLID | AIR;
 
   int nx, ny;
   varType density;
   varType dt, dx, dy;
+
+  // Value members — managed by Grid2D's own Rule-of-Five
   Grid2D u, v, p, div, normVelocity;
-  Grid2D *phi= nullptr;
-  Grid2D *kappa = nullptr;
-  Grid2D *normalX = nullptr;
-  Grid2D *normalY = nullptr;
-  Grid2D *interface_u = nullptr;
-  Grid2D *interface_v = nullptr;
-  uint16_t *Labels = nullptr;
+
+  // Optional surface-tension grids — null when surfaceTension == false
+  std::unique_ptr<Grid2D> phi;
+  std::unique_ptr<Grid2D> kappa;
+  std::unique_ptr<Grid2D> normalX;
+  std::unique_ptr<Grid2D> normalY;
+  std::unique_ptr<Grid2D> interface_u;
+  std::unique_ptr<Grid2D> interface_v;
+
+  // Cell labels — (nx+2)*(ny+2), same layout as p
+  std::unique_ptr<uint16_t[]> Labels;
 
   Fields2D(int nx_, int ny_, varType density_, varType dt_, varType dx_,
            varType dy_, bool freeSurface = false, bool surfaceTension = false)
       : nx(nx_), ny(ny_), density(density_), dt(dt_), dx(dx_), dy(dy_),
         u(nx_ + 1, ny_), v(nx_, ny_ + 1), p(nx_ + 2, ny_ + 2), div(nx_, ny_),
-        normVelocity(nx_, ny_) {
+        normVelocity(nx_, ny_),
+        Labels(std::make_unique<uint16_t[]>(
+            static_cast<std::size_t>(nx_ + 2) * (ny_ + 2))) {
     const std::size_t labelCount =
         static_cast<std::size_t>(nx_ + 2) * (ny_ + 2);
-    Labels =
-        static_cast<uint16_t *>(std::malloc(labelCount * sizeof(uint16_t)));
     const uint16_t initLabel =
         freeSurface ? static_cast<uint16_t>(AIR) : static_cast<uint16_t>(FLUID);
-    for (std::size_t k = 0; k < labelCount; ++k)
-      Labels[k] = initLabel;
+    std::fill(Labels.get(), Labels.get() + labelCount, initLabel);
 
     if (surfaceTension) {
-      phi = new Grid2D(nx_, ny_);
-      kappa = new Grid2D(nx_, ny_);
-      normalX = new Grid2D(nx_, ny_);
-      normalY = new Grid2D(nx_, ny_);
-      interface_u = new Grid2D(nx_ + 1, ny_);
-      interface_v = new Grid2D(nx_, ny_ + 1); 
+      phi        = std::make_unique<Grid2D>(nx_, ny_);
+      kappa      = std::make_unique<Grid2D>(nx_, ny_);
+      normalX    = std::make_unique<Grid2D>(nx_, ny_);
+      normalY    = std::make_unique<Grid2D>(nx_, ny_);
+      interface_u = std::make_unique<Grid2D>(nx_ + 1, ny_);
+      interface_v = std::make_unique<Grid2D>(nx_, ny_ + 1);
     }
   }
 
-  ~Fields2D() {
-    std::free(Labels);
-    delete phi;
-    delete kappa;
-    delete normalX;
-    delete normalY;
-    delete interface_u;
-    delete interface_v;
-  }
+  // unique_ptrs and Grid2D members clean up automatically
+  ~Fields2D() = default;
 
-  // Non-copyable, non-movable (owns raw resources; add if ever needed)
-  Fields2D(const Fields2D &) = delete;
+  // Non-copyable; move could be added if ever needed
+  Fields2D(const Fields2D &)            = delete;
   Fields2D &operator=(const Fields2D &) = delete;
 
   [[nodiscard]] inline labeltype Label(int i, int j) const noexcept {
@@ -116,7 +114,6 @@ public:
     return (nx + 2) * j + i;
   }
 
-  // use this one to improve speed
   void UpdateDivNorm();
   void Div();
   void VelocityNormCenterGrid();

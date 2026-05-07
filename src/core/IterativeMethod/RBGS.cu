@@ -25,7 +25,7 @@ namespace {
 
 static constexpr int BX = 32;
 static constexpr int BY = 8;
-static constexpr int CHECK_EVERY = 8;
+static constexpr int CHECK_EVERY = 32;
 
 __host__ __device__ __forceinline__ int pidx(int pnx, int i, int j) {
   return pnx * j + i;
@@ -90,8 +90,11 @@ __global__ void rbgsColorKernel(int colour, int pnx, int pny, double omega,
   const double p_new = pij + omega * (p_gs - pij);
   p[id] = p_new;
 
-  if (accumulateResidual)
-    deltaSq[id] = (p_new - pij) * (p_new - pij);
+  if (accumulateResidual) {
+    // True residual: r = b + nS - 4*p  (evaluated before the update)
+    const double r = b[id] + sumP - 4.0 * pij;
+    deltaSq[id] = r * r;
+  }
 }
 
 } // namespace
@@ -115,7 +118,6 @@ bool solveRedBlackGaussSeidel_GPU(Fields2D &fields, int nx, int ny,
   std::vector<double> h_p(static_cast<std::size_t>(N), 0.0);
   std::vector<double> h_deltaSq(static_cast<std::size_t>(N), 0.0);
 
-  int fluidCount = 0;
   for (int j = 0; j < pny; ++j) {
     for (int i = 0; i < pnx; ++i) {
       h_lbl[pidx(pnx, i, j)] = static_cast<int>(fields.Label(i, j));
@@ -123,6 +125,7 @@ bool solveRedBlackGaussSeidel_GPU(Fields2D &fields, int nx, int ny,
     }
   }
 
+  double bNormSq = 0.0;
   for (int j = 1; j < pny - 1; ++j) {
     for (int i = 1; i < pnx - 1; ++i) {
       const int id = pidx(pnx, i, j);
@@ -130,15 +133,17 @@ bool solveRedBlackGaussSeidel_GPU(Fields2D &fields, int nx, int ny,
       if (IS_SOLID(cur) || IS_AIR(cur) || IS_BC_P(cur))
         continue;
 
-      h_b[id] = -coef * static_cast<double>(fields.div.Get(i - 1, j - 1));
-      ++fluidCount;
+      const double b_val = -coef * static_cast<double>(fields.div.Get(i - 1, j - 1));
+      h_b[id] = b_val;
+      bNormSq += b_val * b_val;
     }
   }
 
-  if (fluidCount == 0) {
-    DBG_PRINTF("RBGS_GPU: no fluid pressure cells");
+  if (bNormSq < 1e-60) {
+    DBG_PRINTF("RBGS_GPU: no fluid pressure cells or zero RHS");
     return true;
   }
+  const double bNorm = std::sqrt(bNormSq);
 
   int *d_lbl = nullptr;
   double *d_b = nullptr;
@@ -165,8 +170,6 @@ bool solveRedBlackGaussSeidel_GPU(Fields2D &fields, int nx, int ny,
   const dim3 grid((pnx - 2 + BX - 1) / BX, (pny - 2 + BY - 1) / BY);
 
   bool converged = false;
-  double res = 0.0;
-  double res0 = -1.0;
 
   for (int it = 0; it < maxIters; ++it) {
     const bool check = ((it % CHECK_EVERY) == (CHECK_EVERY - 1));
@@ -192,19 +195,9 @@ bool solveRedBlackGaussSeidel_GPU(Fields2D &fields, int nx, int ny,
     for (double v : h_deltaSq)
       sumSq += v;
 
-    res = std::sqrt(sumSq / static_cast<double>(fluidCount));
-    if (res0 < 0.0) {
-      res0 = res;
-      if (res0 < 1e-30) {
-        converged = true;
-        break;
-      }
-      continue;
-    }
-
-    if (res0 < 1e-30 || res / res0 <= tol) {
-      DBG_PRINTF("RBGS_GPU converged in %d iters, rel.res = %.6g", it + 1,
-                 res / res0);
+    const double relRes = std::sqrt(sumSq) / bNorm;
+    if (relRes <= tol) {
+      DBG_PRINTF("RBGS_GPU converged in %d iters, rel.res = %.6g", it + 1, relRes);
       converged = true;
       break;
     }

@@ -19,20 +19,7 @@ void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, varType coef,
   const int pnx = fields.p.nx;
   const int pny = fields.p.ny;
 
-  varType norm = 0.0;
-
-  for (int j = 1; j < pny - 1; ++j) {
-    for (int i = 1; i < pnx - 1; ++i) {
-      const labeltype lbl = fields.Label(i, j);
-      if (IS_SOLID(lbl) || IS_BC_P(lbl) || IS_AIR(lbl))
-        continue;
-
-      const varType b = coef * fields.div.Get(i, j);
-      norm += b * b;
-    }
-  }
-
-  norm = std::sqrt(norm) + REAL_EPSILON;
+  const varType norm = computeRhsNorm(fields, coef);
 
   // Each colour sweep is data-race-free : safe for OpenMP collapse.
   for (int it = 0; it < maxIters; ++it) {
@@ -49,13 +36,14 @@ void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, varType coef,
             continue;
 
           const varType p_old = fields.p.Get(i, j);
-          const varType p_gs = gsUpdate(fields, i, j, coef, beta);
+          const varType p_gs = gsUpdate(fields, i, j, coef);
 
           const varType p_new = p_old + omega * (p_gs - p_old);
           assert(std::isfinite(p_new));
           fields.p.Set(i, j, p_new);
 
-          const varType r = p_old - p_new;
+          // True residual r = b + nS - 4*p_old  (= 4*(p_gs - p_old))
+          const varType r = varType(4) * (p_gs - p_old);
           sumSq += r * r;
         }
       }

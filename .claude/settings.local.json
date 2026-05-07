@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wsl bash *)",
+      "Bash(ls /mnt/c/Users/hydrazine/Documents/Code/cpp/PICM/test/ 2>/dev/null || echo \"Cannot access via /mnt/c\")",
+      "Read(//mnt/c/Users/hydrazine/Documents/Code/cpp/PICM/**)",
+      "Bash(wsl -e bash -c \"ls /mnt/c/Users/hydrazine/Documents/Code/cpp/PICM/build-gpu/bin/ 2>/dev/null && echo 'binary exists'\")",
+      "Bash(wsl -e bash -c ' *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\hydrazine\\\\Documents\\\\Code\\\\cpp\\\\PICM\\\\PostPro\\\\\" -Recurse)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\hydrazine\\\\Documents\\\\Code\\\\cpp\\\\PICM\\\\src\\\\core\" -Recurse -File)",
+      "Bash(Select-Object FullName)",
+      "Bash(grep -E \"\\\\.py$|^d\")",
+      "Bash(ls /mnt/c/Users/hydrazine/Documents/Code/cpp/ 2>/dev/null || echo \"No /mnt/c mount\")",
+      "Read(//mnt/c/Users/hydrazine/Documents/Code/**)"
+    ]
+  }
+}

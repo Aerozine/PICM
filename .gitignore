@@ -1,7 +1,10 @@
 todo.txt
 # Prerequisites
 *.d
-
+venv
+*.mp4
+*.pyc
+*/*/__pycache__/
 # Compiled Object files
 *.slo
 *.lo

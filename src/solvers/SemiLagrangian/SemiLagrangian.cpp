@@ -124,19 +124,12 @@ void SemiLagrangian::AdvectSmoke() const {
             i, j, sampleSmokeFreeSpace(*smokeMap, *fields, xDep, yDep, dx, dy));
       }
     }
-    // TODO : pass smokeNew as pointer of fields and avoir copy
-    for (int j = 0; j < smokeMap->ny; ++j) {
-      for (int i = 0; i < smokeMap->nx; ++i) {
-        assert(std::isfinite(smokeNew.Get(i, j)));
-        smokeMap->Set(i, j, smokeNew.Get(i, j));
-      }
-    }
+    *smokeMap = std::move(smokeNew);
 }
 
 void SemiLagrangian::Step() {
   MakeIncompressible(params, *fields);
-  fields->Div();
-  fields->VelocityNormCenterGrid();
+  fields->UpdateDivNorm();
   Advect();
   AdvectSmoke();
   DBG_PRINTF("step");
@@ -153,8 +146,7 @@ void SemiLagrangian::WriteOutput(int step) const {
 }
 
 void SemiLagrangian::Run() {
-  fields->Div();
-  fields->VelocityNormCenterGrid();
+  fields->UpdateDivNorm();
   WriteOutput(0);
   RunLoop(std::max(1, params.nt / 20));
 }
