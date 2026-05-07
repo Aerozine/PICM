@@ -26,15 +26,15 @@ public:
   enum CellType : uint16_t {
     FLUID = 0,
     SOLID = 1 << 0,
-    AIR   = 1 << 1,
-    BC_U  = 1 << 2,
-    BC_V  = 1 << 3,
-    BC_P  = 1 << 4,
-    BC_S  = 1 << 5,
-    IC_U  = 1 << 6,
-    IC_V  = 1 << 7,
-    IC_P  = 1 << 8,
-    IC_S  = 1 << 9,
+    AIR = 1 << 1,
+    BC_U = 1 << 2,
+    BC_V = 1 << 3,
+    BC_P = 1 << 4,
+    BC_S = 1 << 5,
+    IC_U = 1 << 6,
+    IC_V = 1 << 7,
+    IC_P = 1 << 8,
+    IC_S = 1 << 9,
   };
   static constexpr uint16_t CELL_TYPE_MASK = SOLID | AIR;
 
@@ -42,10 +42,8 @@ public:
   varType density;
   varType dt, dx, dy;
 
-  // Value members — managed by Grid2D's own Rule-of-Five
   Grid2D u, v, p, div, normVelocity;
 
-  // Optional surface-tension grids — null when surfaceTension == false
   std::unique_ptr<Grid2D> phi;
   std::unique_ptr<Grid2D> kappa;
   std::unique_ptr<Grid2D> normalX;
@@ -53,7 +51,6 @@ public:
   std::unique_ptr<Grid2D> interface_u;
   std::unique_ptr<Grid2D> interface_v;
 
-  // Cell labels — (nx+2)*(ny+2), same layout as p
   std::unique_ptr<uint16_t[]> Labels;
 
   Fields2D(int nx_, int ny_, varType density_, varType dt_, varType dx_,
@@ -70,20 +67,18 @@ public:
     std::fill(Labels.get(), Labels.get() + labelCount, initLabel);
 
     if (surfaceTension) {
-      phi        = std::make_unique<Grid2D>(nx_, ny_);
-      kappa      = std::make_unique<Grid2D>(nx_, ny_);
-      normalX    = std::make_unique<Grid2D>(nx_, ny_);
-      normalY    = std::make_unique<Grid2D>(nx_, ny_);
+      phi = std::make_unique<Grid2D>(nx_, ny_);
+      kappa = std::make_unique<Grid2D>(nx_, ny_);
+      normalX = std::make_unique<Grid2D>(nx_, ny_);
+      normalY = std::make_unique<Grid2D>(nx_, ny_);
       interface_u = std::make_unique<Grid2D>(nx_ + 1, ny_);
       interface_v = std::make_unique<Grid2D>(nx_, ny_ + 1);
     }
   }
 
-  // unique_ptrs and Grid2D members clean up automatically
   ~Fields2D() = default;
 
-  // Non-copyable; move could be added if ever needed
-  Fields2D(const Fields2D &)            = delete;
+  Fields2D(const Fields2D &) = delete;
   Fields2D &operator=(const Fields2D &) = delete;
 
   [[nodiscard]] inline labeltype Label(int i, int j) const noexcept {
@@ -113,6 +108,13 @@ public:
   [[nodiscard]] inline int idx(int i, int j) const noexcept {
     return (nx + 2) * j + i;
   }
+
+  [[nodiscard]] varType interpolateU(varType x, varType y) const;
+  [[nodiscard]] varType interpolateV(varType x, varType y) const;
+  [[nodiscard]] varType interpolateU(const Grid2D &grid, varType x,
+                                     varType y) const;
+  [[nodiscard]] varType interpolateV(const Grid2D &grid, varType x,
+                                     varType y) const;
 
   void UpdateDivNorm();
   void Div();

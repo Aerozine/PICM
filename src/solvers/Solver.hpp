@@ -64,7 +64,7 @@ protected:
    * @param[out] v Interpolated v value.
    */
   inline void getVelocity(varType x, varType y, varType &u, varType &v) const {
-    u = fields->u.interpolate<0>(x, y, dx, dy);
-    v = fields->v.interpolate<1>(x, y, dx, dy);
+    u = fields->interpolateU(x, y);
+    v = fields->interpolateV(x, y);
   };
 };

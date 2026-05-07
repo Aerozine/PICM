@@ -49,15 +49,20 @@ int main(int argc, char *argv[]) {
     break;
   }
 #ifdef USE_CUDA
-  case SolverConfig::Method::GPIC: {
-    std::cout << "GPIC (GPU PIC)\n";
+  case SolverConfig::Method::GPIC:
+  case SolverConfig::Method::GFLIP:
+  case SolverConfig::Method::GAPIC: {
+    std::cout << solverMethodName(params.solver.method) << " (GPU)\n";
     GPIC solver(params);
     solver.Run();
     break;
   }
 #else
   case SolverConfig::Method::GPIC:
-    std::cerr << "[GPIC] Requires -DUSE_GPU=ON build.\n";
+  case SolverConfig::Method::GFLIP:
+  case SolverConfig::Method::GAPIC:
+    std::cerr << "[" << solverMethodName(params.solver.method)
+              << "] Requires -DUSE_GPU=ON build.\n";
     return 1;
 #endif
   }

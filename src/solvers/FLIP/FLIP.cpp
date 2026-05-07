@@ -56,11 +56,11 @@ void FLIP::ProjectGridOnParticles() {
         const varType up_old = cell.GetU(p);
         const varType vp_old = cell.GetV(p);
 
-        const varType u_new_grid = fields->u.interpolate<0>(x, y, dx, dy);
-        const varType v_new_grid = fields->v.interpolate<1>(x, y, dx, dy);
+        const varType u_new_grid = fields->interpolateU(x, y);
+        const varType v_new_grid = fields->interpolateV(x, y);
 
-        const varType u_old_grid = u_old.interpolate<0>(x, y, dx, dy);
-        const varType v_old_grid = v_old.interpolate<1>(x, y, dx, dy);
+        const varType u_old_grid = fields->interpolateU(u_old, x, y);
+        const varType v_old_grid = fields->interpolateV(v_old, x, y);
 
         cell.SetU(p, coefPic * u_new_grid +
                          coefFlip * (up_old + (u_new_grid - u_old_grid)));

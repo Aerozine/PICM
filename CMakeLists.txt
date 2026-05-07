@@ -131,4 +131,44 @@ else()
     message(STATUS "CUDA: disabled (USE_GPU=OFF)")
 endif()
 
+set(PICM_CUDA_ARCHITECTURES "" CACHE STRING
+    "Resolved CUDA architectures used by PICM GPU targets.")
+if(USE_CUDA_FOUND)
+    if(GPU_ARCH)
+        string(REGEX REPLACE "^sm_" "" _picm_cuda_arch "${GPU_ARCH}")
+    else()
+        set(_picm_smi_result 1)
+        set(_picm_compute_caps "")
+        find_program(PICM_NVIDIA_SMI nvidia-smi
+            PATHS /usr/lib/wsl/lib /usr/bin /usr/local/bin)
+        if(PICM_NVIDIA_SMI)
+            execute_process(
+                COMMAND ${PICM_NVIDIA_SMI}
+                    --query-gpu=compute_cap
+                    --format=csv,noheader
+                OUTPUT_VARIABLE _picm_compute_caps
+                RESULT_VARIABLE _picm_smi_result
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+                ERROR_QUIET)
+        endif()
+
+        if(PICM_NVIDIA_SMI AND _picm_smi_result EQUAL 0
+           AND NOT _picm_compute_caps STREQUAL "")
+            string(REGEX MATCH "^[0-9]+\\.[0-9]+" _picm_compute_cap
+                   "${_picm_compute_caps}")
+            string(REPLACE "." "" _picm_cuda_arch "${_picm_compute_cap}")
+        endif()
+
+        if(NOT _picm_cuda_arch)
+            # Fast WSL fallback: one real code path plus PTX for newer GPUs.
+            # Override with -DGPU_ARCH=75, 86, 89, native, or a semicolon list.
+            set(_picm_cuda_arch "86-real;86-virtual")
+        endif()
+    endif()
+
+    set(PICM_CUDA_ARCHITECTURES "${_picm_cuda_arch}" CACHE STRING
+        "Resolved CUDA architectures used by PICM GPU targets." FORCE)
+    message(STATUS "CUDA architectures: ${PICM_CUDA_ARCHITECTURES}")
+endif()
+
 add_subdirectory(src)

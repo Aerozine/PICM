@@ -41,23 +41,22 @@ public:
   Grid2D(Grid2D &&o) noexcept : nx(o.nx), ny(o.ny), A(o.A) {
     o.nx = 0;
     o.ny = 0;
-    o.A  = nullptr;
+    o.A = nullptr;
   }
 
   Grid2D &operator=(Grid2D &&o) noexcept {
     if (this == &o)
       return *this;
     delete[] A;
-    nx  = o.nx;
-    ny  = o.ny;
-    A   = o.A;
+    nx = o.nx;
+    ny = o.ny;
+    A = o.A;
     o.nx = 0;
     o.ny = 0;
-    o.A  = nullptr;
+    o.A = nullptr;
     return *this;
   }
 
-  // std::fill on a trivial type gets auto-vectorised by the compiler
   void reset() noexcept {
     std::fill(A, A + static_cast<std::size_t>(nx) * ny, varType{});
   }
@@ -115,12 +114,12 @@ public:
     const varType f01 = Get(i0, j1);
     const varType f11 = Get(i1, j1);
 
-    assert(std::isfinite((REAL_LITERAL(1.0) - fy) *
-                             ((REAL_LITERAL(1.0) - fx) * f00 + fx * f10) +
-                         fy * ((REAL_LITERAL(1.0) - fx) * f01 + fx * f11)));
-    return (REAL_LITERAL(1.0) - fy) *
-               ((REAL_LITERAL(1.0) - fx) * f00 + fx * f10) +
-           fy * ((REAL_LITERAL(1.0) - fx) * f01 + fx * f11);
+    const varType value =
+        (REAL_LITERAL(1.0) - fy) *
+            ((REAL_LITERAL(1.0) - fx) * f00 + fx * f10) +
+        fy * ((REAL_LITERAL(1.0) - fx) * f01 + fx * f11);
+    assert(std::isfinite(value));
+    return value;
   }
 
   varType *A = nullptr;

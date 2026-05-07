@@ -46,10 +46,13 @@ private:
     void GPUMakeIncompressible();       // div → GPU RBGS → pressure gradient
     void GPUProjectGridOnParticles();   // G2P (also applies gravity)
     void GPUAdvect();                   // RK2 + compaction of dead particles
-    void GPUSortParticles();            // sort by cell + build cell ranges
+    void GPUCountParticles();           // rebuild per-cell particle counts
     void GPUUpdateCellState();          // update labels + air cleanup (fully GPU)
+    void GPURefillParticles();          // refill under-populated cells fully on GPU
 
     int  computeAdvectionSubstepsGPU() const;  // GPU thrust reduce over particle velocities
+
+    void DownloadLabels() const;         // d_labels → fields
 };
 
 #endif // USE_CUDA

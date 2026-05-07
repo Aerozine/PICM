@@ -212,9 +212,8 @@ void PIC::ProjectGridOnParticles() {
         for (int p = 0; p < cell.size(); ++p) {
           const varType x = cell.GetX(p);
           const varType y = cell.GetY(p);
-          cell.SetU(p, fields->u.interpolate<0>(x, y, dx, dy));
-          cell.SetV(p, fields->v.interpolate<1>(x, y, dx, dy) -
-                           dt * params.gravity);
+          cell.SetU(p, fields->interpolateU(x, y));
+          cell.SetV(p, fields->interpolateV(x, y) - dt * params.gravity);
         }
       }
     }

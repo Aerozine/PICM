@@ -60,8 +60,9 @@ protected:
 
   void WriteOutput(int step) const override;
 
-private:
-  std::unique_ptr<OutputWriter> particlesWriter;
   void UpdatePhiFromParticles() const;
   void ComputeSurfaceTensionOnFaces() const;
+
+private:
+  std::unique_ptr<OutputWriter> particlesWriter;
 };

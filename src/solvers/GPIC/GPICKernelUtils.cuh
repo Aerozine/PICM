@@ -22,6 +22,21 @@ __device__ __forceinline__ varType hat_device(varType r) {
 #endif
 }
 
+__device__ __forceinline__ varType dhat_device(varType r) {
+#ifdef USE_SPEED
+    return static_cast<varType>((r > varType(-1)) && (r < varType(0)))
+         - static_cast<varType>((r > varType(0)) && (r < varType(1)));
+#else
+    if (r >= varType(-1.5) && r < varType(-0.5))
+        return r + varType(1.5);
+    if (r >= varType(-0.5) && r < varType(0.5))
+        return -varType(2) * r;
+    if (r >= varType(0.5) && r < varType(1.5))
+        return r - varType(1.5);
+    return varType(0);
+#endif
+}
+
 // ─── Bilinear interpolation (mirrors Grid2D::interpolate<field>) ──────────────
 // gnx / gny are the Grid2D::nx and Grid2D::ny members.
 // field == 0 → u-face (staggered in y), field == 1 → v-face (staggered in x).

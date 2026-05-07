@@ -3,7 +3,9 @@
 #include "GPIC.hpp"
 #include "GPICKernelUtils.cuh"
 
+#include <cuda/functional>
 #include <cuda_runtime.h>
+#include <cuda/std/functional>
 #include <thrust/copy.h>
 #include <thrust/count.h>
 #include <thrust/device_ptr.h>
@@ -38,12 +40,18 @@ struct GPIC::DeviceState {
     varType* d_pos_y    = nullptr;
     varType* d_vel_x    = nullptr;
     varType* d_vel_y    = nullptr;
+    varType* d_cu_x     = nullptr;
+    varType* d_cu_y     = nullptr;
+    varType* d_cv_x     = nullptr;
+    varType* d_cv_y     = nullptr;
     int*     d_cell_idx = nullptr;
     int*     d_alive    = nullptr;
 
     // Grid velocity fields (persistent on device between substeps)
     varType*  d_u      = nullptr;  // (nx+1) * ny
     varType*  d_v      = nullptr;  // nx * (ny+1)
+    varType*  d_u_old  = nullptr;  // FLIP transfer cache
+    varType*  d_v_old  = nullptr;
 
     // Pressure + CG workspace (all persistent = warm start between steps)
     varType*  d_p         = nullptr;  // (nx+2) * (ny+2)  pressure (warm-start across steps)
@@ -70,12 +78,17 @@ struct GPIC::DeviceState {
     // Reusable scratch (avoid per-call alloc)
     varType* d_tmp     = nullptr;  // [maxParticles] varType scratch
     int*     d_perm    = nullptr;  // [maxParticles] sort permutation
+    int*     d_particle_count = nullptr;   // device-side refill counter
+    int*     d_refill_overflow = nullptr;  // skipped particles when maxParticles is exceeded
 
     int maxParticles = 0;
     int nParticles   = 0;
     int nx = 0, ny = 0;
     varType dx{}, dy{}, dt{};
     varType density{};
+    int refillSeed = 0;
+    int transferMode = 0; // 0=PIC, 1=FLIP, 2=APIC
+    bool needsAffine = false;
 };
 
 // ─── Functors ─────────────────────────────────────────────────────────────────
@@ -97,16 +110,23 @@ static constexpr int BX        = 32;
 static constexpr int BY        = 8;
 static constexpr int DOT_GRIDS = 64;   // blocks for dot-product reductions
 static constexpr int CG_CHECK  = 8;    // D2H convergence check every N CG iters
+static constexpr int TRANSFER_PIC  = 0;
+static constexpr int TRANSFER_FLIP = 1;
+static constexpr int TRANSFER_APIC = 2;
 
 // ─── P2G scatter ──────────────────────────────────────────────────────────────
 
 __global__ void p2gKernel(
-    int nParticles, int nx, int ny,
+    int nParticles, int nx, int ny, int transferMode,
     varType dx, varType dy,
     const varType* __restrict__ d_pos_x,
     const varType* __restrict__ d_pos_y,
     const varType* __restrict__ d_vel_x,
     const varType* __restrict__ d_vel_y,
+    const varType* __restrict__ d_cu_x,
+    const varType* __restrict__ d_cu_y,
+    const varType* __restrict__ d_cv_x,
+    const varType* __restrict__ d_cv_y,
     varType* d_u_num, varType* d_u_den,
     varType* d_v_num, varType* d_v_den)
 {
@@ -138,7 +158,14 @@ __global__ void p2gKernel(
                             * hat_device(yg - varType(fj) - varType(0.5));
             if (w > varType(0)) {
                 const int id = (nx + 1) * fj + fi;
-                atomicAdd(&d_u_num[id], w * vx);
+                const varType faceX = varType(fi) * dx;
+                const varType faceY = (varType(fj) + varType(0.5)) * dy;
+                const varType value =
+                    (transferMode == TRANSFER_APIC)
+                        ? vx + d_cu_x[p] * (faceX - d_pos_x[p])
+                             + d_cu_y[p] * (faceY - d_pos_y[p])
+                        : vx;
+                atomicAdd(&d_u_num[id], w * value);
                 atomicAdd(&d_u_den[id], w);
             }
         }
@@ -161,7 +188,14 @@ __global__ void p2gKernel(
                             * hat_device(yg - varType(fj));
             if (w > varType(0)) {
                 const int id = nx * fj + fi;
-                atomicAdd(&d_v_num[id], w * vy);
+                const varType faceX = (varType(fi) + varType(0.5)) * dx;
+                const varType faceY = varType(fj) * dy;
+                const varType value =
+                    (transferMode == TRANSFER_APIC)
+                        ? vy + d_cv_x[p] * (faceX - d_pos_x[p])
+                             + d_cv_y[p] * (faceY - d_pos_y[p])
+                        : vy;
+                atomicAdd(&d_v_num[id], w * value);
                 atomicAdd(&d_v_den[id], w);
             }
         }
@@ -226,15 +260,78 @@ __global__ void p2gNormaliseKernel_V(
 
 // ─── G2P ─────────────────────────────────────────────────────────────────────
 
+__device__ __forceinline__ void accumulateAffineDevice(
+    const varType* __restrict__ grid,
+    varType xg, varType yg,
+    int gnx, int gny,
+    varType dx, varType dy,
+    int radius,
+    varType& value,
+    varType& gradX,
+    varType& gradY)
+{
+    const int i0 = static_cast<int>(floor(xg));
+    const int j0 = static_cast<int>(floor(yg));
+
+    varType valueRaw = varType(0);
+    varType gradXRaw = varType(0);
+    varType gradYRaw = varType(0);
+    varType weightSum = varType(0);
+    varType dWeightX = varType(0);
+    varType dWeightY = varType(0);
+
+    for (int dj = -radius; dj <= radius; ++dj) {
+        for (int di = -radius; di <= radius; ++di) {
+            const int i = i0 + di;
+            const int j = j0 + dj;
+            if (i < 0 || i >= gnx || j < 0 || j >= gny) continue;
+
+            const varType wx = hat_device(xg - varType(i));
+            const varType wy = hat_device(yg - varType(j));
+            const varType w = wx * wy;
+            if (w <= varType(0)) continue;
+
+            const varType sample = grid[gnx * j + i];
+            const varType dwx = (dhat_device(xg - varType(i)) / dx) * wy;
+            const varType dwy = wx * (dhat_device(yg - varType(j)) / dy);
+
+            valueRaw += w * sample;
+            gradXRaw += dwx * sample;
+            gradYRaw += dwy * sample;
+            weightSum += w;
+            dWeightX += dwx;
+            dWeightY += dwy;
+        }
+    }
+
+    if (weightSum <= REAL_EPSILON) {
+        value = varType(0);
+        gradX = varType(0);
+        gradY = varType(0);
+        return;
+    }
+
+    value = valueRaw / weightSum;
+    const varType invWeightSq = varType(1) / (weightSum * weightSum);
+    gradX = (gradXRaw * weightSum - valueRaw * dWeightX) * invWeightSq;
+    gradY = (gradYRaw * weightSum - valueRaw * dWeightY) * invWeightSq;
+}
+
 __global__ void g2pKernel(
-    int nParticles, int nx, int ny,
-    varType dx, varType dy, varType dt, varType gravity,
+    int nParticles, int nx, int ny, int transferMode, int kernelRadius,
+    varType dx, varType dy, varType dt, varType gravity, varType coefPic,
     const varType* __restrict__ d_u,
     const varType* __restrict__ d_v,
+    const varType* __restrict__ d_u_old,
+    const varType* __restrict__ d_v_old,
     const varType* __restrict__ d_pos_x,
     const varType* __restrict__ d_pos_y,
     varType* d_vel_x,
-    varType* d_vel_y)
+    varType* d_vel_y,
+    varType* d_cu_x,
+    varType* d_cu_y,
+    varType* d_cv_x,
+    varType* d_cv_y)
 {
     const int p = blockIdx.x * blockDim.x + threadIdx.x;
     if (p >= nParticles) return;
@@ -242,9 +339,37 @@ __global__ void g2pKernel(
     const varType x = d_pos_x[p];
     const varType y = d_pos_y[p];
 
-    d_vel_x[p] = bilinear_device<0>(x, y, dx, dy, d_u, nx + 1, ny);
-    d_vel_y[p] = bilinear_device<1>(x, y, dx, dy, d_v, nx,     ny + 1)
-               - dt * gravity;
+    const varType uNew = bilinear_device<0>(x, y, dx, dy, d_u, nx + 1, ny);
+    const varType vNew = bilinear_device<1>(x, y, dx, dy, d_v, nx, ny + 1);
+
+    if (transferMode == TRANSFER_FLIP) {
+        const varType coefFlip = varType(1) - coefPic;
+        const varType uOld = bilinear_device<0>(x, y, dx, dy, d_u_old, nx + 1, ny);
+        const varType vOld = bilinear_device<1>(x, y, dx, dy, d_v_old, nx, ny + 1);
+        d_vel_x[p] = coefPic * uNew + coefFlip * (d_vel_x[p] + (uNew - uOld));
+        d_vel_y[p] = coefPic * vNew + coefFlip * (d_vel_y[p] + (vNew - vOld))
+                   - dt * gravity;
+        return;
+    }
+
+    if (transferMode == TRANSFER_APIC) {
+        varType u = varType(0), cuX = varType(0), cuY = varType(0);
+        varType v = varType(0), cvX = varType(0), cvY = varType(0);
+        accumulateAffineDevice(d_u, x / dx, y / dy - varType(0.5),
+                               nx + 1, ny, dx, dy, kernelRadius, u, cuX, cuY);
+        accumulateAffineDevice(d_v, x / dx - varType(0.5), y / dy,
+                               nx, ny + 1, dx, dy, kernelRadius, v, cvX, cvY);
+        d_vel_x[p] = u;
+        d_vel_y[p] = v - dt * gravity;
+        d_cu_x[p] = cuX;
+        d_cu_y[p] = cuY;
+        d_cv_x[p] = cvX;
+        d_cv_y[p] = cvY;
+        return;
+    }
+
+    d_vel_x[p] = uNew;
+    d_vel_y[p] = vNew - dt * gravity;
 }
 
 // ─── Advection ────────────────────────────────────────────────────────────────
@@ -598,6 +723,90 @@ __global__ void airCleanupKernel(
     if (!IS_FLUID(lT)) d_v[nx * (cj + 1) + ci]        = varType(0);
 }
 
+// ─── GPU refill ──────────────────────────────────────────────────────────────
+
+__device__ __forceinline__ uint32_t hashU32(uint32_t x) {
+    x ^= x >> 16;
+    x *= 0x7feb352du;
+    x ^= x >> 15;
+    x *= 0x846ca68bu;
+    x ^= x >> 16;
+    return x;
+}
+
+__device__ __forceinline__ varType rand01_device(int cell, int particle, int seed, int salt) {
+    const uint32_t h = hashU32(static_cast<uint32_t>(cell) * 0x9e3779b9u
+                             ^ static_cast<uint32_t>(particle) * 0x85ebca6bu
+                             ^ static_cast<uint32_t>(seed) * 0xc2b2ae35u
+                             ^ static_cast<uint32_t>(salt));
+    return static_cast<varType>((h >> 8) * (1.0 / 16777216.0));
+}
+
+__global__ void refillKernel(
+    int nx, int ny, int targetPPC, int maxParticles, int seed,
+    varType dx, varType dy,
+    const uint16_t* __restrict__ d_labels,
+    const int* __restrict__ d_cell_count,
+    const varType* __restrict__ d_u,
+    const varType* __restrict__ d_v,
+    varType* d_pos_x,
+    varType* d_pos_y,
+    varType* d_vel_x,
+    varType* d_vel_y,
+    varType* d_cu_x,
+    varType* d_cu_y,
+    varType* d_cv_x,
+    varType* d_cv_y,
+    int* d_cell_idx,
+    int* d_alive,
+    int* d_particle_count,
+    int* d_refill_overflow)
+{
+    const int c = blockIdx.x * blockDim.x + threadIdx.x;
+    const int nCells = nx * ny;
+    if (c >= nCells) return;
+
+    const int ci = c % nx;
+    const int cj = c / nx;
+    const uint16_t lbl = d_labels[(nx + 2) * (cj + 1) + (ci + 1)];
+    if ((lbl & Fields2D::SOLID) || (lbl & Fields2D::AIR)) return;
+
+    const int missing = targetPPC - d_cell_count[c];
+    if (missing <= 0) return;
+
+    const int base = atomicAdd(d_particle_count, missing);
+    const int available = maxParticles - base;
+    if (available <= 0) {
+        atomicAdd(d_refill_overflow, missing);
+        return;
+    }
+
+    const int toWrite = min(missing, available);
+    if (toWrite < missing)
+        atomicAdd(d_refill_overflow, missing - toWrite);
+
+    for (int m = 0; m < toWrite; ++m) {
+        const int slot = base + m;
+        const varType rx = rand01_device(c, m, seed, 0x1234u);
+        const varType ry = rand01_device(c, m, seed, 0x9abcu);
+        const varType x = (static_cast<varType>(ci) + rx) * dx;
+        const varType y = (static_cast<varType>(cj) + ry) * dy;
+
+        d_pos_x[slot] = x;
+        d_pos_y[slot] = y;
+        d_vel_x[slot] = bilinear_device<0>(x, y, dx, dy, d_u, nx + 1, ny);
+        d_vel_y[slot] = bilinear_device<1>(x, y, dx, dy, d_v, nx, ny + 1);
+        if (d_cu_x) {
+            d_cu_x[slot] = varType(0);
+            d_cu_y[slot] = varType(0);
+            d_cv_x[slot] = varType(0);
+            d_cv_y[slot] = varType(0);
+        }
+        d_cell_idx[slot] = c;
+        d_alive[slot] = 1;
+    }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // GPIC host implementation
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -623,6 +832,12 @@ GPIC::GPIC(Parameters& params)
     d.nx       = nx;  d.ny = ny;
     d.dx       = dx;  d.dy = dy;  d.dt = dt;
     d.density  = static_cast<varType>(params.density);
+    if (params.solver.method == SolverConfig::Method::GFLIP) {
+        d.transferMode = TRANSFER_FLIP;
+    } else if (params.solver.method == SolverConfig::Method::GAPIC) {
+        d.transferMode = TRANSFER_APIC;
+        d.needsAffine = true;
+    }
 
     const int total    = cloud_->totalSize();
     d.maxParticles     = std::max(total * 4, 64);
@@ -639,14 +854,30 @@ GPIC::GPIC(Parameters& params)
     CUDA_CHECK(cudaMalloc(&d.d_pos_y,    nP * sizeof(varType)));
     CUDA_CHECK(cudaMalloc(&d.d_vel_x,    nP * sizeof(varType)));
     CUDA_CHECK(cudaMalloc(&d.d_vel_y,    nP * sizeof(varType)));
+    if (d.needsAffine) {
+        CUDA_CHECK(cudaMalloc(&d.d_cu_x, nP * sizeof(varType)));
+        CUDA_CHECK(cudaMalloc(&d.d_cu_y, nP * sizeof(varType)));
+        CUDA_CHECK(cudaMalloc(&d.d_cv_x, nP * sizeof(varType)));
+        CUDA_CHECK(cudaMalloc(&d.d_cv_y, nP * sizeof(varType)));
+        CUDA_CHECK(cudaMemset(d.d_cu_x, 0, nP * sizeof(varType)));
+        CUDA_CHECK(cudaMemset(d.d_cu_y, 0, nP * sizeof(varType)));
+        CUDA_CHECK(cudaMemset(d.d_cv_x, 0, nP * sizeof(varType)));
+        CUDA_CHECK(cudaMemset(d.d_cv_y, 0, nP * sizeof(varType)));
+    }
     CUDA_CHECK(cudaMalloc(&d.d_cell_idx, nP * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d.d_alive,    nP * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d.d_tmp,      nP * sizeof(varType)));
     CUDA_CHECK(cudaMalloc(&d.d_perm,     nP * sizeof(int)));
+    CUDA_CHECK(cudaMalloc(&d.d_particle_count,  sizeof(int)));
+    CUDA_CHECK(cudaMalloc(&d.d_refill_overflow, sizeof(int)));
 
     // ── Grid velocity ──
     CUDA_CHECK(cudaMalloc(&d.d_u,     u_sz * sizeof(varType)));
     CUDA_CHECK(cudaMalloc(&d.d_v,     v_sz * sizeof(varType)));
+    if (d.transferMode == TRANSFER_FLIP) {
+        CUDA_CHECK(cudaMalloc(&d.d_u_old, u_sz * sizeof(varType)));
+        CUDA_CHECK(cudaMalloc(&d.d_v_old, v_sz * sizeof(varType)));
+    }
     CUDA_CHECK(cudaMalloc(&d.d_u_num, u_sz * sizeof(varType)));
     CUDA_CHECK(cudaMalloc(&d.d_u_den, u_sz * sizeof(varType)));
     CUDA_CHECK(cudaMalloc(&d.d_v_num, v_sz * sizeof(varType)));
@@ -674,9 +905,13 @@ GPIC::~GPIC() {
 #define FREE(p) if (p) { cudaFree(p); (p) = nullptr; }
     FREE(d.d_pos_x)     FREE(d.d_pos_y)
     FREE(d.d_vel_x)     FREE(d.d_vel_y)
+    FREE(d.d_cu_x)      FREE(d.d_cu_y)
+    FREE(d.d_cv_x)      FREE(d.d_cv_y)
     FREE(d.d_cell_idx)  FREE(d.d_alive)
     FREE(d.d_tmp)       FREE(d.d_perm)
+    FREE(d.d_particle_count) FREE(d.d_refill_overflow)
     FREE(d.d_u)         FREE(d.d_v)
+    FREE(d.d_u_old)     FREE(d.d_v_old)
     FREE(d.d_u_num)     FREE(d.d_u_den)
     FREE(d.d_v_num)     FREE(d.d_v_den)
     FREE(d.d_p)         FREE(d.d_rhs)
@@ -723,6 +958,12 @@ void GPIC::UploadParticles() {
     CUDA_CHECK(cudaMemcpy(d.d_vel_x,    h_vx.data(), N * sizeof(varType), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d.d_vel_y,    h_vy.data(), N * sizeof(varType), cudaMemcpyHostToDevice));
     CUDA_CHECK(cudaMemcpy(d.d_cell_idx, h_ci.data(), N * sizeof(int),     cudaMemcpyHostToDevice));
+    if (d.needsAffine) {
+        CUDA_CHECK(cudaMemset(d.d_cu_x, 0, N * sizeof(varType)));
+        CUDA_CHECK(cudaMemset(d.d_cu_y, 0, N * sizeof(varType)));
+        CUDA_CHECK(cudaMemset(d.d_cv_x, 0, N * sizeof(varType)));
+        CUDA_CHECK(cudaMemset(d.d_cv_y, 0, N * sizeof(varType)));
+    }
 }
 
 void GPIC::UploadGrid() {
@@ -781,6 +1022,13 @@ void GPIC::DownloadAll() const {
     CUDA_CHECK(cudaMemcpy(fields->Labels.get(), d.d_labels, p_sz * sizeof(uint16_t), cudaMemcpyDeviceToHost));
 }
 
+void GPIC::DownloadLabels() const {
+    auto& d = *dev_;
+    const std::size_t p_sz = static_cast<std::size_t>(nx + 2) * (ny + 2);
+    CUDA_CHECK(cudaMemcpy(fields->Labels.get(), d.d_labels,
+                          p_sz * sizeof(uint16_t), cudaMemcpyDeviceToHost));
+}
+
 // ─── GPU step stages ──────────────────────────────────────────────────────────
 
 void GPIC::GPUProjectParticlesOnGrid() {
@@ -797,8 +1045,9 @@ void GPIC::GPUProjectParticlesOnGrid() {
     if (N > 0) {
         const int g = (N + BLOCK - 1) / BLOCK;
         p2gKernel<<<g, BLOCK>>>(
-            N, nx, ny, dx, dy,
+            N, nx, ny, d.transferMode, dx, dy,
             d.d_pos_x, d.d_pos_y, d.d_vel_x, d.d_vel_y,
+            d.d_cu_x, d.d_cu_y, d.d_cv_x, d.d_cv_y,
             d.d_u_num, d.d_u_den, d.d_v_num, d.d_v_den);
         CUDA_CHECK(cudaGetLastError());
     }
@@ -847,7 +1096,8 @@ void GPIC::GPUMakeIncompressible() {
     {
         auto rhs_ptr = thrust::device_pointer_cast(d.d_rhs);
         const varType bNormSq = thrust::transform_reduce(
-            rhs_ptr, rhs_ptr + pNxy, SquareFunctor{}, varType(0), thrust::plus<varType>());
+            rhs_ptr, rhs_ptr + pNxy, SquareFunctor{}, varType(0),
+            cuda::std::plus<varType>{});
 
         if (bNormSq >= REAL_EPSILON * REAL_EPSILON) {
             const double tolSq = (double)params.solver.tolerance
@@ -932,9 +1182,12 @@ void GPIC::GPUProjectGridOnParticles() {
 
     const int g = (N + BLOCK - 1) / BLOCK;
     g2pKernel<<<g, BLOCK>>>(
-        N, nx, ny, dx, dy, d.dt, params.gravity,
-        d.d_u, d.d_v, d.d_pos_x, d.d_pos_y,
-        d.d_vel_x, d.d_vel_y);
+        N, nx, ny, d.transferMode, params.kernelOrder,
+        dx, dy, d.dt, params.gravity, params.coefPic,
+        d.d_u, d.d_v, d.d_u_old, d.d_v_old,
+        d.d_pos_x, d.d_pos_y,
+        d.d_vel_x, d.d_vel_y,
+        d.d_cu_x, d.d_cu_y, d.d_cv_x, d.d_cv_y);
     CUDA_CHECK(cudaGetLastError());
 }
 
@@ -973,6 +1226,12 @@ void GPIC::GPUAdvect() {
         copy_compact_vt(d.d_pos_y);
         copy_compact_vt(d.d_vel_x);
         copy_compact_vt(d.d_vel_y);
+        if (d.needsAffine) {
+            copy_compact_vt(d.d_cu_x);
+            copy_compact_vt(d.d_cu_y);
+            copy_compact_vt(d.d_cv_x);
+            copy_compact_vt(d.d_cv_y);
+        }
 
         thrust::copy_if(thrust::device,
             thrust::device_pointer_cast(d.d_cell_idx),
@@ -986,10 +1245,7 @@ void GPIC::GPUAdvect() {
     d.nParticles = newN;
 }
 
-// Counts particles per cell using a single O(N) atomic kernel.
-// The previous sort + gather (O(N log N)) was removed because d_cell_start
-// was never read by any downstream kernel — only d_cell_count is needed.
-void GPIC::GPUSortParticles() {
+void GPIC::GPUCountParticles() {
     auto& d = *dev_;
     const int N = d.nParticles;
 
@@ -1001,7 +1257,6 @@ void GPIC::GPUSortParticles() {
         CUDA_CHECK(cudaGetLastError());
     }
 
-    CUDA_CHECK(cudaDeviceSynchronize());
 }
 
 // Fully on GPU: labels updated, then air cells cleared.
@@ -1017,7 +1272,48 @@ void GPIC::GPUUpdateCellState() {
 
     airCleanupKernel<<<grid2d, block2d>>>(nx, ny, d.d_labels, d.d_u, d.d_v, d.d_p);
     CUDA_CHECK(cudaGetLastError());
-    CUDA_CHECK(cudaDeviceSynchronize());
+}
+
+void GPIC::GPURefillParticles() {
+    auto& d = *dev_;
+    const int targetPPC = params.ppcx * params.ppcy;
+    if (targetPPC <= 0 || d.nParticles >= d.maxParticles)
+        return;
+
+    CUDA_CHECK(cudaMemcpy(d.d_particle_count, &d.nParticles, sizeof(int),
+                          cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemset(d.d_refill_overflow, 0, sizeof(int)));
+
+    const int nCells = nx * ny;
+    const int g = (nCells + BLOCK - 1) / BLOCK;
+    refillKernel<<<g, BLOCK>>>(
+        nx, ny, targetPPC, d.maxParticles, d.refillSeed++,
+        dx, dy,
+        d.d_labels, d.d_cell_count,
+        d.d_u, d.d_v,
+        d.d_pos_x, d.d_pos_y,
+        d.d_vel_x, d.d_vel_y,
+        d.d_cu_x, d.d_cu_y, d.d_cv_x, d.d_cv_y,
+        d.d_cell_idx, d.d_alive,
+        d.d_particle_count, d.d_refill_overflow);
+    CUDA_CHECK(cudaGetLastError());
+
+    int newCount = 0;
+    int overflow = 0;
+    CUDA_CHECK(cudaMemcpy(&newCount, d.d_particle_count, sizeof(int),
+                          cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(&overflow, d.d_refill_overflow, sizeof(int),
+                          cudaMemcpyDeviceToHost));
+
+    if (overflow > 0 || newCount > d.maxParticles) {
+        std::fprintf(stderr,
+                     "[GPIC] refill exceeded maxParticles (%d > %d, skipped %d). "
+                     "Increase the particle capacity growth factor.\n",
+                     newCount, d.maxParticles, overflow);
+        std::exit(EXIT_FAILURE);
+    }
+
+    d.nParticles = newCount;
 }
 
 // ─── CFL (GPU) ────────────────────────────────────────────────────────────────
@@ -1031,9 +1327,9 @@ int GPIC::computeAdvectionSubstepsGPU() const {
     auto vy_ptr = thrust::device_pointer_cast(d.d_vel_y);
 
     const varType max_vx = thrust::transform_reduce(
-        vx_ptr, vx_ptr + N, AbsFunctor{}, varType(0), thrust::maximum<varType>());
+        vx_ptr, vx_ptr + N, AbsFunctor{}, varType(0), cuda::maximum<varType>{});
     const varType max_vy = thrust::transform_reduce(
-        vy_ptr, vy_ptr + N, AbsFunctor{}, varType(0), thrust::maximum<varType>());
+        vy_ptr, vy_ptr + N, AbsFunctor{}, varType(0), cuda::maximum<varType>{});
 
     const varType max_vy_eff = max_vy + static_cast<varType>(std::abs(params.gravity)) * dt;
     const varType maxCourant = std::max(max_vx / dx, max_vy_eff / dy);
@@ -1055,35 +1351,24 @@ void GPIC::Step() {
 
     for (int s = 0; s < substeps; ++s) {
         GPUProjectParticlesOnGrid();
+        if (dev_->transferMode == TRANSFER_FLIP) {
+            const std::size_t u_sz = static_cast<std::size_t>(nx + 1) * ny;
+            const std::size_t v_sz = static_cast<std::size_t>(nx) * (ny + 1);
+            CUDA_CHECK(cudaMemcpy(dev_->d_u_old, dev_->d_u,
+                                  u_sz * sizeof(varType),
+                                  cudaMemcpyDeviceToDevice));
+            CUDA_CHECK(cudaMemcpy(dev_->d_v_old, dev_->d_v,
+                                  v_sz * sizeof(varType),
+                                  cudaMemcpyDeviceToDevice));
+        }
         GPUMakeIncompressible();
         GPUProjectGridOnParticles();
         GPUAdvect();
-        GPUSortParticles();
+        GPUCountParticles();
         GPUUpdateCellState();
 
-        if (params.refill) {
-            // Refill needs CPU particle inspection
-            DownloadAll();
-            DownloadParticles();
-            const int target = params.ppcx * params.ppcy;
-            for (int cj = 0; cj < ny; ++cj) {
-                for (int ci = 0; ci < nx; ++ci) {
-                    if (!IS_FLUID(fields->Label(ci + 1, cj + 1))) continue;
-                    Particles& cell = (*cloud_)(ci, cj);
-                    const int missing = target - cell.size();
-                    if (missing <= 0) continue;
-                    for (int m = 0; m < missing; ++m) {
-                        const varType x = (ci + rand01()) * dx;
-                        const varType y = (cj + rand01()) * dy;
-                        const varType u = fields->u.interpolate<0>(x, y, dx, dy);
-                        const varType v = fields->v.interpolate<1>(x, y, dx, dy);
-                        cell.Add(x, y, u, v, 0u);
-                    }
-                }
-            }
-            dev_->nParticles = cloud_->totalSize();
-            UploadParticles();
-        }
+        if (params.refill)
+            GPURefillParticles();
     }
 
     setTimeStep(frameDt);
@@ -1097,7 +1382,11 @@ void GPIC::Run() {
     UploadParticles();
     UploadGrid();
 
+    const int savedTransferMode = dev_->transferMode;
+    if (savedTransferMode == TRANSFER_FLIP)
+        dev_->transferMode = TRANSFER_PIC;
     GPUProjectGridOnParticles();   // init particle velocities from initial grid
+    dev_->transferMode = savedTransferMode;
 
     WriteOutput(0);                // downloads from GPU internally
     RunLoop(std::max(1, params.nt / 100));
@@ -1109,9 +1398,19 @@ void GPIC::Run() {
 void GPIC::WriteOutput(int step) const {
     if (step % params.sampling_rate != 0) return;
 
-    DownloadAll();                          // d_u, d_v, d_p, d_labels → fields
-    fields->Div();                          // compute fields->div from u, v
-    fields->VelocityNormCenterGrid();       // compute normVelocity from u, v
+    const bool needsGrid =
+        params.write_u || params.write_v || params.write_p ||
+        params.write_div || params.write_norm_velocity;
+
+    if (needsGrid) {
+        DownloadAll();                      // d_u, d_v, d_p, d_labels → fields
+        if (params.write_div)
+            fields->Div();
+        if (params.write_norm_velocity)
+            fields->VelocityNormCenterGrid();
+    } else {
+        DownloadLabels();                   // Solver::WriteOutput always writes labels
+    }
 
     Solver::WriteOutput(step);
 
