@@ -1,26 +1,26 @@
 {
-  "dx": 2e-3,
-  "dy": 2e-3,
-  "dt": 2e-3,
-  "nx": 500,
-  "ny": 300,
-  "nt": 500,
+  "dx": 1e-3,
+  "dy": 1e-3,
+  "dt": 1e-4,
+  "nx": 200,
+  "ny": 100,
+  "nt": 5000,
   "density": 1000,
-  "sampling_rate": 1,
-
+  "sampling_rate": 10,
+  "write_smoke": false,
   "write_u": true,
   "write_v": true,
   "write_p": true,
   "write_div": true,
   "write_norm_velocity": true,
-  "write_smoke": true,
 
-  "folder": "results/SL/large-vk",
+  "folder": "../postProd/data/SL/von-karman/strouhal/",
   "filename": "simulation",
+
   "velocityu": {
     "rectangle": {
       "condition": "boundary",
-      "val": 1.0,
+      "val": 6.0,
       "x1": "0",
       "y1": "0",
       "x2": "0",
@@ -30,7 +30,7 @@
 
   "solid": {
     "cylinder": {
-      "x": "nx/6",
+      "x": "nx/4",
       "y": "ny/2",
       "r": "ny/10"
     },
@@ -54,7 +54,7 @@
   "smoke": {
     "rectangle": {
       "condition": "boundary",
-      "val": 0.5,
+      "val": 1,
       "x1": "0",
       "y1": "0",
       "x2": "0",
@@ -63,9 +63,8 @@
   },
 
   "solver": {
-    "type": "red_black_gauss_seidel",
-    "max_iterations": 1e5,
+    "type": "cg",
+    "max_iterations": 1e7,
     "tolerance": 1e-2
-  },
-  "method": "sl"
+  }
 }

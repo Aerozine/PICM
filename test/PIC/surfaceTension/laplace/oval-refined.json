@@ -1,0 +1,47 @@
+{
+  "dx": 0.000025,
+  "dy": 0.000025,
+  "dt": 0.000003125,
+  "nx": 400,
+  "ny": 400,
+  "nt": 32000,
+  "ppcx": 10,
+  "ppcy": 10,
+  "density": 1000,
+  "sampling_rate": 40,
+  "write_u": true,
+  "write_v": true,
+  "write_p": true,
+  "write_div": true,
+  "write_norm_velocity": true,
+  "write_smoke": true,
+  "write_particles": true,
+  "folder": "results/PIC/surfaceTension/laplace/oval_x4",
+  "filename": "simulation",
+
+  "fluid": {
+    "rectangle": {
+      "x1": "nx/2-48",
+      "y1": "ny/4-32",
+      "x2": "nx/2+56",
+      "y2": "ny/4+32"
+    },
+    "cylinder": [
+      { "x": "nx/2-48", "y": "ny/4", "r": "32" },
+      { "x": "nx/2+48", "y": "ny/4", "r": "32" }
+    ]
+  },
+
+  "solver": {
+    "type": "red_black_gauss_seidel",
+    "max_iterations": 1e5,
+    "tolerance": 1e-2
+  },
+  "method": "pic",
+  "freeSurface": "yes",
+  "gravity": 0.0,
+  "refill": false,
+  "surfaceTension": true,
+  "particleInteraction": false,
+  "gamma": 0.073
+}

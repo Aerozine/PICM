@@ -1,0 +1,42 @@
+{
+  "dx": 0.0001,
+  "dy": 0.0001,
+  "dt": 0.001,
+  "nx": 100,
+  "ny": 100,
+  "ppcx": 3,
+  "ppcy": 3,
+  "nt": 100,
+  "density": 1000,
+  "sampling_rate": 2,
+  "write_u": true,
+  "write_v": true,
+  "write_p": true,
+  "write_div": true,
+  "write_norm_velocity": true,
+  "write_smoke": true,
+  "write_particles": true,
+  "folder": "results/PIC/surfaceTension/laplace/unstable",
+  "filename": "simulation",
+
+  "fluid": {
+    "cylinder": {
+      "x": "nx/2",
+      "y": "ny/2",
+      "r": "nx/3"
+    }
+  },
+
+  "solver": {
+    "type": "red_black_gauss_seidel",
+    "max_iterations": 1e5,
+    "tolerance": 1e-2
+  },
+  "method": "pic",
+  "freeSurface": "yes",
+  "gravity": 0.0,
+  "refill": false,
+  "surfaceTension": true,
+  "particleInteraction": false,
+  "gamma": 0.073
+}

@@ -1,0 +1,113 @@
+{
+  "dx": 0.0002,
+  "dy": 0.0002,
+  "dt": 0.000005,
+  "nx": 220,
+  "ny": 180,
+  "nt": 12000,
+  "ppcx": 5,
+  "ppcy": 5,
+  "density": 1000,
+  "sampling_rate": 25,
+  "write_u": true,
+  "write_v": true,
+  "write_p": true,
+  "write_div": true,
+  "write_norm_velocity": true,
+  "write_smoke": true,
+  "write_particles": true,
+  "folder": "results/PIC/surfaceTension/laplace/capillary-action",
+  "filename": "simulation",
+
+  "fluid": {
+    "rectangle": [
+      {
+        "x1": "11",
+        "y1": "1",
+        "x2": "119",
+        "y2": "80"
+      },
+      {
+        "x1": "120",
+        "y1": "1",
+        "x2": "139",
+        "y2": "34"
+      },
+      {
+        "x1": "140",
+        "y1": "1",
+        "x2": "154",
+        "y2": "80"
+      }
+    ]
+  },
+
+  "solid": {
+    "rectangle": [
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "0"
+      },
+      {
+        "x1": "0",
+        "y1": "ny+1",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "0",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "nx+1",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "1",
+        "y1": "1",
+        "x2": "10",
+        "y2": "ny"
+      },
+      {
+        "x1": "120",
+        "y1": "35",
+        "x2": "139",
+        "y2": "ny"
+      },
+      {
+        "x1": "155",
+        "y1": "1",
+        "x2": "164",
+        "y2": "ny"
+      },
+      {
+        "x1": "165",
+        "y1": "1",
+        "x2": "nx",
+        "y2": "ny"
+      }
+    ]
+  },
+
+  "solver": {
+    "type": "red_black_gauss_seidel",
+    "max_iterations": 1e5,
+    "tolerance": 1e-2
+  },
+  "method": "pic",
+  "freeSurface": "yes",
+  "gravity": 9.81,
+  "refill": false,
+  "surfaceTension": true,
+  "particleInteraction": false,
+  "gamma": 0.0015,
+  "contactAngle": 0.45,
+  "kernelOrder": 2,
+  "max_cfl": 0.5
+}

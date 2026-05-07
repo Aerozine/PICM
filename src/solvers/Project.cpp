@@ -106,4 +106,5 @@ inline void updateVelocities(const Parameters &params, Fields2D &fields) {
 void Solver::MakeIncompressible(const Parameters &p, Fields2D &f) {
   solvePressure(p, f);
   updateVelocities(p, f);
+  f.Div();
 }
