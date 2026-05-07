@@ -74,8 +74,8 @@ void PIC::Advect() {
           const varType xmid = x0 + varType(0.5) * dt * u0;
           const varType ymid = y0 + varType(0.5) * dt * v0;
 
-          const varType umid = fields->u.interpolate<0>(xmid, ymid, dx, dy);
-          const varType vmid = fields->v.interpolate<1>(xmid, ymid, dx, dy);
+          const varType umid = fields->interpolateU(xmid, ymid);
+          const varType vmid = fields->interpolateV(xmid, ymid);
 
           const varType x1 = x0 + dt * umid;
           const varType y1 = y0 + dt * vmid;

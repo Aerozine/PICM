@@ -117,6 +117,13 @@ public:
   }
 
   // use this one to improve speed
+  [[nodiscard]] varType interpolateU(varType x, varType y) const;
+  [[nodiscard]] varType interpolateV(varType x, varType y) const;
+  [[nodiscard]] varType interpolateU(const Grid2D &grid, varType x,
+                                     varType y) const;
+  [[nodiscard]] varType interpolateV(const Grid2D &grid, varType x,
+                                     varType y) const;
+
   void UpdateDivNorm();
   void Div();
   void VelocityNormCenterGrid();

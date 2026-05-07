@@ -24,7 +24,7 @@ void Solver::Advect() {
       }
       varType x, y;
       traceParticle(i, j, x, y, 0);
-      uNew.Set(i, j, fields->u.interpolate<0>(x, y, dx, dy));
+      uNew.Set(i, j, fields->interpolateU(x, y));
     }
 
   OMP_PRAGMA(omp parallel for collapse(2))
@@ -43,8 +43,8 @@ void Solver::Advect() {
 
       varType x, y;
       traceParticle(i, j, x, y, 1);
-      assert(std::isfinite(fields->v.interpolate<1>(x, y, dx, dy)));
-      vNew.Set(i, j, fields->v.interpolate<1>(x, y, dx, dy));
+      assert(std::isfinite(fields->interpolateV(x, y)));
+      vNew.Set(i, j, fields->interpolateV(x, y));
     }
 
   fields->u = std::move(uNew);

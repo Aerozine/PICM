@@ -35,10 +35,10 @@ void PIC::RefillParticles() {
           varType x = (ci + rand01()) * dx;
           varType y = (cj + rand01()) * dy;
 
-          varType u = isInflowU ? fields->u.Get(ci, cj)
-                                : fields->u.interpolate<0>(x, y, dx, dy);
-          varType v = isInflowV ? fields->v.Get(ci, cj)
-                                : fields->v.interpolate<1>(x, y, dx, dy);
+          varType u =
+              isInflowU ? fields->u.Get(ci, cj) : fields->interpolateU(x, y);
+          varType v =
+              isInflowV ? fields->v.Get(ci, cj) : fields->interpolateV(x, y);
 
           // random birth time + partial advection CH7 p.115
           varType tau = rand01() * dt;
@@ -52,8 +52,8 @@ void PIC::RefillParticles() {
           varType ya = std::clamp(y + remaining * v, varType(0),
                                   std::nextafter(yMax, varType(0)));
 
-          varType ua = fields->u.interpolate<0>(xa, ya, dx, dy);
-          varType va = fields->v.interpolate<1>(xa, ya, dx, dy);
+          varType ua = fields->interpolateU(xa, ya);
+          varType va = fields->interpolateV(xa, ya);
 
           const int fi =
               std::clamp(static_cast<int>(std::floor(xa / dx)), 0, nx - 1);
@@ -79,8 +79,8 @@ void PIC::RefillParticles() {
           varType x = (ci + rand01()) * dx;
           varType y = (cj + rand01()) * dy;
 
-          varType u = fields->u.interpolate<0>(x, y, dx, dy);
-          varType v = fields->v.interpolate<1>(x, y, dx, dy);
+          varType u = fields->interpolateU(x, y);
+          varType v = fields->interpolateV(x, y);
 
           // particle stays in this cell so add directly
           (*cloud)(ci, cj).Add(x, y, u, v, 0);
