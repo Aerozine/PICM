@@ -84,43 +84,6 @@ public:
    * @param dy    Cell height in y.
    * @param field Stagger type: 0 = u-face, 1 = v-face, other = cell-centre.
    */
-  template <unsigned char field>
-  varType interpolate(const varType x, const varType y, const varType dx,
-                      const varType dy) const {
-    varType i_real = x / dx;
-    varType j_real = y / dy;
-
-    if constexpr (field == 0)
-      j_real -= REAL_LITERAL(0.5); // u-face: staggered in y
-    if constexpr (field == 1)
-      i_real -= REAL_LITERAL(0.5); // v-face: staggered in x
-
-    const varType i_clamped =
-        std::clamp(i_real, REAL_LITERAL(0.0), static_cast<varType>(nx - 1));
-    const varType j_clamped =
-        std::clamp(j_real, REAL_LITERAL(0.0), static_cast<varType>(ny - 1));
-
-    const int i0 = static_cast<int>(std::floor(i_clamped));
-    const int j0 = static_cast<int>(std::floor(j_clamped));
-
-    const varType fx = i_clamped - static_cast<varType>(i0);
-    const varType fy = j_clamped - static_cast<varType>(j0);
-
-    const int i1 = std::min(i0 + 1, nx - 1);
-    const int j1 = std::min(j0 + 1, ny - 1);
-
-    const varType f00 = Get(i0, j0);
-    const varType f10 = Get(i1, j0);
-    const varType f01 = Get(i0, j1);
-    const varType f11 = Get(i1, j1);
-
-    const varType value =
-        (REAL_LITERAL(1.0) - fy) *
-            ((REAL_LITERAL(1.0) - fx) * f00 + fx * f10) +
-        fy * ((REAL_LITERAL(1.0) - fx) * f01 + fx * f11);
-    assert(std::isfinite(value));
-    return value;
-  }
 
   varType *A = nullptr;
 };

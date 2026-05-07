@@ -92,7 +92,7 @@
   "solver": {
     "type": "cg",
     "max_iterations": 1e5,
-    "tolerance": 1e-4
+    "tolerance": 1e-2
   },
   "method": "pic",
   "freeSurface": true,
