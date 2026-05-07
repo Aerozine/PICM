@@ -99,8 +99,7 @@ void PIC::Step() {
 }
 
 void PIC::Run() {
-  fields->Div();
-  fields->VelocityNormCenterGrid();
+  fields->UpdateDivNorm();
   ProjectGridOnParticles();
   WriteOutput(0);
   RunLoop(std::max(1, params.nt / 100));

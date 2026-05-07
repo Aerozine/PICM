@@ -1,0 +1,68 @@
+{
+    "dx": 0.05,
+    "dy": 0.05,
+    "dt": 0.01,
+    "nx": 200,
+    "ny": 220,
+    "nt": 400,
+    "ppcx": 5,
+    "ppcy": 5,
+    "density": 1000,
+    "sampling_rate": 2,
+    "write_u": false,
+    "write_v": false,
+    "write_p": false,
+    "write_div": false,
+    "write_norm_velocity": false,
+    "write_smoke": false,
+    "write_particles": true,
+    "folder": "results/GPIC/downBreak",
+    "filename": "simulation",
+
+    "fluid": {
+        "rectangle":{
+            "x1": "1",
+            "y1": "1",
+            "x2": "nx/2",
+            "y2": "100"
+        }
+    },
+
+    "solid": {
+        "rectangle":[{
+            "x1": "0",
+            "y1": "0",
+            "x2": "nx+1",
+            "y2": "0"
+        },
+        {
+            "x1": "0",
+            "y1": "ny+1",
+            "x2": "nx+1",
+            "y2": "ny+1"
+        },
+        {
+            "x1": "0",
+            "y1": "0",
+            "x2": "0",
+            "y2": "ny+1"
+        },
+        {
+            "x1": "nx+1",
+            "y1": "0",
+            "x2": "nx+1",
+            "y2": "ny+1"
+        }]
+    },
+
+    "solver": {
+        "type": "cg",
+        "max_iterations": 500,
+        "tolerance": 1e-2
+    },
+    "method": "gpic",
+    "freeSurface": true,
+    "gravity": 9.81,
+    "refill": false,
+    "kernelOrder": 2
+}

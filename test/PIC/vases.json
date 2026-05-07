@@ -1,0 +1,103 @@
+{
+  "dx": 0.04,
+  "dy": 0.04,
+  "dt": 0.005,
+  "nx": 240,
+  "ny": 160,
+  "nt": 3000,
+  "ppcx": 3,
+  "ppcy": 3,
+  "density": 1000,
+  "sampling_rate": 10,
+  "write_u": true,
+  "write_v": true,
+  "write_p": true,
+  "write_div": true,
+  "write_norm_velocity": true,
+  "write_smoke": true,
+  "write_particles": true,
+  "folder": "results/PIC/vases-communicants",
+  "filename": "simulation",
+
+  "fluid": {
+    "rectangle": [
+      {
+        "x1": "21",
+        "y1": "1",
+        "x2": "219",
+        "y2": "34"
+      },
+      {
+        "x1": "21",
+        "y1": "35",
+        "x2": "84",
+        "y2": "120"
+      },
+      {
+        "x1": "156",
+        "y1": "35",
+        "x2": "219",
+        "y2": "65"
+      }
+    ]
+  },
+
+  "solid": {
+    "rectangle": [
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "0"
+      },
+      {
+        "x1": "0",
+        "y1": "ny+1",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "0",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "nx+1",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "1",
+        "y1": "1",
+        "x2": "20",
+        "y2": "ny"
+      },
+      {
+        "x1": "220",
+        "y1": "1",
+        "x2": "nx",
+        "y2": "ny"
+      },
+      {
+        "x1": "85",
+        "y1": "35",
+        "x2": "155",
+        "y2": "ny"
+      }
+    ]
+  },
+
+  "solver": {
+    "type": "cg",
+    "max_iterations": 1e5,
+    "tolerance": 1e-4
+  },
+  "method": "gpic",
+  "coefpic": 0.02,
+  "freeSurface": true,
+  "gravity": 9.81,
+  "refill": false,
+  "kernelOrder": 2
+}

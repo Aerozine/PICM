@@ -1,0 +1,63 @@
+{
+    "dx": 0.05,
+    "dy": 0.05,
+    "dt": 0.01,
+    "nx": 160,
+    "ny": 80,
+    "nt": 1000,
+    "ppcx": 4,
+    "ppcy": 4,
+    "density": 1000,
+    "sampling_rate": 5,
+    "write_u": false,
+    "write_v": false,
+    "write_p": false,
+    "write_div": false,
+    "write_norm_velocity": false,
+    "write_smoke": false,
+    "write_particles": true,
+    "folder": "results/GPIC/von-karman",
+    "filename": "simulation",
+
+    "velocityu": {
+        "rectangle": {
+            "condition": "boundary",
+            "val": 3,
+            "x1": "0",
+            "y1": "0",
+            "x2": "0",
+            "y2": "ny"
+        }
+    },
+
+    "solid": {
+        "cylinder": {
+            "x": "nx/6",
+            "y": "ny/2",
+            "r": "ny/10"
+        },
+
+        "rectangle":[{
+            "x1": "0",
+            "y1": "ny+1",
+            "x2": "nx+1",
+            "y2": "ny+1"
+        },
+        {
+            "x1": "0",
+            "y1": "0",
+            "x2": "nx+1",
+            "y2": "0"
+        }]
+    },
+
+    "solver": {
+        "type": "cg",
+        "max_iterations": 500,
+        "tolerance": 1e-2
+    },
+    "method": "gpic",
+    "freeSurface": false,
+    "gravity": 0.0,
+    "refill": true
+}

@@ -6,7 +6,16 @@
 
 struct SolverConfig {
   enum class Type { JACOBI, GAUSS_SEIDEL, RB_GS, MICCG0, CG };
-  enum class Method { SL, VanillaPIC, FLIP, Mixed_FLIP_PIC, APIC };
+  enum class Method {
+    SL,
+    VanillaPIC,
+    FLIP,
+    Mixed_FLIP_PIC,
+    APIC,
+    GPIC,
+    GFLIP,
+    GAPIC
+  };
 
   Method method = Method::SL;
   Type type = Type::MICCG0;

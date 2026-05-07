@@ -10,6 +10,8 @@
  * @param tol      Relative residual convergence threshold.
  * @param beta     rho * dx / dt  (solid BC correction term).
  */
+varType computeRhsNorm(Fields2D &fields, varType coef);
+
 void solveJacobi(Fields2D &fields, int nx, int ny, varType coef, int maxIters,
                  varType tol, varType beta);
 

@@ -25,15 +25,16 @@ namespace {
 
 static constexpr int BX = 32;
 static constexpr int BY = 8;
-static constexpr int CHECK_EVERY = 8;
+static constexpr int CHECK_EVERY = 32;
 
 __host__ __device__ __forceinline__ int pidx(int pnx, int i, int j) {
   return pnx * j + i;
 }
 
-__global__ void rbgsColorKernel(int colour, int pnx, int pny, double omega,
-                                const int *lbl, const double *b, double *p,
-                                double *deltaSq, bool accumulateResidual) {
+// Kernel uses varType so it works at native precision (float or double).
+__global__ void rbgsColorKernel(int colour, int pnx, int pny, varType omega,
+                                const int *lbl, const varType *b, varType *p,
+                                varType *deltaSq, bool accumulateResidual) {
   const int i = blockIdx.x * blockDim.x + threadIdx.x + 1;
   const int j = blockIdx.y * blockDim.y + threadIdx.y + 1;
 
@@ -47,8 +48,8 @@ __global__ void rbgsColorKernel(int colour, int pnx, int pny, double omega,
   if (IS_SOLID(cur) || IS_AIR(cur) || IS_BC_P(cur))
     return;
 
-  const double pij = p[id];
-  double sumP = 0.0;
+  const varType pij = p[id];
+  varType sumP = varType(0);
 
   // Left.
   {
@@ -86,12 +87,14 @@ __global__ void rbgsColorKernel(int colour, int pnx, int pny, double omega,
       sumP += p[pidx(pnx, i, j + 1)];
   }
 
-  const double p_gs = (b[id] + sumP) / 4.0;
-  const double p_new = pij + omega * (p_gs - pij);
-  p[id] = p_new;
+  const varType p_gs = (b[id] + sumP) * varType(0.25);
+  p[id] = pij + omega * (p_gs - pij);
 
-  if (accumulateResidual)
-    deltaSq[id] = (p_new - pij) * (p_new - pij);
+  if (accumulateResidual) {
+    // True residual before update: r = b + nS - 4*p
+    const varType r = b[id] + sumP - varType(4) * pij;
+    deltaSq[id] = r * r;
+  }
 }
 
 } // namespace
@@ -107,72 +110,74 @@ bool solveRedBlackGaussSeidel_GPU(Fields2D &fields, int nx, int ny,
 
   constexpr double PI = 3.14159265358979323846;
   const int N_min = (nx < ny) ? nx : ny;
-  const double omega =
-      std::min(1.95, 2.0 / (1.0 + std::sin(PI / static_cast<double>(N_min))));
+  // Compute optimal SOR omega in double for accuracy, then cast.
+  const varType omega = static_cast<varType>(
+      std::min(1.95, 2.0 / (1.0 + std::sin(PI / static_cast<double>(N_min)))));
 
-  std::vector<int> h_lbl(static_cast<std::size_t>(N), 0);
-  std::vector<double> h_b(static_cast<std::size_t>(N), 0.0);
-  std::vector<double> h_p(static_cast<std::size_t>(N), 0.0);
-  std::vector<double> h_deltaSq(static_cast<std::size_t>(N), 0.0);
+  std::vector<int>     h_lbl(static_cast<std::size_t>(N), 0);
+  std::vector<varType> h_b(static_cast<std::size_t>(N), varType(0));
+  std::vector<varType> h_p(static_cast<std::size_t>(N), varType(0));
+  std::vector<varType> h_deltaSq(static_cast<std::size_t>(N), varType(0));
 
-  int fluidCount = 0;
   for (int j = 0; j < pny; ++j) {
     for (int i = 0; i < pnx; ++i) {
       h_lbl[pidx(pnx, i, j)] = static_cast<int>(fields.Label(i, j));
-      h_p[pidx(pnx, i, j)] = static_cast<double>(fields.p.Get(i, j));
+      h_p[pidx(pnx, i, j)]   = fields.p.Get(i, j);
     }
   }
 
+  // Accumulate bNormSq in double to avoid catastrophic cancellation.
+  double bNormSq = 0.0;
   for (int j = 1; j < pny - 1; ++j) {
     for (int i = 1; i < pnx - 1; ++i) {
-      const int id = pidx(pnx, i, j);
+      const int id  = pidx(pnx, i, j);
       const int cur = h_lbl[id];
       if (IS_SOLID(cur) || IS_AIR(cur) || IS_BC_P(cur))
         continue;
 
-      h_b[id] = -coef * static_cast<double>(fields.div.Get(i - 1, j - 1));
-      ++fluidCount;
+      const varType b_val =
+          -coef * fields.div.Get(i - 1, j - 1);
+      h_b[id] = b_val;
+      bNormSq += static_cast<double>(b_val) * static_cast<double>(b_val);
     }
   }
 
-  if (fluidCount == 0) {
-    DBG_PRINTF("RBGS_GPU: no fluid pressure cells");
+  if (bNormSq < 1e-60) {
+    DBG_PRINTF("RBGS_GPU: no fluid pressure cells or zero RHS");
     return true;
   }
+  const double bNorm = std::sqrt(bNormSq);
 
-  int *d_lbl = nullptr;
-  double *d_b = nullptr;
-  double *d_p = nullptr;
-  double *d_deltaSq = nullptr;
+  int     *d_lbl     = nullptr;
+  varType *d_b       = nullptr;
+  varType *d_p       = nullptr;
+  varType *d_deltaSq = nullptr;
 
-  CUDA_CHECK(cudaMalloc(&d_lbl, static_cast<std::size_t>(N) * sizeof(int)));
-  CUDA_CHECK(cudaMalloc(&d_b, static_cast<std::size_t>(N) * sizeof(double)));
-  CUDA_CHECK(cudaMalloc(&d_p, static_cast<std::size_t>(N) * sizeof(double)));
-  CUDA_CHECK(
-      cudaMalloc(&d_deltaSq, static_cast<std::size_t>(N) * sizeof(double)));
+  CUDA_CHECK(cudaMalloc(&d_lbl,     static_cast<std::size_t>(N) * sizeof(int)));
+  CUDA_CHECK(cudaMalloc(&d_b,       static_cast<std::size_t>(N) * sizeof(varType)));
+  CUDA_CHECK(cudaMalloc(&d_p,       static_cast<std::size_t>(N) * sizeof(varType)));
+  CUDA_CHECK(cudaMalloc(&d_deltaSq, static_cast<std::size_t>(N) * sizeof(varType)));
 
-  CUDA_CHECK(cudaMemcpy(d_lbl, h_lbl.data(), static_cast<std::size_t>(N) *
-                                            sizeof(int),
+  CUDA_CHECK(cudaMemcpy(d_lbl, h_lbl.data(),
+                        static_cast<std::size_t>(N) * sizeof(int),
                         cudaMemcpyHostToDevice));
-  CUDA_CHECK(cudaMemcpy(d_b, h_b.data(), static_cast<std::size_t>(N) *
-                                          sizeof(double),
+  CUDA_CHECK(cudaMemcpy(d_b, h_b.data(),
+                        static_cast<std::size_t>(N) * sizeof(varType),
                         cudaMemcpyHostToDevice));
-  CUDA_CHECK(cudaMemcpy(d_p, h_p.data(), static_cast<std::size_t>(N) *
-                                          sizeof(double),
+  CUDA_CHECK(cudaMemcpy(d_p, h_p.data(),
+                        static_cast<std::size_t>(N) * sizeof(varType),
                         cudaMemcpyHostToDevice));
 
   const dim3 block(BX, BY);
   const dim3 grid((pnx - 2 + BX - 1) / BX, (pny - 2 + BY - 1) / BY);
 
   bool converged = false;
-  double res = 0.0;
-  double res0 = -1.0;
 
   for (int it = 0; it < maxIters; ++it) {
     const bool check = ((it % CHECK_EVERY) == (CHECK_EVERY - 1));
     if (check) {
       CUDA_CHECK(cudaMemset(d_deltaSq, 0,
-                            static_cast<std::size_t>(N) * sizeof(double)));
+                            static_cast<std::size_t>(N) * sizeof(varType)));
     }
 
     rbgsColorKernel<<<grid, block>>>(0, pnx, pny, omega, d_lbl, d_b, d_p,
@@ -185,26 +190,17 @@ bool solveRedBlackGaussSeidel_GPU(Fields2D &fields, int nx, int ny,
       continue;
 
     CUDA_CHECK(cudaMemcpy(h_deltaSq.data(), d_deltaSq,
-                          static_cast<std::size_t>(N) * sizeof(double),
+                          static_cast<std::size_t>(N) * sizeof(varType),
                           cudaMemcpyDeviceToHost));
 
+    // Accumulate in double for accurate convergence check.
     double sumSq = 0.0;
-    for (double v : h_deltaSq)
-      sumSq += v;
+    for (varType v : h_deltaSq)
+      sumSq += static_cast<double>(v);
 
-    res = std::sqrt(sumSq / static_cast<double>(fluidCount));
-    if (res0 < 0.0) {
-      res0 = res;
-      if (res0 < 1e-30) {
-        converged = true;
-        break;
-      }
-      continue;
-    }
-
-    if (res0 < 1e-30 || res / res0 <= tol) {
-      DBG_PRINTF("RBGS_GPU converged in %d iters, rel.res = %.6g", it + 1,
-                 res / res0);
+    const double relRes = std::sqrt(sumSq) / bNorm;
+    if (relRes <= static_cast<double>(tol)) {
+      DBG_PRINTF("RBGS_GPU converged in %d iters, rel.res = %.6g", it + 1, relRes);
       converged = true;
       break;
     }
@@ -213,16 +209,16 @@ bool solveRedBlackGaussSeidel_GPU(Fields2D &fields, int nx, int ny,
   if (!converged)
     DBG_PRINTF("RBGS_GPU: reached maxIters = %d", maxIters);
 
-  CUDA_CHECK(cudaMemcpy(h_p.data(), d_p, static_cast<std::size_t>(N) *
-                                          sizeof(double),
+  CUDA_CHECK(cudaMemcpy(h_p.data(), d_p,
+                        static_cast<std::size_t>(N) * sizeof(varType),
                         cudaMemcpyDeviceToHost));
 
   for (int j = 1; j < pny - 1; ++j) {
     for (int i = 1; i < pnx - 1; ++i) {
-      const int id = pidx(pnx, i, j);
+      const int id  = pidx(pnx, i, j);
       const int cur = h_lbl[id];
       if (!IS_SOLID(cur) && !IS_AIR(cur) && !IS_BC_P(cur))
-        fields.p.Set(i, j, static_cast<varType>(h_p[id]));
+        fields.p.Set(i, j, h_p[id]);
     }
   }
 

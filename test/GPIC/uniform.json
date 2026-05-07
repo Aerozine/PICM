@@ -1,0 +1,59 @@
+{
+    "dx": 0.005,
+    "dy": 0.005,
+    "dt": 0.001,
+    "nx": 200,
+    "ny": 20,
+    "nt": 700,
+    "ppcx": 4,
+    "ppcy": 4,
+    "density": 1000,
+    "sampling_rate": 5,
+
+    "write_u":             true,
+    "write_v":             true,
+    "write_p":             true,
+    "write_div":           true,
+    "write_norm_velocity": true,
+    "write_smoke":         true,
+    "write_particles":     true,
+
+    "folder":   "results/GPIC/uniform",
+    "filename": "simulation",
+
+    "velocityu": {
+        "rectangle": {
+            "condition": "boundary",
+            "val": 1.0,
+            "x1": "0",
+            "y1": "0",
+            "x2": "0",
+            "y2": "ny+1"
+        }
+    },
+
+    "solid": {
+        "rectangle":[{
+            "x1": "0",
+            "y1": "0",
+            "x2": "nx+1",
+            "y2": "0"
+        },
+        {
+            "x1": "0",
+            "y1": "ny+1",
+            "x2": "nx+1",
+            "y2": "ny+1"
+        }]
+    },
+
+    "solver": {
+        "type": "cg",
+        "max_iterations": 500,
+        "tolerance": 1e-3
+    },
+    "method": "gpic",
+    "freeSurface": false,
+    "gravity": 0.0,
+    "refill": true
+}

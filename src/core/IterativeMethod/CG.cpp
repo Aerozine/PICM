@@ -98,7 +98,7 @@ struct IC0Preconditioner {
     const int pid = system.cellOfRow[row];
     const int i = pid % system.pnx;
     const int j = pid / system.pnx;
-    const labeltype cur = fields.Label(i, j);
+
 
     varType diag = varType(4);
     varType rhs = -coef * fields.div.Get(i - 1, j - 1);
@@ -125,7 +125,7 @@ struct IC0Preconditioner {
     // Right face / neighbour.
     {
       const labeltype nb = fields.Label(i + 1, j);
-      if (IS_SOLID(nb) || IS_BC_U(cur)) {
+      if (IS_SOLID(nb) || IS_BC_U(nb)) {
         diag -= varType(1);
       } else if (isKnownPressureCell(nb)) {
         rhs += fields.p.Get(i + 1, j);
@@ -149,7 +149,7 @@ struct IC0Preconditioner {
     // Top face / neighbour.
     {
       const labeltype nb = fields.Label(i, j + 1);
-      if (IS_SOLID(nb) || IS_BC_V(cur)) {
+      if (IS_SOLID(nb) || IS_BC_V(nb)) {
         diag -= varType(1);
       } else if (isKnownPressureCell(nb)) {
         rhs += fields.p.Get(i, j + 1);
@@ -275,7 +275,7 @@ bool solveSparseCGSystem(const PressureSystem &system, const Vector &b,
   if (b.size() == 0)
     return true;
 
-  const varType bNorm = b.template lpNorm<Eigen::Infinity>();
+  const varType bNorm = b.norm();
   if (bNorm <= REAL_EPSILON)
     return true;
 
@@ -300,7 +300,7 @@ bool solveSparseCGSystem(const PressureSystem &system, const Vector &b,
     x += alpha * d;
     r -= alpha * Ad;
 
-    const varType relRes = r.template lpNorm<Eigen::Infinity>() / bNorm;
+    const varType relRes = r.norm() / bNorm;
     if (relRes <= tol) {
       converged = true;
       ++it;
@@ -328,7 +328,7 @@ bool solveSparsePCGSystem(const PressureSystem &system,
   if (b.size() == 0)
     return true;
 
-  const varType bNorm = b.template lpNorm<Eigen::Infinity>();
+  const varType bNorm = b.norm();
   if (bNorm <= REAL_EPSILON)
     return true;
 
@@ -355,7 +355,7 @@ bool solveSparsePCGSystem(const PressureSystem &system,
     x += alpha * d;
     r -= alpha * Ad;
 
-    const varType relRes = r.template lpNorm<Eigen::Infinity>() / bNorm;
+    const varType relRes = r.norm() / bNorm;
     if (relRes <= tol) {
       converged = true;
       ++it;

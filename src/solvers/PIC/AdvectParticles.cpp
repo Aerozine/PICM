@@ -70,15 +70,19 @@ void PIC::Advect() {
           const varType cvX0 = cell.GetCvX(local_idx);
           const varType cvY0 = cell.GetCvY(local_idx);
 
-          // RK2 midpoint advection (same as before)
+#ifdef USE_SPEED
+          // Euler: half the grid reads, negligible accuracy loss for PIC
+          const varType x1 = x0 + dt * u0;
+          const varType y1 = y0 + dt * v0;
+#else
+          // RK2 midpoint
           const varType xmid = x0 + varType(0.5) * dt * u0;
           const varType ymid = y0 + varType(0.5) * dt * v0;
-
           const varType umid = fields->interpolateU(xmid, ymid);
           const varType vmid = fields->interpolateV(xmid, ymid);
-
           const varType x1 = x0 + dt * umid;
           const varType y1 = y0 + dt * vmid;
+#endif
 
           // out of bounds: kill particle, swap-and-pop keeps array packed.
           // Decrement n - on fewer original particle remains.

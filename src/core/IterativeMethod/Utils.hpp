@@ -28,15 +28,13 @@
  *           +----------+
  */
 [[nodiscard]] inline varType
-neighbourSum(const Fields2D &f, const int i, const int j,
-             [[maybe_unused]] varType beta) noexcept {
+neighbourSum(const Fields2D &f, const int i, const int j) noexcept {
   assert(i >= 1 && i < f.p.nx - 1);
   assert(j >= 1 && j < f.p.ny - 1);
 
   const varType pC = f.p.Get(i, j);
   assert(std::isfinite(pC));
 
-  const labeltype cur = f.Label(i, j);
   varType sumP = static_cast<varType>(0);
 
   // Left (i-1, j)
@@ -44,18 +42,18 @@ neighbourSum(const Fields2D &f, const int i, const int j,
     const labeltype nb = f.Label(i - 1, j);
     if (IS_SOLID(nb) || IS_BC_U(nb))
       sumP += pC;
-    else if (IS_AIR(nb) && f.phi != nullptr) // !! ajouter un params ou quoi ?? surfaceTension ?
-      sumP += f.interface_u->Get(i - 1, j - 1); 
+    else if (IS_AIR(nb) && f.phi != nullptr)
+      sumP += f.interface_u->Get(i - 1, j - 1);
     else if (!IS_AIR(nb))
       sumP += f.p.Get(i - 1, j);
   }
 
-  // Right (i+1, j)
+  // Right (i+1, j) — BC_U flag lives on the neighbour, not the current cell
   {
     const labeltype nb = f.Label(i + 1, j);
-    if (IS_SOLID(nb) || IS_BC_U(cur))
+    if (IS_SOLID(nb) || IS_BC_U(nb))
       sumP += pC;
-    else if (IS_AIR(nb) && f.phi != nullptr) // !! ajouter un params ou quoi ?? surfaceTension ?
+    else if (IS_AIR(nb) && f.phi != nullptr)
       sumP += f.interface_u->Get(i, j - 1);
     else if (!IS_AIR(nb))
       sumP += f.p.Get(i + 1, j);
@@ -66,18 +64,18 @@ neighbourSum(const Fields2D &f, const int i, const int j,
     const labeltype nb = f.Label(i, j - 1);
     if (IS_SOLID(nb) || IS_BC_V(nb))
       sumP += pC;
-    else if (IS_AIR(nb) && f.phi != nullptr) // !! ajouter un params ou quoi ?? surfaceTension ?
+    else if (IS_AIR(nb) && f.phi != nullptr)
       sumP += f.interface_v->Get(i - 1, j - 1);
     else if (!IS_AIR(nb))
       sumP += f.p.Get(i, j - 1);
   }
 
-  // Top (i, j+1)
+  // Top (i, j+1) — BC_V flag lives on the neighbour, not the current cell
   {
     const labeltype nb = f.Label(i, j + 1);
-    if (IS_SOLID(nb) || IS_BC_V(cur))
+    if (IS_SOLID(nb) || IS_BC_V(nb))
       sumP += pC;
-    else if (IS_AIR(nb) && f.phi != nullptr) // !! ajouter un params ou quoi ?? surfaceTension ?
+    else if (IS_AIR(nb) && f.phi != nullptr)
       sumP += f.interface_v->Get(i - 1, j);
     else if (!IS_AIR(nb))
       sumP += f.p.Get(i, j + 1);
@@ -87,18 +85,8 @@ neighbourSum(const Fields2D &f, const int i, const int j,
 }
 
 [[nodiscard]] inline varType gsUpdate(const Fields2D &f, const int i,
-                                      const int j, const varType coef,
-                                      const varType beta) noexcept {
-  return (-coef * f.div.Get(i - 1, j - 1) + neighbourSum(f, i, j, beta)) / 4.0;
-}
-
-inline bool checkConvergence(varType res, varType &res0, int it,
-                             varType tol) noexcept {
-  if (it == 0) {
-    res0 = res;
-    return res0 < 1e-30;
-  }
-  return (res0 < 1e-30) || (res / res0 < tol);
+                                      const int j, const varType coef) noexcept {
+  return (-coef * f.div.Get(i - 1, j - 1) + neighbourSum(f, i, j)) / 4.0;
 }
 
 inline void debugSolverConverged(const char *solverName, const int iterations,

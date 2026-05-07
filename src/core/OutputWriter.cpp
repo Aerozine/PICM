@@ -312,7 +312,7 @@ bool OutputWriter::writeParticlePolyData(
   offset += headerSize + static_cast<uint32_t>(connPayload.size());
 
   const uint32_t offOffset = offset;
-  offset += static_cast<uint32_t>(offPayload.size());
+  offset += headerSize + static_cast<uint32_t>(offPayload.size());
 
   std::ostringstream xml;
   xml << "<?xml version=\"1.0\"?>\n"

@@ -56,14 +56,13 @@ protected:
   void UpdateCellState() const;
 
   void particleInteraction();
+  void LaplacePressure();
 
   void WriteOutput(int step) const override;
 
   void UpdatePhiFromParticles() const;
   void ComputeSurfaceTensionOnFaces() const;
-  void LaplacePressure();
 
 private:
   std::unique_ptr<OutputWriter> particlesWriter;
-
 };

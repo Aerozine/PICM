@@ -26,42 +26,18 @@
             "x1": "0",
             "y1": "0",
             "x2": "1",
-<<<<<<< HEAD:test/SemiLagrangian/test-source.json
-            "y2": "ny-1"
-        }
-    },
-
-    "pressure": {
-        "rectangle": {
-            "condition": "boundary",
-            "val": 0,
-            "x1": "nx-1",
-            "y1": "0",
-            "x2": "nx",
-            "y2": "ny-1"
-=======
             "y2": "ny-2"
->>>>>>> origin/vinc:test/bin/test-constant.json
         }
     },
 
     "solid": {
         "cylinder": {
-<<<<<<< HEAD:test/SemiLagrangian/test-source.json
-            "x": "125",
-            "y": "ny/2",
-            "r": 25
-        }
-
-    },
-=======
             "x": "20",
             "y": "ny/2",
             "r": 5
         }
 
    },
->>>>>>> origin/vinc:test/bin/test-constant.json
    "smoke": {
         "rectangle": {
             "val": 5,
@@ -75,13 +51,8 @@
 
     "solver": {
   "type": "red_black_gauss_seidel",
-<<<<<<< HEAD:test/SemiLagrangian/test-source.json
-    "max_iterations": 1e4,
-    "tolerance": 5e-2
-=======
     "max_iterations": 5000,
     "tolerance": 1e-1
->>>>>>> origin/vinc:test/bin/test-constant.json
 }
 }
 

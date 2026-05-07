@@ -49,26 +49,8 @@ if(USE_CUDA_FOUND)
             USE_CUDA
             $<IF:$<BOOL:${USE_FLOAT_PRECISION}>,USE_FLOAT,USE_DOUBLE>)
 
-    # Architecture: user-supplied string (e.g. "sm_89"), numeric shorthand
-    # (e.g. "89"), or empty → CMake native auto-detect.
-    if(GPU_ARCH)
-        # Strip the "sm_" prefix if the user supplied it so both "89" and
-        # "sm_89" are accepted.
-        string(REGEX REPLACE "^sm_" "" _arch_num "${GPU_ARCH}")
-        set_target_properties(IterativeMethod_GPU PROPERTIES
-                CUDA_ARCHITECTURES "${_arch_num}")
-    else()
-        # "native" tells CMake to query the installed GPU at configure time.
-        # Requires CMake >= 3.24; fall back to a safe default for older CMake.
-        if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
-            set_target_properties(IterativeMethod_GPU PROPERTIES
-                    CUDA_ARCHITECTURES "native")
-        else()
-            # Broadest useful default: Volta + Turing + Ampere + Ada
-            set_target_properties(IterativeMethod_GPU PROPERTIES
-                    CUDA_ARCHITECTURES "70;75;80;89")
-        endif()
-    endif()
+    set_target_properties(IterativeMethod_GPU PROPERTIES
+            CUDA_ARCHITECTURES "${PICM_CUDA_ARCHITECTURES}")
 
     set_target_properties(IterativeMethod_GPU PROPERTIES
             CUDA_STANDARD          17

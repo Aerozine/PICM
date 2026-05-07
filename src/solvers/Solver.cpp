@@ -16,7 +16,7 @@ void Solver::setTimeStep(varType newDt) noexcept {
 }
 
 void Solver::RunLoop(int reportEvery) {
-  const varType start = GET_TIME();
+  const double start = GET_TIME();
 
   for (int t = 1; t <= params.nt; ++t) {
     if (t % reportEvery == 0) {
@@ -74,7 +74,7 @@ void Solver::WriteOutput(int step) const {
   if (params.write_norm_velocity && normVelocityWriter)
     ok &= normVelocityWriter->writeGrid2D(fields->normVelocity, "normVelocity");
 
-  ok &= labelWriter->writeLabels(fields->Labels, fields->nx + 2, fields->ny + 2,
+  ok &= labelWriter->writeLabels(fields->Labels.get(), fields->nx + 2, fields->ny + 2,
                                  "label");
   if (!ok)
     std::cerr << "[SemiLagrangian] Warning: failed to write output at step "
