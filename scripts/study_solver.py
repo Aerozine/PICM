@@ -35,6 +35,11 @@ import sys
 from pathlib import Path
 
 import numpy as np
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(it, **kw):
+        return it
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -95,17 +100,23 @@ def load_or_run(binary, base_cfg, solver_type, repeats, out_dir, tmp_dir):
         run_folder.mkdir(parents=True, exist_ok=True)
         cache = run_folder / "iters.json"
 
+        # Load from cache — but discard empty caches (left by release-build runs)
         if cache.exists():
             with open(cache) as f:
                 counts = json.load(f)
-            print(f"  {solver_type} rep={rep}  loaded {len(counts)} steps from cache")
-        else:
-            tmp_cfg = tmp_dir / f"{solver_type}_rep{rep}.json"
-            print(f"  running {solver_type} rep={rep} …", flush=True)
-            counts = run_and_capture(binary, base_cfg, tmp_cfg,
-                                      str(run_folder), solver_type, rep)
-            print(f"  {solver_type} rep={rep}  {len(counts)} pressure solves "
-                  f"(mean={np.mean(counts):.1f} if counts else 'N/A')")
+            if counts:
+                tqdm.write(f"  {solver_type} rep={rep}  {len(counts)} steps (cached)")
+                all_counts.append(counts)
+                continue
+            cache.unlink()
+
+        tmp_cfg = tmp_dir / f"{solver_type}_rep{rep}.json"
+        tqdm.write(f"  running {solver_type} rep={rep} …")
+        counts = run_and_capture(binary, base_cfg, tmp_cfg,
+                                  str(run_folder), solver_type, rep)
+        mean_str = f"{np.mean(counts):.1f}" if counts else "none"
+        tqdm.write(f"  {solver_type} rep={rep}  {len(counts)} pressure solves  mean={mean_str}")
+        if counts:  # only cache non-empty results
             with open(cache, "w") as f:
                 json.dump(counts, f)
 
@@ -163,8 +174,7 @@ def main():
         print(f"[binary] {binary}")
 
     results = {}
-    for solver in solver_list:
-        print(f"\n── {solver} ──")
+    for solver in tqdm(solver_list, unit="solver", desc="solvers"):
         all_counts = load_or_run(binary, base_cfg, solver,
                                   args.repeats, out_dir, out_dir)
         mean, std = align_and_average(all_counts)

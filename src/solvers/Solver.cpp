@@ -16,7 +16,7 @@ void Solver::setTimeStep(varType newDt) noexcept {
 }
 
 void Solver::RunLoop(int reportEvery) {
-  const varType start = GET_TIME();
+  const double start = GET_TIME();
 
   for (int t = 1; t <= params.nt; ++t) {
     if (t % reportEvery == 0) {

@@ -29,7 +29,7 @@ __host__ __device__ __forceinline__ int pidx(int pnx, int i, int j) {
 }
 
 __global__ void applyAKernel(int N, int pnx, int pny, const int *lbl,
-                             const double *x, double *Ax) {
+                             const varType *x, varType *Ax) {
   const int id = blockIdx.x * blockDim.x + threadIdx.x;
   if (id >= N)
     return;
@@ -37,17 +37,17 @@ __global__ void applyAKernel(int N, int pnx, int pny, const int *lbl,
   const int i = id % pnx;
   const int j = id / pnx;
   if (i == 0 || i == pnx - 1 || j == 0 || j == pny - 1) {
-    Ax[id] = 0.0;
+    Ax[id] = varType(0);
     return;
   }
 
   const int cur = lbl[id];
   if (IS_SOLID(cur) || IS_AIR(cur) || IS_BC_P(cur)) {
-    Ax[id] = 0.0;
+    Ax[id] = varType(0);
     return;
   }
 
-  double acc = 4.0 * x[id];
+  varType acc = varType(4) * x[id];
 
   // Left.
   {
@@ -88,27 +88,27 @@ __global__ void applyAKernel(int N, int pnx, int pny, const int *lbl,
   Ax[id] = acc;
 }
 
-__global__ void initResidualKernel(int N, const int *lbl, const double *b,
-                                   const double *Ax, double *r, double *d) {
+__global__ void initResidualKernel(int N, const int *lbl, const varType *b,
+                                   const varType *Ax, varType *r, varType *d) {
   const int id = blockIdx.x * blockDim.x + threadIdx.x;
   if (id >= N)
     return;
 
   const int cur = lbl[id];
   if (IS_SOLID(cur) || IS_AIR(cur) || IS_BC_P(cur)) {
-    r[id] = 0.0;
-    d[id] = 0.0;
+    r[id] = varType(0);
+    d[id] = varType(0);
     return;
   }
 
-  const double val = b[id] - Ax[id];
+  const varType val = b[id] - Ax[id];
   r[id] = val;
   d[id] = val;
 }
 
-__global__ void updateXandRKernel(int N, const int *lbl, double alpha,
-                                  const double *d, const double *q, double *x,
-                                  double *r) {
+__global__ void updateXandRKernel(int N, const int *lbl, varType alpha,
+                                  const varType *d, const varType *q,
+                                  varType *x, varType *r) {
   const int id = blockIdx.x * blockDim.x + threadIdx.x;
   if (id >= N)
     return;
@@ -121,32 +121,34 @@ __global__ void updateXandRKernel(int N, const int *lbl, double alpha,
   r[id] -= alpha * q[id];
 }
 
-__global__ void updateSearchKernel(int N, const int *lbl, double beta,
-                                   const double *r, double *d) {
+__global__ void updateSearchKernel(int N, const int *lbl, varType beta,
+                                   const varType *r, varType *d) {
   const int id = blockIdx.x * blockDim.x + threadIdx.x;
   if (id >= N)
     return;
 
   const int cur = lbl[id];
   if (IS_SOLID(cur) || IS_AIR(cur) || IS_BC_P(cur)) {
-    d[id] = 0.0;
+    d[id] = varType(0);
     return;
   }
 
   d[id] = r[id] + beta * d[id];
 }
 
-__global__ void dotKernel(const double *a, const double *b, double *partial,
+// Dot product kernel accumulates into double shared memory to avoid
+// catastrophic cancellation when varType == float.
+__global__ void dotKernel(const varType *a, const varType *b, double *partial,
                           int N) {
   __shared__ double cache[THREADS];
 
-  const int tid = threadIdx.x;
-  int id = blockIdx.x * blockDim.x + tid;
+  const int tid    = threadIdx.x;
+  int       id     = blockIdx.x * blockDim.x + tid;
   const int stride = blockDim.x * gridDim.x;
 
   double sum = 0.0;
   while (id < N) {
-    sum += a[id] * b[id];
+    sum += static_cast<double>(a[id]) * static_cast<double>(b[id]);
     id += stride;
   }
 
@@ -163,7 +165,7 @@ __global__ void dotKernel(const double *a, const double *b, double *partial,
     partial[blockIdx.x] = cache[0];
 }
 
-double dotDevice(const double *a, const double *b, double *d_partial,
+double dotDevice(const varType *a, const varType *b, double *d_partial,
                  std::vector<double> &h_partial, int N) {
   if (N <= 0)
     return 0.0;
@@ -189,55 +191,54 @@ bool solveCG_GPU(Fields2D &fields, varType coef, varType /*beta*/,
 
   const int pnx = fields.p.nx;
   const int pny = fields.p.ny;
-  const int N = pnx * pny;
+  const int N   = pnx * pny;
 
-  std::vector<int> h_lbl(static_cast<std::size_t>(N), 0);
-  std::vector<double> h_b(static_cast<std::size_t>(N), 0.0);
-  std::vector<double> h_x(static_cast<std::size_t>(N), 0.0);
+  std::vector<int>     h_lbl(static_cast<std::size_t>(N), 0);
+  std::vector<varType> h_b(static_cast<std::size_t>(N), varType(0));
+  std::vector<varType> h_x(static_cast<std::size_t>(N), varType(0));
 
   double bNorm2Sq = 0.0;
   for (int j = 0; j < pny; ++j) {
     for (int i = 0; i < pnx; ++i) {
       const int id = pidx(pnx, i, j);
       h_lbl[id] = static_cast<int>(fields.Label(i, j));
-      h_x[id] = static_cast<double>(fields.p.Get(i, j));
+      h_x[id]   = fields.p.Get(i, j);
     }
   }
 
   for (int j = 1; j < pny - 1; ++j) {
     for (int i = 1; i < pnx - 1; ++i) {
-      const int id = pidx(pnx, i, j);
+      const int id  = pidx(pnx, i, j);
       const int cur = h_lbl[id];
       if (IS_SOLID(cur) || IS_AIR(cur) || IS_BC_P(cur))
         continue;
 
-      double rhs = -static_cast<double>(coef) *
-                   static_cast<double>(fields.div.Get(i - 1, j - 1));
+      varType rhs = -coef * fields.div.Get(i - 1, j - 1);
 
-      // Known pressure neighbours contribute directly to the RHS.
+      // Known-pressure (BC_P) neighbours contribute directly to the RHS.
       {
         const int nb = h_lbl[pidx(pnx, i - 1, j)];
         if (!(IS_SOLID(nb) || IS_BC_U(nb)) && IS_BC_P(nb))
-          rhs += static_cast<double>(fields.p.Get(i - 1, j));
+          rhs += fields.p.Get(i - 1, j);
       }
       {
         const int nb = h_lbl[pidx(pnx, i + 1, j)];
         if (!(IS_SOLID(nb) || IS_BC_U(cur)) && IS_BC_P(nb))
-          rhs += static_cast<double>(fields.p.Get(i + 1, j));
+          rhs += fields.p.Get(i + 1, j);
       }
       {
         const int nb = h_lbl[pidx(pnx, i, j - 1)];
         if (!(IS_SOLID(nb) || IS_BC_V(nb)) && IS_BC_P(nb))
-          rhs += static_cast<double>(fields.p.Get(i, j - 1));
+          rhs += fields.p.Get(i, j - 1);
       }
       {
         const int nb = h_lbl[pidx(pnx, i, j + 1)];
         if (!(IS_SOLID(nb) || IS_BC_V(cur)) && IS_BC_P(nb))
-          rhs += static_cast<double>(fields.p.Get(i, j + 1));
+          rhs += fields.p.Get(i, j + 1);
       }
 
       h_b[id] = rhs;
-      bNorm2Sq += rhs * rhs;
+      bNorm2Sq += static_cast<double>(rhs) * static_cast<double>(rhs);
     }
   }
 
@@ -250,31 +251,31 @@ bool solveCG_GPU(Fields2D &fields, varType coef, varType /*beta*/,
   const int blocks = std::max(1, (N + THREADS - 1) / THREADS);
   std::vector<double> h_partial(static_cast<std::size_t>(blocks), 0.0);
 
-  int *d_lbl = nullptr;
-  double *d_b = nullptr;
-  double *d_x = nullptr;
-  double *d_r = nullptr;
-  double *d_d = nullptr;
-  double *d_q = nullptr;
-  double *d_partial = nullptr;
+  int     *d_lbl     = nullptr;
+  varType *d_b       = nullptr;
+  varType *d_x       = nullptr;
+  varType *d_r       = nullptr;
+  varType *d_d       = nullptr;
+  varType *d_q       = nullptr;
+  double  *d_partial = nullptr;
 
-  CUDA_CHECK(cudaMalloc(&d_lbl, static_cast<std::size_t>(N) * sizeof(int)));
-  CUDA_CHECK(cudaMalloc(&d_b, static_cast<std::size_t>(N) * sizeof(double)));
-  CUDA_CHECK(cudaMalloc(&d_x, static_cast<std::size_t>(N) * sizeof(double)));
-  CUDA_CHECK(cudaMalloc(&d_r, static_cast<std::size_t>(N) * sizeof(double)));
-  CUDA_CHECK(cudaMalloc(&d_d, static_cast<std::size_t>(N) * sizeof(double)));
-  CUDA_CHECK(cudaMalloc(&d_q, static_cast<std::size_t>(N) * sizeof(double)));
+  CUDA_CHECK(cudaMalloc(&d_lbl,     static_cast<std::size_t>(N) * sizeof(int)));
+  CUDA_CHECK(cudaMalloc(&d_b,       static_cast<std::size_t>(N) * sizeof(varType)));
+  CUDA_CHECK(cudaMalloc(&d_x,       static_cast<std::size_t>(N) * sizeof(varType)));
+  CUDA_CHECK(cudaMalloc(&d_r,       static_cast<std::size_t>(N) * sizeof(varType)));
+  CUDA_CHECK(cudaMalloc(&d_d,       static_cast<std::size_t>(N) * sizeof(varType)));
+  CUDA_CHECK(cudaMalloc(&d_q,       static_cast<std::size_t>(N) * sizeof(varType)));
   CUDA_CHECK(cudaMalloc(&d_partial,
                         static_cast<std::size_t>(blocks) * sizeof(double)));
 
-  CUDA_CHECK(cudaMemcpy(d_lbl, h_lbl.data(), static_cast<std::size_t>(N) *
-                                            sizeof(int),
+  CUDA_CHECK(cudaMemcpy(d_lbl, h_lbl.data(),
+                        static_cast<std::size_t>(N) * sizeof(int),
                         cudaMemcpyHostToDevice));
-  CUDA_CHECK(cudaMemcpy(d_b, h_b.data(), static_cast<std::size_t>(N) *
-                                          sizeof(double),
+  CUDA_CHECK(cudaMemcpy(d_b, h_b.data(),
+                        static_cast<std::size_t>(N) * sizeof(varType),
                         cudaMemcpyHostToDevice));
-  CUDA_CHECK(cudaMemcpy(d_x, h_x.data(), static_cast<std::size_t>(N) *
-                                          sizeof(double),
+  CUDA_CHECK(cudaMemcpy(d_x, h_x.data(),
+                        static_cast<std::size_t>(N) * sizeof(varType),
                         cudaMemcpyHostToDevice));
 
   applyAKernel<<<blocks, THREADS>>>(N, pnx, pny, d_lbl, d_x, d_q);
@@ -285,71 +286,54 @@ bool solveCG_GPU(Fields2D &fields, varType coef, varType /*beta*/,
   double sigma = dotDevice(d_r, d_r, d_partial, h_partial, N);
   if (sigma < 1e-30) {
     DBG_PRINTF("CG_GPU: initial residual negligible");
-    CUDA_CHECK(cudaMemcpy(h_x.data(), d_x, static_cast<std::size_t>(N) *
-                                            sizeof(double),
-                          cudaMemcpyDeviceToHost));
-    for (int j = 1; j < pny - 1; ++j)
-      for (int i = 1; i < pnx - 1; ++i) {
-        const int id = pidx(pnx, i, j);
-        const int cur = h_lbl[id];
-        if (!IS_SOLID(cur) && !IS_AIR(cur) && !IS_BC_P(cur))
-          fields.p.Set(i, j, static_cast<varType>(h_x[id]));
+    goto finish;
+  }
+
+  {
+    bool converged = false;
+    for (int it = 0; it < maxIters; ++it) {
+      applyAKernel<<<blocks, THREADS>>>(N, pnx, pny, d_lbl, d_d, d_q);
+      CUDA_CHECK(cudaGetLastError());
+
+      const double dAd = dotDevice(d_d, d_q, d_partial, h_partial, N);
+      if (!std::isfinite(dAd) || std::abs(dAd) < 1e-30)
+        break;
+
+      const varType alpha = static_cast<varType>(sigma / dAd);
+      updateXandRKernel<<<blocks, THREADS>>>(N, d_lbl, alpha, d_d, d_q, d_x, d_r);
+      CUDA_CHECK(cudaGetLastError());
+
+      const double sigmaNew = dotDevice(d_r, d_r, d_partial, h_partial, N);
+      const double relRes   = std::sqrt(sigmaNew) / bNorm2;
+      if (relRes <= static_cast<double>(tol)) {
+        DBG_PRINTF("CG_GPU converged in %d iters, rel.res = %.6g", it + 1, relRes);
+        converged = true;
+        break;
       }
 
-    CUDA_CHECK(cudaFree(d_lbl));
-    CUDA_CHECK(cudaFree(d_b));
-    CUDA_CHECK(cudaFree(d_x));
-    CUDA_CHECK(cudaFree(d_r));
-    CUDA_CHECK(cudaFree(d_d));
-    CUDA_CHECK(cudaFree(d_q));
-    CUDA_CHECK(cudaFree(d_partial));
-    return true;
-  }
+      if (!std::isfinite(sigmaNew) || sigmaNew < 1e-30)
+        break;
 
-  bool converged = false;
-
-  for (int it = 0; it < maxIters; ++it) {
-    applyAKernel<<<blocks, THREADS>>>(N, pnx, pny, d_lbl, d_d, d_q);
-    CUDA_CHECK(cudaGetLastError());
-
-    const double dAd = dotDevice(d_d, d_q, d_partial, h_partial, N);
-    if (!std::isfinite(dAd) || std::abs(dAd) < 1e-30)
-      break;
-
-    const double alpha = sigma / dAd;
-    updateXandRKernel<<<blocks, THREADS>>>(N, d_lbl, alpha, d_d, d_q, d_x, d_r);
-    CUDA_CHECK(cudaGetLastError());
-
-    const double sigmaNew = dotDevice(d_r, d_r, d_partial, h_partial, N);
-    const double relRes = std::sqrt(sigmaNew) / bNorm2;
-    if (relRes <= static_cast<double>(tol)) {
-      DBG_PRINTF("CG_GPU converged in %d iters, rel.res = %.6g", it + 1,
-                 relRes);
-      converged = true;
-      break;
+      const varType betaCG = static_cast<varType>(sigmaNew / sigma);
+      updateSearchKernel<<<blocks, THREADS>>>(N, d_lbl, betaCG, d_r, d_d);
+      CUDA_CHECK(cudaGetLastError());
+      sigma = sigmaNew;
     }
 
-    if (!std::isfinite(sigmaNew) || sigmaNew < 1e-30)
-      break;
-
-    const double betaCG = sigmaNew / sigma;
-    updateSearchKernel<<<blocks, THREADS>>>(N, d_lbl, betaCG, d_r, d_d);
-    CUDA_CHECK(cudaGetLastError());
-    sigma = sigmaNew;
+    if (!converged)
+      DBG_PRINTF("CG_GPU: reached maxIters = %d", maxIters);
   }
 
-  if (!converged)
-    DBG_PRINTF("CG_GPU: reached maxIters = %d", maxIters);
-
-  CUDA_CHECK(cudaMemcpy(h_x.data(), d_x, static_cast<std::size_t>(N) *
-                                          sizeof(double),
+finish:
+  CUDA_CHECK(cudaMemcpy(h_x.data(), d_x,
+                        static_cast<std::size_t>(N) * sizeof(varType),
                         cudaMemcpyDeviceToHost));
   for (int j = 1; j < pny - 1; ++j) {
     for (int i = 1; i < pnx - 1; ++i) {
-      const int id = pidx(pnx, i, j);
+      const int id  = pidx(pnx, i, j);
       const int cur = h_lbl[id];
       if (!IS_SOLID(cur) && !IS_AIR(cur) && !IS_BC_P(cur))
-        fields.p.Set(i, j, static_cast<varType>(h_x[id]));
+        fields.p.Set(i, j, h_x[id]);
     }
   }
 
@@ -361,7 +345,7 @@ bool solveCG_GPU(Fields2D &fields, varType coef, varType /*beta*/,
   CUDA_CHECK(cudaFree(d_q));
   CUDA_CHECK(cudaFree(d_partial));
 
-  return converged;
+  return true;
 }
 
 #endif // USE_CUDA

@@ -30,7 +30,7 @@ varType computeRhsNorm(Fields2D &fields, varType coef) {
 }
 
 void solveJacobi(Fields2D &fields, int /*nx*/, int /*ny*/, varType coef,
-                 int maxIters, varType tol, varType beta) {
+                 int maxIters, varType tol, varType /*beta*/) {
   fields.Div();
 
   const int pnx = fields.p.nx;
@@ -83,7 +83,7 @@ void solveJacobi(Fields2D &fields, int /*nx*/, int /*ny*/, varType coef,
 }
 
 void solveGaussSeidel(Fields2D &fields, int /*nx*/, int /*ny*/, varType coef,
-                      int maxIters, varType tol, varType beta) {
+                      int maxIters, varType tol, varType /*beta*/) {
   fields.Div();
 
   const int pnx = fields.p.nx;

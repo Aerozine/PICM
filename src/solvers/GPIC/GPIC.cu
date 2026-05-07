@@ -9,10 +9,7 @@
 #include <thrust/device_ptr.h>
 #include <thrust/execution_policy.h>
 #include <thrust/functional.h>
-#include <thrust/gather.h>
 #include <thrust/reduce.h>
-#include <thrust/sequence.h>
-#include <thrust/sort.h>
 #include <thrust/transform_reduce.h>
 
 #include <algorithm>
@@ -48,10 +45,15 @@ struct GPIC::DeviceState {
     varType*  d_u      = nullptr;  // (nx+1) * ny
     varType*  d_v      = nullptr;  // nx * (ny+1)
 
-    // Pressure + RBGS workspace (persistent = warm start between steps)
-    varType*  d_p      = nullptr;  // (nx+2) * (ny+2)
-    varType*  d_rhs    = nullptr;  // (nx+2) * (ny+2)  RHS for pressure solve
-    varType*  d_resSq  = nullptr;  // (nx+2) * (ny+2)  per-cell residual^2
+    // Pressure + CG workspace (all persistent = warm start between steps)
+    varType*  d_p         = nullptr;  // (nx+2) * (ny+2)  pressure (warm-start across steps)
+    varType*  d_rhs       = nullptr;  // (nx+2) * (ny+2)  RHS  b = -coef * div(u,v)
+    varType*  d_cg_r      = nullptr;  // (nx+2) * (ny+2)  CG residual  r = b - A*p
+    varType*  d_cg_d      = nullptr;  // (nx+2) * (ny+2)  CG search direction
+    varType*  d_cg_q      = nullptr;  // (nx+2) * (ny+2)  CG matrix-vector product  A*d
+    // CG scalar state kept on device to avoid per-iteration D2H syncs
+    // Layout: [0]=sigma (r·r), [1]=d·Ad, [2]=sigma_new (r_new·r_new)
+    double*   d_cg_scalars = nullptr;  // 3 doubles
 
     // P2G accumulators (cleared each substep)
     varType*  d_u_num  = nullptr;  // (nx+1) * ny
@@ -62,8 +64,7 @@ struct GPIC::DeviceState {
     // Labels (persistent; updated by cellLabelKernel + airCleanupKernel)
     uint16_t* d_labels = nullptr;  // (nx+2) * (ny+2)
 
-    // Cell occupancy (rebuilt after sort)
-    int* d_cell_start  = nullptr;  // [nx*ny]
+    // Per-cell particle count (rebuilt each step via countCellsKernel)
     int* d_cell_count  = nullptr;  // [nx*ny]
 
     // Reusable scratch (avoid per-call alloc)
@@ -91,10 +92,11 @@ struct AbsFunctor {
     }
 };
 
-static constexpr int BLOCK      = 256;
-static constexpr int BX         = 32;
-static constexpr int BY         = 8;
-static constexpr int CHECK_EVERY = 32;
+static constexpr int BLOCK     = 256;
+static constexpr int BX        = 32;
+static constexpr int BY        = 8;
+static constexpr int DOT_GRIDS = 64;   // blocks for dot-product reductions
+static constexpr int CG_CHECK  = 8;    // D2H convergence check every N CG iters
 
 // ─── P2G scatter ──────────────────────────────────────────────────────────────
 
@@ -297,23 +299,20 @@ __global__ void advectKernel(
     d_alive[p]    = 1;
 }
 
-// ─── Cell ranges ─────────────────────────────────────────────────────────────
+// ─── Cell count ───────────────────────────────────────────────────────────────
+// Counts particles per cell via atomicAdd. O(N) — no sorting required.
+// d_cell_start is not maintained: only d_cell_count is needed downstream.
 
-__global__ void buildCellRangesKernel(
+__global__ void countCellsKernel(
     int nParticles, int nCells,
     const int* __restrict__ d_cell_idx,
-    int* d_cell_start,
     int* d_cell_count)
 {
     const int p = blockIdx.x * blockDim.x + threadIdx.x;
     if (p >= nParticles) return;
 
     const int c = d_cell_idx[p];
-    if (c < 0 || c >= nCells) return;
-
-    atomicAdd(&d_cell_count[c], 1);
-    if (p == 0 || d_cell_idx[p - 1] != c)
-        d_cell_start[c] = p;
+    if (c >= 0 && c < nCells) atomicAdd(&d_cell_count[c], 1);
 }
 
 // ─── Cell label update ────────────────────────────────────────────────────────
@@ -374,67 +373,138 @@ __global__ void computeRHSKernel(
     d_rhs[id] = -coef * ((u_r - u_l) / dx + (v_t - v_b) / dy);
 }
 
-// ─── GPU pressure solve: RBGS sweep ──────────────────────────────────────────
-// Processes one checkerboard colour per call.
-// Writes squared true-residual (before update) to d_resSq for convergence.
+// ─── CG dot product → device ─────────────────────────────────────────────────
+// Computes a·b (double precision) and atomicAdds the result into *out.
+// Caller must zero *out (cudaMemset) before launching.
+// Requires compute capability 6.0+ for double atomicAdd (all modern GPUs).
 
-__global__ void gpicRBGSKernel(
-    int colour, int pnx, int pny, varType omega,
-    const uint16_t* __restrict__ d_labels,
-    const varType* __restrict__ d_rhs,
-    varType* d_p,
-    varType* d_resSq)
+__global__ void dotToDevKernel(
+    int n,
+    const varType* __restrict__ a,
+    const varType* __restrict__ b,
+    double* out)
 {
-    const int i = blockIdx.x * blockDim.x + threadIdx.x + 1;
-    const int j = blockIdx.y * blockDim.y + threadIdx.y + 1;
-    if (i >= pnx - 1 || j >= pny - 1) return;
-    if (((i + j) & 1) != colour) return;
+    __shared__ double smem[BLOCK];
+    double s = 0.0;
+    for (int i = blockIdx.x * BLOCK + threadIdx.x; i < n; i += gridDim.x * BLOCK)
+        s += (double)a[i] * (double)b[i];
+    smem[threadIdx.x] = s;
+    __syncthreads();
+    for (int k = BLOCK / 2; k > 0; k >>= 1) {
+        if (threadIdx.x < k) smem[threadIdx.x] += smem[threadIdx.x + k];
+        __syncthreads();
+    }
+    if (threadIdx.x == 0) atomicAdd(out, smem[0]);
+}
 
-    const int      id  = pnx * j + i;
+// ─── CG pressure kernels ──────────────────────────────────────────────────────
+// The pressure Laplacian stencil: (Ax)[id] = 4*x[id] - sum_fluid_neighbors(x).
+// Solid/BC_U|V neighbours contribute x[id] (Neumann); AIR neighbours
+// contribute 0 (Dirichlet p=0); fluid neighbours contribute x[nb].
+
+__global__ void cgApplyLaplacianKernel(
+    int pnx, int pny, int pNxy,
+    const uint16_t* __restrict__ d_labels,
+    const varType* __restrict__ x,
+    varType* y)
+{
+    const int id = blockIdx.x * blockDim.x + threadIdx.x;
+    if (id >= pNxy) return;
+
+    const int i = id % pnx;
+    const int j = id / pnx;
+
+    if (i == 0 || i == pnx - 1 || j == 0 || j == pny - 1) { y[id] = varType(0); return; }
+
     const uint16_t lbl = d_labels[id];
-
     if ((lbl & Fields2D::SOLID) || (lbl & Fields2D::AIR) || (lbl & Fields2D::BC_P)) {
-        d_resSq[id] = varType(0);
-        return;
+        y[id] = varType(0); return;
     }
 
-    const varType pij = d_p[id];
-    varType sumP = varType(0);
+    const varType xij = x[id];
+    varType sumN = varType(0);  // sum of neighbour contributions
 
-    // Left (i-1, j)
-    {
-        const uint16_t nb = d_labels[pnx * j + (i - 1)];
-        if ((nb & Fields2D::SOLID) || (nb & Fields2D::BC_U)) sumP += pij;
-        else if (!(nb & Fields2D::AIR)) sumP += d_p[pnx * j + (i - 1)];
-    }
-    // Right (i+1, j): BC_U checked on current cell (face belongs to cur)
-    {
-        const uint16_t nb = d_labels[pnx * j + (i + 1)];
-        if ((nb & Fields2D::SOLID) || (lbl & Fields2D::BC_U)) sumP += pij;
-        else if (!(nb & Fields2D::AIR)) sumP += d_p[pnx * j + (i + 1)];
-    }
-    // Bottom (i, j-1)
-    {
-        const uint16_t nb = d_labels[pnx * (j - 1) + i];
-        if ((nb & Fields2D::SOLID) || (nb & Fields2D::BC_V)) sumP += pij;
-        else if (!(nb & Fields2D::AIR)) sumP += d_p[pnx * (j - 1) + i];
-    }
-    // Top (i, j+1): BC_V checked on current cell
-    {
-        const uint16_t nb = d_labels[pnx * (j + 1) + i];
-        if ((nb & Fields2D::SOLID) || (lbl & Fields2D::BC_V)) sumP += pij;
-        else if (!(nb & Fields2D::AIR)) sumP += d_p[pnx * (j + 1) + i];
-    }
+    // Left
+    { const uint16_t nb = d_labels[pnx * j + (i - 1)];
+      if      ((nb & Fields2D::SOLID) || (nb & Fields2D::BC_U)) sumN += xij;
+      else if (!(nb & Fields2D::AIR))                           sumN += x[pnx * j + (i - 1)]; }
+    // Right  (BC_U lives on current cell's right face)
+    { const uint16_t nb = d_labels[pnx * j + (i + 1)];
+      if      ((nb & Fields2D::SOLID) || (lbl & Fields2D::BC_U)) sumN += xij;
+      else if (!(nb & Fields2D::AIR))                            sumN += x[pnx * j + (i + 1)]; }
+    // Bottom
+    { const uint16_t nb = d_labels[pnx * (j - 1) + i];
+      if      ((nb & Fields2D::SOLID) || (nb & Fields2D::BC_V)) sumN += xij;
+      else if (!(nb & Fields2D::AIR))                           sumN += x[pnx * (j - 1) + i]; }
+    // Top    (BC_V lives on current cell's top face)
+    { const uint16_t nb = d_labels[pnx * (j + 1) + i];
+      if      ((nb & Fields2D::SOLID) || (lbl & Fields2D::BC_V)) sumN += xij;
+      else if (!(nb & Fields2D::AIR))                            sumN += x[pnx * (j + 1) + i]; }
 
-    const varType rhs = d_rhs[id];
+    y[id] = varType(4) * xij - sumN;
+}
 
-    // True residual before update: r = b + nS - 4*p
-    const varType r = rhs + sumP - varType(4) * pij;
-    d_resSq[id] = r * r;
+// r = b - Ax;  d = r.  Non-fluid cells are zeroed.
+__global__ void cgInitKernel(
+    int pNxy,
+    const uint16_t* __restrict__ d_labels,
+    const varType* __restrict__ b,
+    const varType* __restrict__ Ax,
+    varType* r, varType* d_dir)
+{
+    const int id = blockIdx.x * blockDim.x + threadIdx.x;
+    if (id >= pNxy) return;
 
-    // SOR update
-    const varType p_gs = (rhs + sumP) * varType(0.25);
-    d_p[id] = pij + omega * (p_gs - pij);
+    const uint16_t lbl = d_labels[id];
+    if ((lbl & Fields2D::SOLID) || (lbl & Fields2D::AIR) || (lbl & Fields2D::BC_P)) {
+        r[id] = varType(0); d_dir[id] = varType(0); return;
+    }
+    const varType val = b[id] - Ax[id];
+    r[id] = val; d_dir[id] = val;
+}
+
+// p += alpha * d;   r -= alpha * q.
+// alpha = scalars[0] / scalars[1]  (sigma / dAd), computed on device.
+__global__ void cgUpdatePRKernel(
+    int pNxy,
+    const uint16_t* __restrict__ d_labels,
+    const double* __restrict__ scalars,  // [0]=sigma, [1]=dAd
+    const varType* __restrict__ d_dir,
+    const varType* __restrict__ q,
+    varType* p, varType* r)
+{
+    const int id = blockIdx.x * blockDim.x + threadIdx.x;
+    if (id >= pNxy) return;
+
+    const uint16_t lbl = d_labels[id];
+    if ((lbl & Fields2D::SOLID) || (lbl & Fields2D::AIR) || (lbl & Fields2D::BC_P)) return;
+
+    const double dAd = scalars[1];
+    if (!(fabs(dAd) > 1e-300)) return;
+    const varType alpha = (varType)(scalars[0] / dAd);
+    p[id] += alpha * d_dir[id];
+    r[id] -= alpha * q[id];
+}
+
+// d = r + beta * d.
+// beta = scalars[2] / scalars[0]  (sigma_new / sigma), computed on device.
+__global__ void cgUpdateDirKernel(
+    int pNxy,
+    const uint16_t* __restrict__ d_labels,
+    const double* __restrict__ scalars,  // [0]=sigma, [2]=sigma_new
+    const varType* __restrict__ r,
+    varType* d_dir)
+{
+    const int id = blockIdx.x * blockDim.x + threadIdx.x;
+    if (id >= pNxy) return;
+
+    const uint16_t lbl = d_labels[id];
+    if ((lbl & Fields2D::SOLID) || (lbl & Fields2D::AIR) || (lbl & Fields2D::BC_P)) {
+        d_dir[id] = varType(0); return;
+    }
+    const double sigma = scalars[0];
+    const varType beta = (fabs(sigma) > 1e-300) ? (varType)(scalars[2] / sigma) : varType(0);
+    d_dir[id] = r[id] + beta * d_dir[id];
 }
 
 // ─── Pressure gradient: U-faces ──────────────────────────────────────────────
@@ -582,15 +652,17 @@ GPIC::GPIC(Parameters& params)
     CUDA_CHECK(cudaMalloc(&d.d_v_num, v_sz * sizeof(varType)));
     CUDA_CHECK(cudaMalloc(&d.d_v_den, v_sz * sizeof(varType)));
 
-    // ── Pressure / RBGS workspace ──
-    CUDA_CHECK(cudaMalloc(&d.d_p,     p_sz * sizeof(varType)));
-    CUDA_CHECK(cudaMalloc(&d.d_rhs,   p_sz * sizeof(varType)));
-    CUDA_CHECK(cudaMalloc(&d.d_resSq, p_sz * sizeof(varType)));
-    CUDA_CHECK(cudaMemset(d.d_p,      0, p_sz * sizeof(varType)));
+    // ── Pressure / CG workspace ──
+    CUDA_CHECK(cudaMalloc(&d.d_p,          p_sz * sizeof(varType)));
+    CUDA_CHECK(cudaMalloc(&d.d_rhs,        p_sz * sizeof(varType)));
+    CUDA_CHECK(cudaMalloc(&d.d_cg_r,       p_sz * sizeof(varType)));
+    CUDA_CHECK(cudaMalloc(&d.d_cg_d,       p_sz * sizeof(varType)));
+    CUDA_CHECK(cudaMalloc(&d.d_cg_q,       p_sz * sizeof(varType)));
+    CUDA_CHECK(cudaMalloc(&d.d_cg_scalars, 3 * sizeof(double)));
+    CUDA_CHECK(cudaMemset(d.d_p,           0, p_sz * sizeof(varType)));
 
     // ── Labels + cell occupancy ──
     CUDA_CHECK(cudaMalloc(&d.d_labels,     p_sz * sizeof(uint16_t)));
-    CUDA_CHECK(cudaMalloc(&d.d_cell_start, c_sz * sizeof(int)));
     CUDA_CHECK(cudaMalloc(&d.d_cell_count, c_sz * sizeof(int)));
 }
 
@@ -607,8 +679,10 @@ GPIC::~GPIC() {
     FREE(d.d_u)         FREE(d.d_v)
     FREE(d.d_u_num)     FREE(d.d_u_den)
     FREE(d.d_v_num)     FREE(d.d_v_den)
-    FREE(d.d_p)         FREE(d.d_rhs)       FREE(d.d_resSq)
-    FREE(d.d_labels)    FREE(d.d_cell_start) FREE(d.d_cell_count)
+    FREE(d.d_p)         FREE(d.d_rhs)
+    FREE(d.d_cg_r)      FREE(d.d_cg_d)      FREE(d.d_cg_q)
+    FREE(d.d_cg_scalars)
+    FREE(d.d_labels)    FREE(d.d_cell_count)
 #undef FREE
 }
 
@@ -742,10 +816,15 @@ void GPIC::GPUProjectParticlesOnGrid() {
     }
 }
 
-// ─── GPU pressure solve ───────────────────────────────────────────────────────
-// 1. Compute RHS = -coef*div on GPU
-// 2. Run GPU RBGS until ||r||/||b|| < tol
-// 3. Apply pressure gradient to d_u, d_v on GPU
+// ─── GPU pressure solve (CG) ──────────────────────────────────────────────────
+// 1. Compute RHS b = -coef * div(u,v) on GPU.
+// 2. Solve A*p = b with unpreconditioned CG (warm start from previous step).
+// 3. Apply pressure gradient to d_u, d_v on GPU.
+//
+// CG converges in O(sqrt(N)) iterations for the pressure Laplacian vs O(N)
+// for RBGS, giving a large speedup on grids that are not too large.
+// All three CG vectors (r, d, q) live in persistent device memory and are
+// re-initialised each step from the warm-start pressure.
 
 void GPIC::GPUMakeIncompressible() {
     auto& d = *dev_;
@@ -754,9 +833,8 @@ void GPIC::GPUMakeIncompressible() {
     const int pNxy = pnx * pny;
     const varType coef = d.density * dx * dx / d.dt;
 
-    // ── Compute RHS ──
-    CUDA_CHECK(cudaMemset(d.d_rhs,   0, pNxy * sizeof(varType)));
-    CUDA_CHECK(cudaMemset(d.d_resSq, 0, pNxy * sizeof(varType)));
+    // ── 1. Compute RHS b ──
+    CUDA_CHECK(cudaMemset(d.d_rhs, 0, pNxy * sizeof(varType)));
     {
         const dim3 block(BX, BY);
         const dim3 grid((nx + BX - 1) / BX, (ny + BY - 1) / BY);
@@ -765,43 +843,75 @@ void GPIC::GPUMakeIncompressible() {
         CUDA_CHECK(cudaGetLastError());
     }
 
-    // ── ||b||² for convergence criterion ──
-    auto rhs_ptr   = thrust::device_pointer_cast(d.d_rhs);
-    const varType bNormSq = thrust::transform_reduce(
-        rhs_ptr, rhs_ptr + pNxy, SquareFunctor{}, varType(0), thrust::plus<varType>());
-    if (bNormSq < REAL_EPSILON * REAL_EPSILON) return;
-    const varType bNorm = static_cast<varType>(std::sqrt(static_cast<double>(bNormSq)));
+    // ── 2. ||b||² — one D2H sync, early exit when already divergence-free ──
+    {
+        auto rhs_ptr = thrust::device_pointer_cast(d.d_rhs);
+        const varType bNormSq = thrust::transform_reduce(
+            rhs_ptr, rhs_ptr + pNxy, SquareFunctor{}, varType(0), thrust::plus<varType>());
 
-    // ── RBGS parameters ──
-    constexpr double PI = 3.14159265358979323846;
-    const int N_min = std::min(nx, ny);
-    const varType omega = static_cast<varType>(
-        std::min(1.95, 2.0 / (1.0 + std::sin(PI / static_cast<double>(N_min)))));
+        if (bNormSq >= REAL_EPSILON * REAL_EPSILON) {
+            const double tolSq = (double)params.solver.tolerance
+                               * (double)params.solver.tolerance
+                               * (double)bNormSq;
 
-    const dim3 block2(BX, BY);
-    const dim3 grid2((pnx - 2 + BX - 1) / BX, (pny - 2 + BY - 1) / BY);
-    const int     maxIters = params.solver.maxIters;
-    const varType tol      = static_cast<varType>(params.solver.tolerance);
-    auto resSq_ptr = thrust::device_pointer_cast(d.d_resSq);
+            // ── 3. CG solve (warm start on d_p) ──
+            // All dot products write to d_cg_scalars on device.
+            // D2H sync only every CG_CHECK iterations for convergence.
+            const int cgBlocks = (pNxy + BLOCK - 1) / BLOCK;
+            const int maxIters = params.solver.maxIters;
 
-    // ── RBGS loop (persistent d_p = warm start) ──
-    for (int it = 0; it < maxIters; ++it) {
-        gpicRBGSKernel<<<grid2, block2>>>(0, pnx, pny, omega,
-                                           d.d_labels, d.d_rhs, d.d_p, d.d_resSq);
-        gpicRBGSKernel<<<grid2, block2>>>(1, pnx, pny, omega,
-                                           d.d_labels, d.d_rhs, d.d_p, d.d_resSq);
-        CUDA_CHECK(cudaGetLastError());
+            // q = A * p  (initial)
+            cgApplyLaplacianKernel<<<cgBlocks, BLOCK>>>(pnx, pny, pNxy, d.d_labels, d.d_p, d.d_cg_q);
+            CUDA_CHECK(cudaGetLastError());
 
-        if ((it % CHECK_EVERY) != CHECK_EVERY - 1) continue;
+            // r = b - A*p;   d_dir = r
+            cgInitKernel<<<cgBlocks, BLOCK>>>(pNxy, d.d_labels, d.d_rhs, d.d_cg_q, d.d_cg_r, d.d_cg_d);
+            CUDA_CHECK(cudaGetLastError());
 
-        const varType resNormSq = thrust::reduce(
-            resSq_ptr, resSq_ptr + pNxy, varType(0), thrust::plus<varType>());
-        if (std::sqrt(static_cast<double>(resNormSq)) <=
-            static_cast<double>(tol) * static_cast<double>(bNorm))
-            break;
+            // scalars[0] = sigma = r · r  (device)
+            CUDA_CHECK(cudaMemset(d.d_cg_scalars, 0, sizeof(double)));
+            dotToDevKernel<<<DOT_GRIDS, BLOCK>>>(pNxy, d.d_cg_r, d.d_cg_r, d.d_cg_scalars);
+
+            for (int it = 0; it < maxIters; ++it) {
+                // Convergence check: D2H every CG_CHECK iters (scalars[0] = current sigma)
+                if (it % CG_CHECK == 0) {
+                    double sigma_h;
+                    CUDA_CHECK(cudaMemcpy(&sigma_h, d.d_cg_scalars, sizeof(double),
+                                         cudaMemcpyDeviceToHost));
+                    if (!std::isfinite(sigma_h) || sigma_h <= tolSq) break;
+                }
+
+                // q = A * d
+                cgApplyLaplacianKernel<<<cgBlocks, BLOCK>>>(pnx, pny, pNxy,
+                    d.d_labels, d.d_cg_d, d.d_cg_q);
+                CUDA_CHECK(cudaGetLastError());
+
+                // scalars[1] = dAd = d · q  (device)
+                CUDA_CHECK(cudaMemset(d.d_cg_scalars + 1, 0, sizeof(double)));
+                dotToDevKernel<<<DOT_GRIDS, BLOCK>>>(pNxy, d.d_cg_d, d.d_cg_q, d.d_cg_scalars + 1);
+
+                // p += (sigma/dAd)*d;   r -= (sigma/dAd)*q  — alpha computed on device
+                cgUpdatePRKernel<<<cgBlocks, BLOCK>>>(pNxy, d.d_labels, d.d_cg_scalars,
+                    d.d_cg_d, d.d_cg_q, d.d_p, d.d_cg_r);
+                CUDA_CHECK(cudaGetLastError());
+
+                // scalars[2] = sigma_new = r · r  (device)
+                CUDA_CHECK(cudaMemset(d.d_cg_scalars + 2, 0, sizeof(double)));
+                dotToDevKernel<<<DOT_GRIDS, BLOCK>>>(pNxy, d.d_cg_r, d.d_cg_r, d.d_cg_scalars + 2);
+
+                // d = r + (sigma_new/sigma)*d  — beta computed on device
+                cgUpdateDirKernel<<<cgBlocks, BLOCK>>>(pNxy, d.d_labels, d.d_cg_scalars,
+                    d.d_cg_r, d.d_cg_d);
+                CUDA_CHECK(cudaGetLastError());
+
+                // Shift: scalars[0] = scalars[2]  (D2D copy, no PCIe)
+                CUDA_CHECK(cudaMemcpy(d.d_cg_scalars, d.d_cg_scalars + 2, sizeof(double),
+                                      cudaMemcpyDeviceToDevice));
+            }
+        }
     }
 
-    // ── Apply pressure gradient ──
+    // ── 4. Apply pressure gradient ──
     {
         const int gu = ((nx + 1) * ny + BLOCK - 1) / BLOCK;
         applyPressureGradKernel_U<<<gu, BLOCK>>>(
@@ -876,42 +986,21 @@ void GPIC::GPUAdvect() {
     d.nParticles = newN;
 }
 
+// Counts particles per cell using a single O(N) atomic kernel.
+// The previous sort + gather (O(N log N)) was removed because d_cell_start
+// was never read by any downstream kernel — only d_cell_count is needed.
 void GPIC::GPUSortParticles() {
     auto& d = *dev_;
     const int N = d.nParticles;
 
-    CUDA_CHECK(cudaMemset(d.d_cell_count, 0,  static_cast<std::size_t>(nx) * ny * sizeof(int)));
-    CUDA_CHECK(cudaMemset(d.d_cell_start, -1, static_cast<std::size_t>(nx) * ny * sizeof(int)));
+    CUDA_CHECK(cudaMemset(d.d_cell_count, 0, static_cast<std::size_t>(nx) * ny * sizeof(int)));
 
-    if (N == 0) return;
+    if (N > 0) {
+        const int g = (N + BLOCK - 1) / BLOCK;
+        countCellsKernel<<<g, BLOCK>>>(N, nx * ny, d.d_cell_idx, d.d_cell_count);
+        CUDA_CHECK(cudaGetLastError());
+    }
 
-    thrust::sequence(thrust::device,
-                     thrust::device_pointer_cast(d.d_perm),
-                     thrust::device_pointer_cast(d.d_perm + N));
-
-    thrust::sort_by_key(thrust::device,
-                        thrust::device_pointer_cast(d.d_cell_idx),
-                        thrust::device_pointer_cast(d.d_cell_idx + N),
-                        thrust::device_pointer_cast(d.d_perm));
-
-    auto gather_vt = [&](varType* src) {
-        thrust::gather(thrust::device,
-                       thrust::device_pointer_cast(d.d_perm),
-                       thrust::device_pointer_cast(d.d_perm + N),
-                       thrust::device_pointer_cast(src),
-                       thrust::device_pointer_cast(d.d_tmp));
-        CUDA_CHECK(cudaMemcpy(src, d.d_tmp, N * sizeof(varType),
-                              cudaMemcpyDeviceToDevice));
-    };
-    gather_vt(d.d_pos_x);
-    gather_vt(d.d_pos_y);
-    gather_vt(d.d_vel_x);
-    gather_vt(d.d_vel_y);
-
-    const int grid1d = (N + BLOCK - 1) / BLOCK;
-    buildCellRangesKernel<<<grid1d, BLOCK>>>(
-        N, nx * ny, d.d_cell_idx, d.d_cell_start, d.d_cell_count);
-    CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
 }
 

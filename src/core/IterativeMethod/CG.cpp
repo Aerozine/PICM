@@ -98,7 +98,7 @@ struct IC0Preconditioner {
     const int pid = system.cellOfRow[row];
     const int i = pid % system.pnx;
     const int j = pid / system.pnx;
-    const labeltype cur = fields.Label(i, j);
+
 
     varType diag = varType(4);
     varType rhs = -coef * fields.div.Get(i - 1, j - 1);

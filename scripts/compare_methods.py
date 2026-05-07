@@ -29,6 +29,11 @@ import sys
 from pathlib import Path
 
 import numpy as np
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(it, **kw):
+        return it
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -66,7 +71,9 @@ def run_method(binary: Path, base_cfg: dict, method: str,
 
 def extract_ke_series(folder: Path, nx: int, ny: int,
                       density: float, dx: float, dy: float) -> tuple[list, list]:
-    pvd_files = list(folder.glob("*.pvd"))
+    # Prefer particles.pvd (VTP) — label.pvd has no velocity data
+    pvd_files = sorted(folder.glob("*.pvd"),
+                       key=lambda p: (0 if "particle" in p.stem else 1, p.name))
     if not pvd_files:
         return [], []
     entries = parse_pvd(pvd_files[0])
@@ -138,22 +145,21 @@ def main():
 
     results = {}  # method → (times, ke_vals)
 
-    for method in method_list:
+    for method in tqdm(method_list, unit="method", desc="methods"):
         run_folder = out_dir / method
         run_folder.mkdir(parents=True, exist_ok=True)
 
         if not args.no_run:
-            print(f"  running method={method} …", flush=True)
             tmp_cfg = out_dir / f"_tmp_{method}.json"
             ok = run_method(binary, base_cfg, method, run_folder, tmp_cfg)
             if not ok:
-                print(f"  [SKIP] {method} failed")
+                tqdm.write(f"  [SKIP] {method} failed")
                 continue
             tmp_cfg.unlink(missing_ok=True)
 
         times, ke_vals = extract_ke_series(run_folder, nx, ny, density, dx, dy)
         if not times:
-            print(f"  [WARN] {method}: no output found in {run_folder}")
+            tqdm.write(f"  [WARN] {method}: no output found in {run_folder}")
             continue
         results[method] = (times, ke_vals)
         print(f"  {method}: {len(times)} timesteps, "

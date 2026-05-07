@@ -9,7 +9,7 @@
 #include <iostream>
 
 void solveRedBlackGaussSeidel(Fields2D &fields, int nx, int ny, varType coef,
-                              int maxIters, varType tol, varType beta) {
+                              int maxIters, varType tol, varType /*beta*/) {
   fields.Div();
 
   constexpr varType PI = 3.14159265358979323846;

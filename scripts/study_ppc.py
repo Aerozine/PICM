@@ -32,6 +32,11 @@ import sys
 from pathlib import Path
 
 import numpy as np
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(it, **kw):  # silent fallback
+        return it
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -96,7 +101,7 @@ def main():
                         help="Path to base JSON config (omit when passing config as first arg with --no-run)")
     parser.add_argument("--min-ppc", type=int, default=1)
     parser.add_argument("--max-ppc", type=int, default=10)
-    parser.add_argument("--repeats", type=int, default=5)
+    parser.add_argument("--repeats", type=int, default=25)
     parser.add_argument("--out", default=None)
     parser.add_argument("--no-run", action="store_true")
     args = parser.parse_args()
@@ -131,39 +136,57 @@ def main():
     ke_mean    = []
     ke_std     = []
 
+    total_runs = len(ppc_values) * args.repeats
+    bar = tqdm(total=total_runs, unit="run", desc="ppc sweep")
+
     for ppc in ppc_values:
         ke_runs = []
         for rep in range(args.repeats):
             run_folder = out_dir / f"ppc{ppc}_rep{rep}"
             run_folder.mkdir(parents=True, exist_ok=True)
 
+            bar.set_description(f"ppc={ppc} rep={rep}")
             if not args.no_run:
-                print(f"  running ppc={ppc} rep={rep} …", flush=True)
                 run_simulation(binary, base_cfg, str(run_folder),
                                ppc, rep, out_dir)
 
             ke = extract_final_ke(run_folder, nx, ny, density, dx, dy)
             ke_runs.append(ke)
-            print(f"  ppc={ppc} rep={rep}  KE={ke:.4g}")
+            bar.set_postfix(KE=f"{ke:.4g}")
+            bar.update(1)
 
         ke_runs = [v for v in ke_runs if not np.isnan(v)]
         ke_mean.append(np.mean(ke_runs) if ke_runs else float("nan"))
         ke_std.append(np.std(ke_runs)  if ke_runs else float("nan"))
 
+    bar.close()
+
     # ── plot ─────────────────────────────────────────────────────────────────
-    fig, ax = plt.subplots(figsize=(9, 5))
-    ax.errorbar(ppc_values, ke_mean, yerr=ke_std,
-                fmt="o-", capsize=5, lw=1.5, label="mean ± std")
-    ax.set_xlabel("ppcx = ppcy  (particles per cell per direction)")
-    ax.set_ylabel("Final kinetic energy (proportional, a.u.)")
-    ax.set_title(f"Kinetic energy vs PPC  (N={args.repeats} runs per point)")
-    ax.grid(True, alpha=0.3)
-    ax.legend()
-    fig.tight_layout()
-    out_png = out_dir / "ke_vs_ppc.png"
-    fig.savefig(str(out_png), dpi=150)
-    plt.close(fig)
-    print(f"\n[done] plot saved → {out_png}")
+    ppc_arr  = np.array(ppc_values, dtype=float)
+    mean_arr = np.array(ke_mean,    dtype=float)
+    std_arr  = np.array(ke_std,     dtype=float)
+
+    valid = np.isfinite(mean_arr)
+    if not valid.any():
+        print("\n[warn] all KE values are NaN — no plot generated")
+        print("       check that the simulation binary runs correctly")
+    else:
+        # Replace NaN std with 0 so errorbar doesn't crash on partial data
+        std_plot = np.where(np.isfinite(std_arr[valid]), std_arr[valid], 0.0)
+
+        fig, ax = plt.subplots(figsize=(9, 5))
+        ax.errorbar(ppc_arr[valid], mean_arr[valid], yerr=std_plot,
+                    fmt="o-", capsize=5, lw=1.5, label="mean ± std")
+        ax.set_xlabel("ppcx = ppcy  (particles per cell per direction)")
+        ax.set_ylabel("Final kinetic energy (proportional, a.u.)")
+        ax.set_title(f"Kinetic energy vs PPC  (N={args.repeats} runs per point)")
+        ax.grid(True, alpha=0.3)
+        ax.legend()
+        fig.tight_layout()
+        out_png = out_dir / "ke_vs_ppc.png"
+        fig.savefig(str(out_png), dpi=150)
+        plt.close(fig)
+        print(f"\n[done] plot saved → {out_png}")
 
     # save CSV
     csv_path = out_dir / "ke_vs_ppc.csv"
