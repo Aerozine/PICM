@@ -3,10 +3,10 @@
   "dy": 0.04,
   "dt": 0.004,
   "nx": 320,
-  "ny": 170,
+  "ny": 200,
   "nt": 3600,
-  "ppcx": 4,
-  "ppcy": 4,
+  "ppcx": 3,
+  "ppcy": 3,
   "density": 1000,
   "sampling_rate": 10,
   "write_u": true,
@@ -31,7 +31,7 @@
         "x1": "21",
         "y1": "33",
         "x2": "74",
-        "y2": "126"
+        "y2": "196"
       },
       {
         "x1": "246",
@@ -110,12 +110,12 @@
   "solver": {
     "type": "cg",
     "max_iterations": 100000,
-    "tolerance": 1e-3
+    "tolerance": 1e-2
   },
   "method": "pic",
   "freeSurface": true,
   "gravity": 9.81,
   "refill": false,
   "kernelOrder": 2,
-  "max_cfl": 0.65
+  "max_cfl": 0.95
 }

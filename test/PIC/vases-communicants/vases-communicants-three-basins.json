@@ -2,11 +2,11 @@
   "dx": 0.04,
   "dy": 0.04,
   "dt": 0.005,
-  "nx": 280,
-  "ny": 180,
+  "nx": 300,
+  "ny": 170,
   "nt": 3200,
-  "ppcx": 4,
-  "ppcy": 4,
+  "ppcx": 2,
+  "ppcy": 2,
   "density": 1000,
   "sampling_rate": 10,
   "write_u": true,
@@ -16,7 +16,7 @@
   "write_norm_velocity": true,
   "write_smoke": false,
   "write_particles": true,
-  "folder": "results/PIC/vases-communicants-inverted-siphon",
+  "folder": "results/PIC/vases-communicants-three-basins",
   "filename": "simulation",
 
   "fluid": {
@@ -24,20 +24,26 @@
       {
         "x1": "21",
         "y1": "1",
-        "x2": "259",
-        "y2": "18"
+        "x2": "279",
+        "y2": "22"
       },
       {
         "x1": "21",
-        "y1": "19",
-        "x2": "78",
-        "y2": "130"
+        "y1": "23",
+        "x2": "82",
+        "y2": "128"
       },
       {
-        "x1": "202",
-        "y1": "19",
-        "x2": "259",
-        "y2": "48"
+        "x1": "120",
+        "y1": "23",
+        "x2": "180",
+        "y2": "76"
+      },
+      {
+        "x1": "218",
+        "y1": "23",
+        "x2": "279",
+        "y2": "42"
       }
     ]
   },
@@ -75,15 +81,21 @@
         "y2": "ny"
       },
       {
-        "x1": "260",
+        "x1": "280",
         "y1": "1",
         "x2": "nx",
         "y2": "ny"
       },
       {
-        "x1": "79",
-        "y1": "19",
-        "x2": "201",
+        "x1": "83",
+        "y1": "23",
+        "x2": "119",
+        "y2": "ny"
+      },
+      {
+        "x1": "181",
+        "y1": "23",
+        "x2": "217",
         "y2": "ny"
       }
     ]
@@ -92,12 +104,12 @@
   "solver": {
     "type": "cg",
     "max_iterations": 100000,
-    "tolerance": 1e-3
+    "tolerance": 1e-2
   },
   "method": "pic",
   "freeSurface": true,
   "gravity": 9.81,
   "refill": false,
   "kernelOrder": 2,
-  "max_cfl": 0.7
+  "max_cfl": 0.95
 }

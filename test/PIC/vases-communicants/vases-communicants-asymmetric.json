@@ -5,8 +5,8 @@
   "nx": 260,
   "ny": 170,
   "nt": 2600,
-  "ppcx": 4,
-  "ppcy": 4,
+  "ppcx": 2,
+  "ppcy": 2,
   "density": 1000,
   "sampling_rate": 10,
   "write_u": true,
@@ -92,12 +92,12 @@
   "solver": {
     "type": "cg",
     "max_iterations": 100000,
-    "tolerance": 1e-3
+    "tolerance": 1e-2
   },
   "method": "pic",
   "freeSurface": true,
   "gravity": 9.81,
   "refill": false,
   "kernelOrder": 2,
-  "max_cfl": 0.7
+  "max_cfl": 0.95
 }
