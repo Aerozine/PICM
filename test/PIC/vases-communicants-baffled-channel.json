@@ -1,0 +1,121 @@
+{
+  "dx": 0.04,
+  "dy": 0.04,
+  "dt": 0.004,
+  "nx": 320,
+  "ny": 170,
+  "nt": 3600,
+  "ppcx": 4,
+  "ppcy": 4,
+  "density": 1000,
+  "sampling_rate": 10,
+  "write_u": true,
+  "write_v": true,
+  "write_p": true,
+  "write_div": true,
+  "write_norm_velocity": true,
+  "write_smoke": false,
+  "write_particles": true,
+  "folder": "results/PIC/vases-communicants-baffled-channel",
+  "filename": "simulation",
+
+  "fluid": {
+    "rectangle": [
+      {
+        "x1": "21",
+        "y1": "1",
+        "x2": "299",
+        "y2": "32"
+      },
+      {
+        "x1": "21",
+        "y1": "33",
+        "x2": "74",
+        "y2": "126"
+      },
+      {
+        "x1": "246",
+        "y1": "33",
+        "x2": "299",
+        "y2": "50"
+      }
+    ]
+  },
+
+  "solid": {
+    "rectangle": [
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "0"
+      },
+      {
+        "x1": "0",
+        "y1": "ny+1",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "0",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "nx+1",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "1",
+        "y1": "1",
+        "x2": "20",
+        "y2": "ny"
+      },
+      {
+        "x1": "300",
+        "y1": "1",
+        "x2": "nx",
+        "y2": "ny"
+      },
+      {
+        "x1": "75",
+        "y1": "33",
+        "x2": "245",
+        "y2": "ny"
+      },
+      {
+        "x1": "108",
+        "y1": "1",
+        "x2": "116",
+        "y2": "22"
+      },
+      {
+        "x1": "150",
+        "y1": "11",
+        "x2": "158",
+        "y2": "32"
+      },
+      {
+        "x1": "192",
+        "y1": "1",
+        "x2": "200",
+        "y2": "22"
+      }
+    ]
+  },
+
+  "solver": {
+    "type": "cg",
+    "max_iterations": 100000,
+    "tolerance": 1e-3
+  },
+  "method": "pic",
+  "freeSurface": true,
+  "gravity": 9.81,
+  "refill": false,
+  "kernelOrder": 2,
+  "max_cfl": 0.65
+}

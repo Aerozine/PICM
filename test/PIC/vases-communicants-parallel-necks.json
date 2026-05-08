@@ -1,0 +1,115 @@
+{
+  "dx": 0.04,
+  "dy": 0.04,
+  "dt": 0.005,
+  "nx": 300,
+  "ny": 180,
+  "nt": 3200,
+  "ppcx": 4,
+  "ppcy": 4,
+  "density": 1000,
+  "sampling_rate": 10,
+  "write_u": true,
+  "write_v": true,
+  "write_p": true,
+  "write_div": true,
+  "write_norm_velocity": true,
+  "write_smoke": false,
+  "write_particles": true,
+  "folder": "results/PIC/vases-communicants-parallel-necks",
+  "filename": "simulation",
+
+  "fluid": {
+    "rectangle": [
+      {
+        "x1": "21",
+        "y1": "1",
+        "x2": "279",
+        "y2": "22"
+      },
+      {
+        "x1": "21",
+        "y1": "23",
+        "x2": "88",
+        "y2": "122"
+      },
+      {
+        "x1": "212",
+        "y1": "23",
+        "x2": "279",
+        "y2": "54"
+      },
+      {
+        "x1": "89",
+        "y1": "62",
+        "x2": "211",
+        "y2": "74"
+      }
+    ]
+  },
+
+  "solid": {
+    "rectangle": [
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "0"
+      },
+      {
+        "x1": "0",
+        "y1": "ny+1",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "0",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "nx+1",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "1",
+        "y1": "1",
+        "x2": "20",
+        "y2": "ny"
+      },
+      {
+        "x1": "280",
+        "y1": "1",
+        "x2": "nx",
+        "y2": "ny"
+      },
+      {
+        "x1": "89",
+        "y1": "23",
+        "x2": "211",
+        "y2": "61"
+      },
+      {
+        "x1": "89",
+        "y1": "75",
+        "x2": "211",
+        "y2": "ny"
+      }
+    ]
+  },
+
+  "solver": {
+    "type": "cg",
+    "max_iterations": 100000,
+    "tolerance": 1e-3
+  },
+  "method": "pic",
+  "freeSurface": true,
+  "gravity": 9.81,
+  "refill": false,
+  "kernelOrder": 2,
+  "max_cfl": 0.7
+}

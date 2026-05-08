@@ -5,8 +5,8 @@
   "nx": 200,
   "ny": 300,
   "nt": 500,
-  "ppcx": 3,
-  "ppcy": 3,
+  "ppcx": 6,
+  "ppcy": 6,
   "density": 1000,
   "sampling_rate": 2,
   "write_u": true,
@@ -16,7 +16,7 @@
   "write_norm_velocity": true,
   "write_smoke": true,
   "write_particles": true,
-  "folder": "results/FLIP/downBreak",
+  "folder": "results/APIC/downBreak",
   "filename": "simulation",
 
   "fluid": {
@@ -62,8 +62,7 @@
     "max_iterations": 1e5,
     "tolerance": 1e-2
   },
-  "method": "flip",
-  "coefpic": 0.05,
+  "method": "apic",
   "freeSurface": true,
   "gravity": 9.81,
   "refill": false,

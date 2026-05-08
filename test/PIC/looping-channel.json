@@ -1,0 +1,163 @@
+{
+  "dx": 0.04,
+  "dy": 0.04,
+  "dt": 0.004,
+  "nx": 220,
+  "ny": 180,
+  "nt": 2200,
+  "ppcx": 5,
+  "ppcy": 5,
+  "density": 1000,
+  "sampling_rate": 8,
+  "write_u": true,
+  "write_v": true,
+  "write_p": true,
+  "write_div": true,
+  "write_norm_velocity": true,
+  "write_smoke": false,
+  "write_particles": true,
+  "folder": "results/PIC/looping-channel",
+  "filename": "simulation",
+
+  "fluid": {
+    "rectangle": [
+      {
+        "x1": "35",
+        "y1": "35",
+        "x2": "185",
+        "y2": "65"
+      },
+      {
+        "x1": "143",
+        "y1": "66",
+        "x2": "185",
+        "y2": "114"
+      },
+      {
+        "x1": "35",
+        "y1": "115",
+        "x2": "185",
+        "y2": "145"
+      },
+      {
+        "x1": "35",
+        "y1": "66",
+        "x2": "77",
+        "y2": "114"
+      }
+    ]
+  },
+
+  "velocityu": {
+    "rectangle": [
+      {
+        "condition": "initial",
+        "val": 3.5,
+        "x1": "35",
+        "y1": "35",
+        "x2": "185",
+        "y2": "65"
+      },
+      {
+        "condition": "initial",
+        "val": -3.5,
+        "x1": "35",
+        "y1": "115",
+        "x2": "185",
+        "y2": "145"
+      }
+    ]
+  },
+
+  "velocityv": {
+    "rectangle": [
+      {
+        "condition": "initial",
+        "val": 3.5,
+        "x1": "143",
+        "y1": "66",
+        "x2": "185",
+        "y2": "114"
+      },
+      {
+        "condition": "initial",
+        "val": -3.5,
+        "x1": "35",
+        "y1": "66",
+        "x2": "77",
+        "y2": "114"
+      }
+    ]
+  },
+
+  "solid": {
+    "rectangle": [
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "0"
+      },
+      {
+        "x1": "0",
+        "y1": "ny+1",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "0",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "nx+1",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "20",
+        "y1": "20",
+        "x2": "34",
+        "y2": "160"
+      },
+      {
+        "x1": "186",
+        "y1": "20",
+        "x2": "200",
+        "y2": "160"
+      },
+      {
+        "x1": "20",
+        "y1": "20",
+        "x2": "200",
+        "y2": "34"
+      },
+      {
+        "x1": "20",
+        "y1": "146",
+        "x2": "200",
+        "y2": "160"
+      },
+      {
+        "x1": "78",
+        "y1": "66",
+        "x2": "142",
+        "y2": "114"
+      }
+    ]
+  },
+
+  "solver": {
+    "type": "cg",
+    "max_iterations": 100000,
+    "tolerance": 1e-3
+  },
+  "method": "pic",
+  "freeSurface": true,
+  "gravity": 0.0,
+  "refill": false,
+  "kernelOrder": 2,
+  "max_cfl": 0.6
+}

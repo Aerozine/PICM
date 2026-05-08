@@ -1,0 +1,125 @@
+{
+  "dx": 0.00025,
+  "dy": 0.00025,
+  "dt": 0.000006,
+  "nx": 280,
+  "ny": 190,
+  "nt": 16000,
+  "ppcx": 5,
+  "ppcy": 5,
+  "density": 1000,
+  "sampling_rate": 25,
+  "write_u": true,
+  "write_v": true,
+  "write_p": true,
+  "write_div": true,
+  "write_norm_velocity": true,
+  "write_smoke": false,
+  "write_particles": true,
+  "folder": "results/PIC/surfaceTension/laplace/vases-communicants-double-capillary",
+  "filename": "simulation",
+
+  "fluid": {
+    "rectangle": [
+      {
+        "x1": "11",
+        "y1": "1",
+        "x2": "89",
+        "y2": "58"
+      },
+      {
+        "x1": "90",
+        "y1": "1",
+        "x2": "104",
+        "y2": "30"
+      },
+      {
+        "x1": "105",
+        "y1": "1",
+        "x2": "175",
+        "y2": "58"
+      },
+      {
+        "x1": "176",
+        "y1": "1",
+        "x2": "215",
+        "y2": "30"
+      },
+      {
+        "x1": "216",
+        "y1": "1",
+        "x2": "269",
+        "y2": "58"
+      }
+    ]
+  },
+
+  "solid": {
+    "rectangle": [
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "0"
+      },
+      {
+        "x1": "0",
+        "y1": "ny+1",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "0",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "nx+1",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "1",
+        "y1": "1",
+        "x2": "10",
+        "y2": "ny"
+      },
+      {
+        "x1": "270",
+        "y1": "1",
+        "x2": "nx",
+        "y2": "ny"
+      },
+      {
+        "x1": "90",
+        "y1": "31",
+        "x2": "104",
+        "y2": "ny"
+      },
+      {
+        "x1": "176",
+        "y1": "31",
+        "x2": "215",
+        "y2": "ny"
+      }
+    ]
+  },
+
+  "solver": {
+    "type": "red_black_gauss_seidel",
+    "max_iterations": 100000,
+    "tolerance": 1e-2
+  },
+  "method": "pic",
+  "freeSurface": true,
+  "gravity": 9.81,
+  "refill": false,
+  "surfaceTension": true,
+  "particleInteraction": false,
+  "gamma": 0.0025,
+  "contactAngle": 0.45,
+  "kernelOrder": 2,
+  "max_cfl": 0.45
+}
