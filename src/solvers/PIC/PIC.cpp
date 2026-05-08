@@ -58,6 +58,9 @@ void PIC::WriteOutput(int step) const {
   if (step % params.sampling_rate != 0)
     return;
 
+  if (params.write_norm_velocity)
+    fields->VelocityNormCenterGrid();
+
   Solver::WriteOutput(step);
 
   if (params.write_particles && particlesWriter) {

@@ -1,14 +1,14 @@
 {
-  "dx": 0.02,
-  "dy": 0.02,
-  "dt": 0.025,
+  "dx": 0.05,
+  "dy": 0.05,
+  "dt": 0.01,
   "nx": 200,
-  "ny": 200,
-  "nt": 1500,
-  "ppcx": 5,
-  "ppcy": 5,
+  "ny": 300,
+  "nt": 500,
+  "ppcx": 3,
+  "ppcy": 3,
   "density": 1000,
-  "sampling_rate": 10,
+  "sampling_rate": 2,
   "write_u": true,
   "write_v": true,
   "write_p": true,
@@ -16,24 +16,16 @@
   "write_norm_velocity": true,
   "write_smoke": true,
   "write_particles": true,
-  "folder": "results/PIC/surfaceTension/laplace/cross",
+  "folder": "results/FLIP/downBreak",
   "filename": "simulation",
 
   "fluid": {
-    "rectangle": [
-      {
-        "x1": "2*nx/20",
-        "y1": "19*ny/40",
-        "x2": "18*nx/20",
-        "y2": "21*ny/40"
-      },
-      {
-        "x1": "19*nx/40",
-        "y1": "2*ny/20",
-        "x2": "21*nx/40",
-        "y2": "18*ny/20"
-      }
-    ]
+    "rectangle": {
+      "x1": "1",
+      "y1": "1",
+      "x2": "nx/2",
+      "y2": "nx/2"
+    }
   },
 
   "solid": {
@@ -70,11 +62,10 @@
     "max_iterations": 1e5,
     "tolerance": 1e-2
   },
-  "method": "pic",
-  "freeSurface": "yes",
-  "gravity": 0.0,
+  "method": "flip",
+  "coefpic": 0.05,
+  "freeSurface": true,
+  "gravity": 9.81,
   "refill": false,
-  "surfaceTension": true,
-  "particleInteraction": false,
-  "gamma": 10.073
+  "kernelOrder": 2
 }

@@ -2,6 +2,7 @@
 #include <cmath>
 #include <vector>
 #include <algorithm>
+#include <limits>
 
 //  Surface tension 
 //  Label(i,j) : i,j ∈ [0, nx+1] × [0, ny+1]  (ghost cells)
@@ -10,7 +11,10 @@
 //  interface_u(i,j) : (nx+1)×ny - face btw phi(i-1,j) & phi(i,j)
 //  interface_v(i,j) : nx×(ny+1) - face btw phi(i,j-1) & phi(i,j)
 
-static const varType CSF_KERNEL_RADIUS_FACTOR = 2.0;
+static constexpr varType CSF_KERNEL_RADIUS_FACTOR = REAL_LITERAL(3.0);
+static constexpr int CSF_PHI_SMOOTH_PASSES = 2;
+static constexpr varType CSF_NORMAL_GRAD_EPS = REAL_LITERAL(1e-4);
+static constexpr varType PI = REAL_LITERAL(3.14159265358979);
 
 static inline varType smoothingKernel(varType r, varType h)
 {
@@ -38,8 +42,15 @@ void PIC::UpdatePhiFromParticles() const
     const int     ny       = fields->ny;
     const varType dx       = fields->dx;
     const varType dy       = fields->dy;
-    const varType h_smooth = CSF_KERNEL_RADIUS_FACTOR * dx;
-    const int     Rsmooth  = static_cast<int>(std::ceil(h_smooth / dx)) + 1;
+    const varType cellSize = dx;
+    const varType h_smooth = CSF_KERNEL_RADIUS_FACTOR * cellSize;
+    const int     Rsmooth  = static_cast<int>(std::ceil(h_smooth / cellSize)) + 1;
+    const int targetPPC = std::max(1, params.ppcx * params.ppcy);
+    const varType cellArea = std::max(dx * dy, std::numeric_limits<varType>::min());
+    const varType particleDensity = static_cast<varType>(targetPPC) / cellArea;
+    const varType fullKernelValue =
+        std::max(particleDensity * PI * h_smooth * h_smooth / REAL_LITERAL(10.0),
+                 std::numeric_limits<varType>::min());
 
 
     fields->phi->reset();
@@ -47,7 +58,12 @@ void PIC::UpdatePhiFromParticles() const
     fields->normalX->reset();
     fields->normalY->reset();
 
-    //  color function phi(i,j) = sum on p [ kernel(|xc - xp|, h)]
+    std::vector<varType> phiValues(static_cast<std::size_t>(nx) * ny,
+                                   REAL_LITERAL(0.5) * h_smooth);
+    auto idx = [nx](int i, int j) {
+        return static_cast<std::size_t>(nx) * j + i;
+    };
+
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
     for (int j = 0; j < ny; ++j) {
         for (int i = 0; i < nx; ++i) {
@@ -72,34 +88,53 @@ void PIC::UpdatePhiFromParticles() const
                     }
                 }
             }
-            fields->phi->Set(i, j, cval);
+            const varType volume = std::clamp(cval / fullKernelValue,
+                                              REAL_LITERAL(0.0),
+                                              REAL_LITERAL(1.0));
+            phiValues[idx(i, j)] = (REAL_LITERAL(0.5) - volume) * h_smooth;
         }
     }
 
-    // normalisation of phi in [0,1]
-    varType Cmax = 0.0;
-    OMP_PRAGMA(omp parallel for collapse(2) reduction(max:Cmax) schedule(static))
-    for (int j = 0; j < ny; ++j)
-        for (int i = 0; i < nx; ++i)
-            Cmax = std::max(Cmax, fields->phi->Get(i, j));
+    std::vector<varType> smoothed(phiValues.size(), REAL_LITERAL(0.0));
+    for (int pass = 0; pass < CSF_PHI_SMOOTH_PASSES; ++pass) {
+        OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
+        for (int j = 0; j < ny; ++j) {
+            for (int i = 0; i < nx; ++i) {
+                const labeltype label = fields->Label(i + 1, j + 1);
+                if (IS_SOLID(label)) {
+                    smoothed[idx(i, j)] = phiValues[idx(i, j)];
+                    continue;
+                }
 
-    if (Cmax < REAL_EPSILON) return;
+                varType sum = REAL_LITERAL(0.0);
+                varType weightSum = REAL_LITERAL(0.0);
+                for (int dj = -1; dj <= 1; ++dj) {
+                    const int jj = std::clamp(j + dj, 0, ny - 1);
+                    const varType wy = (dj == 0) ? REAL_LITERAL(2.0)
+                                                  : REAL_LITERAL(1.0);
+                    for (int di = -1; di <= 1; ++di) {
+                        const int ii = std::clamp(i + di, 0, nx - 1);
+                        if (IS_SOLID(fields->Label(ii + 1, jj + 1)))
+                            continue;
+                        const varType wx = (di == 0) ? REAL_LITERAL(2.0)
+                                                      : REAL_LITERAL(1.0);
+                        const varType w = wx * wy;
+                        sum += w * phiValues[idx(ii, jj)];
+                        weightSum += w;
+                    }
+                }
+                smoothed[idx(i, j)] =
+                    weightSum > REAL_EPSILON ? sum / weightSum
+                                             : phiValues[idx(i, j)];
+            }
+        }
+        phiValues.swap(smoothed);
+    }
 
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
     for (int j = 0; j < ny; ++j)
         for (int i = 0; i < nx; ++i)
-            fields->phi->Set(i, j, fields->phi->Get(i, j) / Cmax);
-
-    //   phi < 0 : FLUIDE,  phi > 0 : AIR
-    OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
-    for (int j = 0; j < ny; ++j) {
-        for (int i = 0; i < nx; ++i) {
-            const varType val = fields->phi->Get(i, j);
-            fields->phi->Set(i, j, IS_FLUID(fields->Label(i + 1, j + 1))
-                                  ? -std::abs(val)
-                                  :  std::abs(val));
-        }
-    }
+            fields->phi->Set(i, j, phiValues[idx(i, j)]);
 }
 
 void PIC::ComputeSurfaceTensionOnFaces() const
@@ -108,8 +143,12 @@ void PIC::ComputeSurfaceTensionOnFaces() const
     const int ny = fields->ny;
     const varType dx = fields->dx;
     const varType dy = fields->dy;
+    const varType cellSize = std::min(dx, dy);
     const varType gamma = params.gamma;
     const varType cosTheta = std::cos(params.contactAngle);
+    auto idx = [nx](int i, int j) {
+        return static_cast<std::size_t>(nx) * j + i;
+    };
 
     fields->interface_u->reset();
     fields->interface_v->reset();
@@ -145,7 +184,7 @@ void PIC::ComputeSurfaceTensionOnFaces() const
             const varType gy = (phi_yp - phi_ym) / (2.0 * dy);
             const varType gn = std::hypot(gx, gy);
 
-            if (gn > REAL_EPSILON) {
+            if (gn > CSF_NORMAL_GRAD_EPS) {
                 fields->normalX->Set(i, j, gx / gn);
                 fields->normalY->Set(i, j, gy / gn);
             }
@@ -156,15 +195,15 @@ void PIC::ComputeSurfaceTensionOnFaces() const
     for (int j = 0; j < ny; ++j) {
         for (int i = 0; i < nx; ++i) {
 
-            if (!IS_FLUID(fields->Label(i + 1, j + 1))) continue;
+            if (IS_SOLID(fields->Label(i + 1, j + 1))) continue;
 
             auto nxVal = [&](int ii, int jj) -> varType {
-                if (ii < 0 || ii >= nx) return 0.0;
+                if (ii < 0 || ii >= nx || jj < 0 || jj >= ny) return 0.0;
                 if (IS_SOLID(fields->Label(ii + 1, jj + 1))) return 0.0;
                 return fields->normalX->Get(ii, jj);
             };
             auto nyVal = [&](int ii, int jj) -> varType {
-                if (jj < 0 || jj >= ny) return 0.0;
+                if (ii < 0 || ii >= nx || jj < 0 || jj >= ny) return 0.0;
                 if (IS_SOLID(fields->Label(ii + 1, jj + 1))) return 0.0;
                 return fields->normalY->Get(ii, jj);
             };
@@ -178,6 +217,43 @@ void PIC::ComputeSurfaceTensionOnFaces() const
         }
     }
 
+    std::vector<varType> rawKappa(static_cast<std::size_t>(nx) * ny,
+                                  REAL_LITERAL(0.0));
+    OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
+    for (int j = 0; j < ny; ++j)
+        for (int i = 0; i < nx; ++i)
+            rawKappa[idx(i, j)] = fields->kappa->Get(i, j);
+
+    OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
+    for (int j = 0; j < ny; ++j) {
+        for (int i = 0; i < nx; ++i) {
+            if (IS_SOLID(fields->Label(i + 1, j + 1))) continue;
+            varType sum = REAL_LITERAL(0.0);
+            varType weightSum = REAL_LITERAL(0.0);
+            for (int dj = -1; dj <= 1; ++dj) {
+                const int jj = std::clamp(j + dj, 0, ny - 1);
+                const varType wy = (dj == 0) ? REAL_LITERAL(2.0)
+                                              : REAL_LITERAL(1.0);
+                for (int di = -1; di <= 1; ++di) {
+                    const int ii = std::clamp(i + di, 0, nx - 1);
+                    if (IS_SOLID(fields->Label(ii + 1, jj + 1)))
+                        continue;
+                    const varType wx = (di == 0) ? REAL_LITERAL(2.0)
+                                                  : REAL_LITERAL(1.0);
+                    const varType w = wx * wy;
+                    sum += w * rawKappa[idx(ii, jj)];
+                    weightSum += w;
+                }
+            }
+            fields->kappa->Set(i, j, weightSum > REAL_EPSILON
+                                         ? sum / weightSum
+                                         : rawKappa[idx(i, j)]);
+        }
+    }
+
+    const varType maxAbsKappa =
+        REAL_LITERAL(1.0) / std::max(cellSize, REAL_EPSILON);
+
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
     for (int j = 0; j < ny; ++j) {
         for (int i = 1; i < nx; ++i) {
@@ -188,8 +264,10 @@ void PIC::ComputeSurfaceTensionOnFaces() const
             if (leftFluid == rightFluid) continue;
             if (IS_SOLID(left))  continue;
             if (IS_SOLID(right)) continue;
-            const varType kappa_face = leftFluid ? fields->kappa->Get(i - 1, j)
-                                                 : fields->kappa->Get(i,     j);
+            const varType kappa_face = std::clamp(
+                REAL_LITERAL(0.5) *
+                    (fields->kappa->Get(i - 1, j) + fields->kappa->Get(i, j)),
+                -maxAbsKappa, maxAbsKappa);
             fields->interface_u->Set(i, j, -gamma * kappa_face);
         }
     }
@@ -204,8 +282,10 @@ void PIC::ComputeSurfaceTensionOnFaces() const
             if (botFluid == topFluid) continue;
             if (IS_SOLID(labelBot))   continue;
             if (IS_SOLID(labelTop))   continue;
-            const varType kappa_face = botFluid ? fields->kappa->Get(i, j - 1)
-                                                : fields->kappa->Get(i, j);
+            const varType kappa_face = std::clamp(
+                REAL_LITERAL(0.5) *
+                    (fields->kappa->Get(i, j - 1) + fields->kappa->Get(i, j)),
+                -maxAbsKappa, maxAbsKappa);
             fields->interface_v->Set(i, j, -gamma * kappa_face);
         }
     }
