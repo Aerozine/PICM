@@ -56,6 +56,11 @@ format:
 	find . -name "*.cpp" -o -name "*.hpp" | xargs clang-format -i --style=LLVM
 
 clean:
-	rm -rf build* results* cmake-build*
+	find . -maxdepth 1 -type d \( -name 'build*' -o -name 'cmake-build*' \) -prune -exec rm -rf {} +
+	if [ -d results ]; then \
+		find results -type d \( -name raw -o -name runs -o -name configs -o -name plots \) -prune -exec rm -rf {} +; \
+		find results -type f \( -name '*.vti' -o -name '*.vtp' -o -name '*.pvd' -o -name '*.png' -o -name '*.mp4' -o -name '*.log' -o -name '*.out' -o -name '*.err' \) -delete; \
+	fi
+	find . -type d -name __pycache__ -prune -exec rm -rf {} +
 memcheck:
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose ./build-dbg/bin/PIC -c test/test-large-cylinder.json

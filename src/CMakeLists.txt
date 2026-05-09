@@ -47,6 +47,10 @@ if(ZLIB_FOUND)
     target_compile_definitions(PIC PRIVATE HAVE_ZLIB)
 endif()
 
+if(PICM_FILESYSTEM_LIB)
+    target_link_libraries(PIC PRIVATE ${PICM_FILESYSTEM_LIB})
+endif()
+
 if(OpenMP_CXX_FOUND)
     target_link_libraries(PIC PRIVATE OpenMP::OpenMP_CXX)
     target_compile_definitions(PIC PRIVATE USE_OPENMP)

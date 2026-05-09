@@ -18,7 +18,7 @@ int resolveInt(const nlohmann::json &val,
   std::vector<std::pair<std::string, int>> sorted(vars.begin(), vars.end());
   // use std:sort and define an anonymous function that takes 2 parameter and
   // define the sort order
-  std::ranges::sort(sorted, [](const auto &a, const auto &b) {
+  std::sort(sorted.begin(), sorted.end(), [](const auto &a, const auto &b) {
     return a.first.size() > b.first.size();
   });
   // replace expression

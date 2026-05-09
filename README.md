@@ -41,7 +41,7 @@ Notes:
 Required:
 
 - CMake 3.18 or newer
-- A C++23 compiler
+- A C++17 compiler
 
 Optional:
 
@@ -129,6 +129,12 @@ The executable expects the JSON config path as its only argument:
 
 ```bash
 ./build-release/bin/PIC test/PIC/downbreak.json
+```
+
+The legacy wrapper form is also accepted:
+
+```bash
+./build-release/bin/PIC -c test/PIC/downbreak.json
 ```
 
 On Windows:
@@ -299,4 +305,28 @@ test/
   FLIP/                 FLIP sample scenes
   APIC/                 APIC sample scenes
 results/                default output location used by sample configs
+PostPro/                optional PICM-PostPro submodule with Slurm/report tools
 ```
+
+## Post-Processing / Slurm Tools
+
+The report and server scripts live in the separate `PICM-PostPro` repository.
+When it is checked out as `PostPro`, use:
+
+```bash
+make -C PostPro build
+make -C PostPro sbatch
+make -C PostPro postpro
+make -C PostPro plot
+make -C PostPro clean
+```
+
+Post-processing outputs stay inside `PostPro/`:
+
+- `PostPro/data/`: CSV files used by plotting.
+- `PostPro/data/misc/`: generated configs/logs and temporary post-processing
+  inputs.
+- `PostPro/img/`: generated `png`, `svg`, `pdf`, and `jpg` figures.
+
+`clean` removes build folders, raw simulation files, and regenerated images
+while keeping CSV data.

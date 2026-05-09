@@ -217,12 +217,18 @@ bool Parameters::loadFromFile(const std::string &path) {
 bool Parameters::parseCommandLine(const int argc, char *argv[]) {
   if (argc == 2)
     return loadFromFile(argv[1]);
+  if (argc == 3) {
+    const std::string option = argv[1];
+    if (option == "-c" || option == "--config")
+      return loadFromFile(argv[2]);
+  }
   printUsage(argv[0]);
   return false;
 }
 
 void Parameters::printUsage(const char *prog) {
-  std::cout << "Usage: " << prog << " <config.json>\n";
+  std::cout << "Usage: " << prog << " <config.json>\n"
+            << "   or: " << prog << " -c <config.json>\n";
 }
 
 std::ostream &operator<<(std::ostream &os, const Parameters &p) {
