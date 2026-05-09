@@ -17,13 +17,14 @@ void PIC::RefillParticles() {
 
       if (isInflow) {
         // physically coherent emission rate CH7 p.114
-        varType speed = varType(0);
-        if (isInflowU)
-          speed = std::abs(fields->u.Get(ci, cj));
-        else
-          speed = std::abs(fields->v.Get(ci, cj));
+        const varType normalVelocity =
+            isInflowU ? fields->u.Get(ci, cj) : fields->v.Get(ci, cj);
+        const varType speed = std::max(normalVelocity, varType(0));
+        if (speed <= REAL_EPSILON)
+          continue;
 
-        varType dWdt = targetPPC * speed / dx;
+        const varType normalCellWidth = isInflowU ? dx : dy;
+        varType dWdt = targetPPC * speed / normalCellWidth;
         varType n = dt * dWdt;
 
         int toEmit = static_cast<int>(n);
@@ -32,8 +33,11 @@ void PIC::RefillParticles() {
           toEmit++;
 
         for (int m = 0; m < toEmit; m++) {
-          varType x = (ci + rand01()) * dx;
-          varType y = (cj + rand01()) * dy;
+          // Emit on the inflow face. The random birth time below then spreads
+          // particles through the swept slab for this step; sampling inside the
+          // whole cell as well would double-count advection at the inlet.
+          varType x = isInflowU ? ci * dx : (ci + rand01()) * dx;
+          varType y = isInflowV ? cj * dy : (cj + rand01()) * dy;
 
           varType u =
               isInflowU ? fields->u.Get(ci, cj) : fields->interpolateU(x, y);
@@ -64,6 +68,7 @@ void PIC::RefillParticles() {
 
           // add directly into the destination cell
           (*cloud)(fi, fj).Add(xa, ya, ua, va, 0);
+          fields->setFluid(fi + 1, fj + 1);
         }
 
       } else if (IS_FLUID(fields->Label(ci + 1, cj + 1))) {
