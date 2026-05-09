@@ -17,7 +17,25 @@ endif()
 target_compile_definitions(IterativeMethod_CPU PUBLIC
         $<IF:$<BOOL:${USE_FLOAT_PRECISION}>,USE_FLOAT,USE_DOUBLE>)
 
+option(PICM_FETCH_EIGEN "Download Eigen3 with CMake FetchContent if no system Eigen3 is found" ON)
+
 find_package(Eigen3 QUIET NO_MODULE)
+if(NOT TARGET Eigen3::Eigen AND PICM_FETCH_EIGEN)
+    message(STATUS "Eigen3: not found locally - fetching Eigen 3.4.0")
+    include(FetchContent)
+    set(BUILD_TESTING OFF)
+    set(EIGEN_BUILD_TESTING OFF)
+    set(EIGEN_MPL2_ONLY ON)
+    set(EIGEN_BUILD_PKGCONFIG OFF)
+    set(EIGEN_BUILD_DOC OFF)
+    FetchContent_Declare(
+            Eigen
+            GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+            GIT_TAG 3.4.0
+            GIT_SHALLOW TRUE)
+    FetchContent_MakeAvailable(Eigen)
+endif()
+
 if(TARGET Eigen3::Eigen)
     target_link_libraries(IterativeMethod_CPU PUBLIC Eigen3::Eigen)
     target_compile_definitions(IterativeMethod_CPU PUBLIC HAVE_EIGEN)
