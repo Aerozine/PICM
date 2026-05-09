@@ -1,14 +1,14 @@
 {
-  "dx": 1e-5,
-  "dy": 1e-5,
-  "dt": 2e-7,
+  "dx": 2e-5,
+  "dy": 2e-5,
+  "dt": 1e-6,
   "nx": 100,
   "ny": 100,
-  "nt": 5000,
-  "ppcx": 2,
-  "ppcy": 2,
+  "nt": 1000,
+  "ppcx": 3,
+  "ppcy": 3,
   "density": 1000,
-  "sampling_rate": 50,
+  "sampling_rate": 5,
   "write_u": true,
   "write_v": true,
   "write_p": true,
@@ -16,7 +16,7 @@
   "write_norm_velocity": true,
   "write_smoke": true,
   "write_particles": true,
-  "folder": "results/surfaceTension/laplace/drop-in-vaccum",
+  "folder": "results/surfaceTension/laplace/drop-in-vaccum-coarsed",
   "filename": "simulation",
 
   "fluid": {
@@ -59,7 +59,7 @@
   "solver": {
     "type": "red_black_gauss_seidel",
     "max_iterations": 1e5,
-    "tolerance": 1e-2
+    "tolerance": 1e-3
   },
   "method": "pic",
   "freeSurface": "yes",

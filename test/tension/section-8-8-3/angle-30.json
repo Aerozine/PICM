@@ -1,0 +1,73 @@
+{
+  "dx": 1e-6,
+  "dy": 1e-6,
+  "dt": 5e-9,
+  "nx": 512,
+  "ny": 128,
+  "nt": 15000,
+  "ppcx": 4,
+  "ppcy": 4,
+  "density": 1000,
+  "sampling_rate": 300,
+  "write_u": false,
+  "write_v": false,
+  "write_p": false,
+  "write_div": true,
+  "write_norm_velocity": false,
+  "write_smoke": false,
+  "write_particles": true,
+  "folder": "results/tensions/section-8-8-3/personal/angle-30",
+  "filename": "simulation",
+
+  "fluid": {
+    "cylinder": {
+      "x": "nx/2",
+      "y": "ny/7",
+      "r": "ny/6"
+    }
+  },
+
+  "solid": {
+    "rectangle": [
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "0"
+      },
+      {
+        "x1": "0",
+        "y1": "ny+1",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "0",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "nx+1",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      }
+    ]
+  },
+
+  "solver": {
+    "type": "red_black_gauss_seidel",
+    "max_iterations": 1e5,
+    "tolerance": 1e-2
+  },
+  "method": "pic",
+  "freeSurface": "yes",
+  "gravity": 0.0,
+  "refill": false,
+  "surfaceTension": true,
+  "particleInteraction": false,
+  "gamma": 0.073,
+  "contactAngle": 2.617993878,
+  "max_cfl": 0.95
+}
