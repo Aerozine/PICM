@@ -1,29 +1,30 @@
 {
   "dx": 1e-6,
   "dy": 1e-6,
-  "dt": 5e-9,
-  "nx": 512,
-  "ny": 128,
-  "nt": 15000,
-  "ppcx": 4,
-  "ppcy": 4,
+  "dt": 1e-8,
+  "nx": 300,
+  "ny": 100,
+  "nt": 5000,
+  "ppcx": 5,
+  "ppcy": 5,
   "density": 1000,
-  "sampling_rate": 300,
+  "sampling_rate": 20,
   "write_u": false,
   "write_v": false,
   "write_p": false,
-  "write_div": true,
+  "write_div": false,
   "write_norm_velocity": false,
   "write_smoke": false,
   "write_particles": true,
-  "folder": "results/tensions/section-8-8-3/personal/angle-45",
+  "folder": "results/tension/angle-30",
   "filename": "simulation",
 
   "fluid": {
-    "cylinder": {
-      "x": "nx/2",
-      "y": "ny/7",
-      "r": "ny/6"
+    "rectangle": {
+      "x1": "110",
+      "y1": "1",
+      "x2": "190",
+      "y2": "20"
     }
   },
 
@@ -58,8 +59,8 @@
 
   "solver": {
     "type": "red_black_gauss_seidel",
-    "max_iterations": 1e5,
-    "tolerance": 1e-2
+    "max_iterations": 1e6,
+    "tolerance": 1e-5
   },
   "method": "pic",
   "freeSurface": "yes",
@@ -69,5 +70,5 @@
   "particleInteraction": false,
   "gamma": 0.073,
   "contactAngle": 2.35619449,
-  "max_cfl": 0.95
+  "max_cfl": 0.9
 }
