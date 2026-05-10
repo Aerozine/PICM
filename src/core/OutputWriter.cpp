@@ -171,9 +171,13 @@ bool OutputWriter::writeParticles(const Particles &particles,
   const int nAlive = particles.size();
 
   std::vector<varType> normValues;
+  std::vector<varType> uValues;
+  std::vector<varType> vValues;
   std::vector<varType> pointValues;
 
   normValues.reserve(nAlive);
+  uValues.reserve(nAlive);
+  vValues.reserve(nAlive);
   pointValues.reserve(static_cast<std::size_t>(nAlive) * 3);
 
   for (int k = 0; k < nAlive; ++k) {
@@ -183,22 +187,28 @@ bool OutputWriter::writeParticles(const Particles &particles,
     const varType v = particles.GetV(k);
 
     normValues.push_back(std::sqrt(u * u + v * v));
+    uValues.push_back(u);
+    vValues.push_back(v);
 
     pointValues.push_back(x);
     pointValues.push_back(y);
     pointValues.push_back(static_cast<varType>(0));
   }
 
-  return writeParticlePolyData(normValues, pointValues, id);
+  return writeParticlePolyData(normValues, uValues, vValues, pointValues, id);
 }
 
 bool OutputWriter::writeCloud(const Cloud2D &cloud, const std::string &id) {
   const int nAlive = cloud.totalSize();
 
   std::vector<varType> normValues;
+  std::vector<varType> uValues;
+  std::vector<varType> vValues;
   std::vector<varType> pointValues;
 
   normValues.reserve(nAlive);
+  uValues.reserve(nAlive);
+  vValues.reserve(nAlive);
   pointValues.reserve(static_cast<std::size_t>(nAlive) * 3);
 
   for (int cj = 0; cj < cloud.ny; ++cj) {
@@ -211,6 +221,8 @@ bool OutputWriter::writeCloud(const Cloud2D &cloud, const std::string &id) {
         const varType v = cell.GetV(p);
 
         normValues.push_back(std::sqrt(u * u + v * v));
+        uValues.push_back(u);
+        vValues.push_back(v);
 
         pointValues.push_back(x);
         pointValues.push_back(y);
@@ -219,16 +231,20 @@ bool OutputWriter::writeCloud(const Cloud2D &cloud, const std::string &id) {
     }
   }
 
-  return writeParticlePolyData(normValues, pointValues, id);
+  return writeParticlePolyData(normValues, uValues, vValues, pointValues, id);
 }
 
 bool OutputWriter::writeParticlePolyData(
     const std::vector<varType> &normValues,
+    const std::vector<varType> &uValues,
+    const std::vector<varType> &vValues,
     const std::vector<varType> &pointValues, const std::string &id) {
   if (pvd_finalised_)
     return false;
 
   const int nAlive = static_cast<int>(normValues.size());
+  if (uValues.size() != normValues.size() || vValues.size() != normValues.size())
+    return false;
   if (pointValues.size() != static_cast<std::size_t>(nAlive) * 3)
     return false;
 
@@ -243,6 +259,8 @@ bool OutputWriter::writeParticlePolyData(
   }
 
   const std::vector<unsigned char> normPayload = preparePayload(normValues);
+  const std::vector<unsigned char> uPayload = preparePayload(uValues);
+  const std::vector<unsigned char> vPayload = preparePayload(vValues);
   const std::vector<unsigned char> pointsPayload = preparePayload(pointValues);
 
   const auto *connRaw =
@@ -272,6 +290,10 @@ bool OutputWriter::writeParticlePolyData(
 
   const uint32_t normRawBytes =
       static_cast<uint32_t>(normValues.size() * sizeof(varType));
+  const uint32_t uRawBytes =
+      static_cast<uint32_t>(uValues.size() * sizeof(varType));
+  const uint32_t vRawBytes =
+      static_cast<uint32_t>(vValues.size() * sizeof(varType));
   const uint32_t pointsRawBytes =
       static_cast<uint32_t>(pointValues.size() * sizeof(varType));
   const uint32_t connRawBytes =
@@ -305,6 +327,12 @@ bool OutputWriter::writeParticlePolyData(
   const uint32_t normOffset = offset;
   offset += headerSize + static_cast<uint32_t>(normPayload.size());
 
+  const uint32_t uOffset = offset;
+  offset += headerSize + static_cast<uint32_t>(uPayload.size());
+
+  const uint32_t vOffset = offset;
+  offset += headerSize + static_cast<uint32_t>(vPayload.size());
+
   const uint32_t pointsOffset = offset;
   offset += headerSize + static_cast<uint32_t>(pointsPayload.size());
 
@@ -327,6 +355,14 @@ bool OutputWriter::writeParticlePolyData(
       << "\" Name=\"normVelocity\" NumberOfComponents=\"1\" "
          "format=\"appended\" "
       << "offset=\"" << normOffset << "\"/>\n"
+      << "        <DataArray type=\"" << vtkTypeName()
+      << "\" Name=\"velocityX\" NumberOfComponents=\"1\" "
+         "format=\"appended\" "
+      << "offset=\"" << uOffset << "\"/>\n"
+      << "        <DataArray type=\"" << vtkTypeName()
+      << "\" Name=\"velocityY\" NumberOfComponents=\"1\" "
+         "format=\"appended\" "
+      << "offset=\"" << vOffset << "\"/>\n"
       << "      </PointData>\n"
       << "      <Points>\n"
       << "        <DataArray type=\"" << vtkTypeName()
@@ -362,6 +398,8 @@ bool OutputWriter::writeParticlePolyData(
   };
 
   writeBlock(normPayload, normRawBytes);
+  writeBlock(uPayload, uRawBytes);
+  writeBlock(vPayload, vRawBytes);
   writeBlock(pointsPayload, pointsRawBytes);
   writeBlock(connPayload, connRawBytes);
   writeBlock(offPayload, offRawBytes);

@@ -44,6 +44,8 @@ private:
   [[nodiscard]] static std::vector<unsigned char>
   preparePayload(const std::vector<varType> &values);
   bool writeParticlePolyData(const std::vector<varType> &normValues,
+                             const std::vector<varType> &uValues,
+                             const std::vector<varType> &vValues,
                              const std::vector<varType> &pointValues,
                              const std::string &id);
 
