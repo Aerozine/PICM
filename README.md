@@ -213,9 +213,39 @@ Supported object shapes:
 
 - `rectangle`
 - `cylinder`
+- `u_tube` / `utube` / `u-tube` / `tube_u` / `manometer` / `manometre`
 
 Coordinates can be integers or simple expressions such as `"nx/2"` or
 `"ny-10"`.
+
+`u_tube` draws a rounded U-shaped channel on the grid. `bottom_y` is the
+lowest inner point of the bend; `left_x` and `right_x` place the two vertical
+legs. Use the same geometry under `solid` to create the tube walls and under
+`fluid` to initialise the liquid:
+
+```json
+"solid": {
+  "u_tube": {
+    "left_x": "55",
+    "right_x": "155",
+    "bottom_y": "14",
+    "top_y": "165",
+    "tube_width": "30",
+    "wall": "6"
+  }
+},
+"fluid": {
+  "u_tube": {
+    "left_x": "55",
+    "right_x": "155",
+    "bottom_y": "14",
+    "top_y": "165",
+    "tube_width": "30",
+    "left_level": "150",
+    "right_level": "112"
+  }
+}
+```
 
 ### Minimal example
 

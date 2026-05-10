@@ -1,6 +1,7 @@
 #include "SceneObjects.hpp"
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 
@@ -259,6 +260,174 @@ void CylinderObject::applyAir(Fields2D &f) {
   }
 }
 
+namespace {
+
+struct UTubeGeometry {
+  int leftX;
+  int rightX;
+  int bottomY;
+  int topY;
+  int tubeWidth;
+  int wall;
+  int leftLevel;
+  int rightLevel;
+  double leftCenterX;
+  double rightCenterX;
+  double centerX;
+  double centerY;
+  double bendRadius;
+  double halfWidth;
+};
+
+UTubeGeometry normalizedUTube(const UTubeObject &obj) {
+  UTubeGeometry g{};
+  g.leftX = obj.leftX;
+  g.rightX = obj.rightX;
+  g.bottomY = std::min(obj.bottomY, obj.topY);
+  g.topY = std::max(obj.bottomY, obj.topY);
+  g.tubeWidth = std::max(obj.tubeWidth, 1);
+  g.wall = std::max(obj.wall, 0);
+  g.leftLevel = obj.leftLevel;
+  g.rightLevel = obj.rightLevel;
+
+  if (g.leftX > g.rightX) {
+    std::swap(g.leftX, g.rightX);
+    std::swap(g.leftLevel, g.rightLevel);
+  }
+
+  g.halfWidth = static_cast<double>(g.tubeWidth) / 2.0;
+  g.leftCenterX = g.leftX + (static_cast<double>(g.tubeWidth) - 1.0) / 2.0;
+  g.rightCenterX = g.rightX + (static_cast<double>(g.tubeWidth) - 1.0) / 2.0;
+  g.centerX = (g.leftCenterX + g.rightCenterX) / 2.0;
+  g.bendRadius = std::max((g.rightCenterX - g.leftCenterX) / 2.0, 1.0);
+  g.centerY = g.bottomY + g.bendRadius + g.halfWidth;
+  g.topY = std::max(g.topY, static_cast<int>(std::ceil(g.centerY)));
+
+  if (g.leftLevel < 0)
+    g.leftLevel = g.topY;
+  if (g.rightLevel < 0)
+    g.rightLevel = g.topY;
+  g.leftLevel = std::clamp(g.leftLevel, g.bottomY, g.topY);
+  g.rightLevel = std::clamp(g.rightLevel, g.bottomY, g.topY);
+  return g;
+}
+
+bool isInsideVerticalLeg(const UTubeGeometry &g, const int i, const int j,
+                         const double halfWidth, const int leftTop,
+                         const int rightTop) {
+  const double x = static_cast<double>(i) + 0.5;
+  const double y = static_cast<double>(j) + 0.5;
+  if (y < g.centerY)
+    return false;
+  const bool leftLeg =
+      y <= static_cast<double>(leftTop) + 0.5 &&
+      std::abs(x - g.leftCenterX) <= halfWidth;
+  const bool rightLeg =
+      y <= static_cast<double>(rightTop) + 0.5 &&
+      std::abs(x - g.rightCenterX) <= halfWidth;
+  return leftLeg || rightLeg;
+}
+
+bool isInsideBend(const UTubeGeometry &g, const int i, const int j,
+                  const double halfWidth) {
+  const double x = static_cast<double>(i) + 0.5;
+  const double y = static_cast<double>(j) + 0.5;
+  if (y > g.centerY)
+    return false;
+  const double dx = x - g.centerX;
+  const double dy = y - g.centerY;
+  const double distance = std::sqrt(dx * dx + dy * dy);
+  return std::abs(distance - g.bendRadius) <= halfWidth;
+}
+
+bool isInsideUTubeChannel(const UTubeGeometry &g, const int i, const int j,
+                          const int leftTop, const int rightTop) {
+  return isInsideVerticalLeg(g, i, j, g.halfWidth, leftTop, rightTop) ||
+         isInsideBend(g, i, j, g.halfWidth);
+}
+
+bool isInsideUTubeEnvelope(const UTubeGeometry &g, const int i, const int j) {
+  const double outerHalfWidth = g.halfWidth + g.wall;
+  return isInsideVerticalLeg(g, i, j, outerHalfWidth, g.topY, g.topY) ||
+         isInsideBend(g, i, j, outerHalfWidth);
+}
+
+bool readIntField(const nlohmann::json &j, const char *key,
+                  const std::map<std::string, int> &vars, int &value) {
+  if (!j.contains(key))
+    return false;
+  value = resolveInt(j[key], vars);
+  return true;
+}
+
+} // namespace
+
+void UTubeObject::applySolid(Fields2D &f) {
+  const UTubeGeometry g = normalizedUTube(*this);
+  const int iMin = std::max(
+      static_cast<int>(std::floor(g.centerX - g.bendRadius - g.halfWidth -
+                                  g.wall)),
+      0);
+  const int iMax = std::min(
+      static_cast<int>(std::ceil(g.centerX + g.bendRadius + g.halfWidth +
+                                 g.wall)),
+      f.p.nx - 1);
+  const int jMin = std::max(
+      static_cast<int>(std::floor(g.centerY - g.bendRadius - g.halfWidth -
+                                  g.wall)),
+      0);
+  const int jMax = std::min(g.topY, f.p.ny - 1);
+
+  for (int j = jMin; j <= jMax; ++j)
+    for (int i = iMin; i <= iMax; ++i) {
+      if (!isInsideUTubeEnvelope(g, i, j))
+        continue;
+      if (isInsideUTubeChannel(g, i, j, g.topY, g.topY))
+        continue;
+      f.setSolid(i, j);
+      f.p.Set(i, j, FIELD_USOLID);
+    }
+}
+
+void UTubeObject::applyFluid(Fields2D &f) {
+  const UTubeGeometry g = normalizedUTube(*this);
+  const int iMin = std::max(
+      static_cast<int>(std::floor(g.centerX - g.bendRadius - g.halfWidth)), 0);
+  const int iMax = std::min(
+      static_cast<int>(std::ceil(g.centerX + g.bendRadius + g.halfWidth)),
+      f.p.nx - 1);
+  const int jMin = std::max(
+      static_cast<int>(std::floor(g.centerY - g.bendRadius - g.halfWidth)), 0);
+  const int bendTop = static_cast<int>(std::ceil(g.centerY));
+  const int fluidTop = std::max({g.leftLevel, g.rightLevel, bendTop});
+  const int jMax = std::min(fluidTop, f.p.ny - 1);
+
+  for (int j = jMin; j <= jMax; ++j)
+    for (int i = iMin; i <= iMax; ++i)
+      if (isInsideUTubeChannel(g, i, j, g.leftLevel, g.rightLevel))
+        f.setFluid(i, j);
+}
+
+void UTubeObject::applyAir(Fields2D &f) {
+  const UTubeGeometry g = normalizedUTube(*this);
+  const int iMin = std::max(
+      static_cast<int>(std::floor(g.centerX - g.bendRadius - g.halfWidth)), 0);
+  const int iMax = std::min(
+      static_cast<int>(std::ceil(g.centerX + g.bendRadius + g.halfWidth)),
+      f.p.nx - 1);
+  const int jMin = std::max(
+      static_cast<int>(std::floor(g.centerY - g.bendRadius - g.halfWidth)), 0);
+  const int jMax = std::min(g.topY, f.p.ny - 1);
+
+  for (int j = jMin; j <= jMax; ++j)
+    for (int i = iMin; i <= iMax; ++i) {
+      if (!isInsideUTubeChannel(g, i, j, g.topY, g.topY))
+        continue;
+      f.setAir(i, j);
+      f.p.Set(i, j, 0.0);
+    }
+}
+
 static std::unique_ptr<RectangleObject>
 parseRectangle(const nlohmann::json &j,
                const std::map<std::string, int> &vars) {
@@ -297,6 +466,43 @@ parseCylinder(const nlohmann::json &j, const std::map<std::string, int> &vars) {
   return obj;
 }
 
+static std::unique_ptr<UTubeObject>
+parseUTube(const nlohmann::json &j, const std::map<std::string, int> &vars) {
+  auto obj = std::make_unique<UTubeObject>();
+
+  if (!readIntField(j, "left_x", vars, obj->leftX))
+    if (!readIntField(j, "leftX", vars, obj->leftX))
+      readIntField(j, "x1", vars, obj->leftX);
+
+  if (!readIntField(j, "right_x", vars, obj->rightX))
+    if (!readIntField(j, "rightX", vars, obj->rightX))
+      readIntField(j, "x2", vars, obj->rightX);
+
+  if (!readIntField(j, "bottom_y", vars, obj->bottomY))
+    if (!readIntField(j, "bottomY", vars, obj->bottomY))
+      readIntField(j, "y1", vars, obj->bottomY);
+
+  if (!readIntField(j, "top_y", vars, obj->topY))
+    if (!readIntField(j, "topY", vars, obj->topY))
+      readIntField(j, "y2", vars, obj->topY);
+
+  if (!readIntField(j, "tube_width", vars, obj->tubeWidth))
+    if (!readIntField(j, "tubeWidth", vars, obj->tubeWidth))
+      readIntField(j, "width", vars, obj->tubeWidth);
+
+  if (!readIntField(j, "wall_thickness", vars, obj->wall))
+    if (!readIntField(j, "wallThickness", vars, obj->wall))
+      readIntField(j, "wall", vars, obj->wall);
+
+  if (!readIntField(j, "left_level", vars, obj->leftLevel))
+    readIntField(j, "leftLevel", vars, obj->leftLevel);
+
+  if (!readIntField(j, "right_level", vars, obj->rightLevel))
+    readIntField(j, "rightLevel", vars, obj->rightLevel);
+
+  return obj;
+}
+
 std::unique_ptr<SceneObject>
 makeSceneObject(const std::string &type, const nlohmann::json &j,
                 const std::map<std::string, int> &vars) {
@@ -304,6 +510,9 @@ makeSceneObject(const std::string &type, const nlohmann::json &j,
     return parseRectangle(j, vars);
   if (type == "cylinder")
     return parseCylinder(j, vars);
+  if (type == "u_tube" || type == "utube" || type == "u-tube" ||
+      type == "tube_u" || type == "manometer" || type == "manometre")
+    return parseUTube(j, vars);
 
   std::cerr << "[SceneObjects] Unknown object type: '" << type
             << "' – ignored.\n";

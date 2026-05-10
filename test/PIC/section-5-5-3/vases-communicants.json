@@ -5,8 +5,8 @@
   "nx": 240,
   "ny": 160,
   "nt": 3000,
-  "ppcx": 3,
-  "ppcy": 3,
+  "ppcx": 4,
+  "ppcy": 4,
   "density": 1000,
   "sampling_rate": 10,
   "write_u": true,
@@ -92,7 +92,7 @@
   "solver": {
     "type": "cg",
     "max_iterations": 1e5,
-    "tolerance": 1e-2
+    "tolerance": 1e-3
   },
   "method": "pic",
   "freeSurface": true,

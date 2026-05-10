@@ -106,8 +106,8 @@
   "refill": false,
   "surfaceTension": true,
   "particleInteraction": false,
-  "gamma": 0.0015,
-  "contactAngle": 0.45,
+  "gamma": 1.0015,
+  "contactAngle": 2.45,
   "kernelOrder": 2,
   "max_cfl": 0.5
 }

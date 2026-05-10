@@ -45,6 +45,21 @@ struct CylinderObject : public SceneObject {
   void applyAir(Fields2D &f) override;
 };
 
+struct UTubeObject : public SceneObject {
+  int leftX{0};       ///< Left leg inner x min.
+  int rightX{0};      ///< Right leg inner x min.
+  int bottomY{0};     ///< Lowest inner point of the rounded tube.
+  int topY{0};        ///< Open top of the vertical legs.
+  int tubeWidth{1};   ///< Inner channel width in cells.
+  int wall{1};        ///< Wall thickness in cells.
+  int leftLevel{-1};  ///< Fluid level in left leg, defaults to topY.
+  int rightLevel{-1}; ///< Fluid level in right leg, defaults to topY.
+
+  void applySolid(Fields2D &f) override;
+  void applyFluid(Fields2D &f) override;
+  void applyAir(Fields2D &f) override;
+};
+
 /**
  * @brief Evaluate a simple integer arithmetic expression from a JSON value.
  */
