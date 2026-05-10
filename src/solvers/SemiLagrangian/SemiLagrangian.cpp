@@ -139,6 +139,11 @@ void SemiLagrangian::WriteOutput(int step) const {
   if (step % params.sampling_rate != 0)
     return;
 
+  if (params.write_norm_velocity)
+    fields->VelocityNormCenterGrid();
+  if (params.write_vorticity)
+    fields->VorticityCenterGrid();
+
   Solver::WriteOutput(step);
 
   if (params.write_smoke && smokeWriter)

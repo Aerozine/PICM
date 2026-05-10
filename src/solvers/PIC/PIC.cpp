@@ -60,6 +60,8 @@ void PIC::WriteOutput(int step) const {
 
   if (params.write_norm_velocity)
     fields->VelocityNormCenterGrid();
+  if (params.write_vorticity)
+    fields->VorticityCenterGrid();
 
   Solver::WriteOutput(step);
 

@@ -1400,7 +1400,8 @@ void GPIC::WriteOutput(int step) const {
 
     const bool needsGrid =
         params.write_u || params.write_v || params.write_p ||
-        params.write_div || params.write_norm_velocity;
+        params.write_div || params.write_norm_velocity ||
+        params.write_vorticity;
 
     if (needsGrid) {
         DownloadAll();                      // d_u, d_v, d_p, d_labels → fields
@@ -1408,6 +1409,8 @@ void GPIC::WriteOutput(int step) const {
             fields->Div();
         if (params.write_norm_velocity)
             fields->VelocityNormCenterGrid();
+        if (params.write_vorticity)
+            fields->VorticityCenterGrid();
     } else {
         DownloadLabels();                   // Solver::WriteOutput always writes labels
     }

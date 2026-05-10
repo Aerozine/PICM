@@ -39,6 +39,7 @@ public:
   bool write_p = true;
   bool write_div = false;
   bool write_norm_velocity = false;
+  bool write_vorticity = false;
   bool write_smoke = false;
   bool write_particles = false;
   bool refill = false;

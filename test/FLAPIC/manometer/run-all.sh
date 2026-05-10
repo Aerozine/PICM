@@ -1,12 +1,29 @@
 #!/bin/bash -l
 #SBATCH --job-name=FLAPIC-manometer
-#SBATCH --partition=hmem
-#SBATCH --mem=0
-#SBATCH --exclusive
+#SBATCH --partition=batch
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
 #SBATCH --cpus-per-task=64
 #SBATCH --time=02:00:00
+#SBATCH --output=FLAPIC-manometer-%j.out
+#SBATCH --error=FLAPIC-manometer-%j.err
 
 set -euo pipefail
+
+# -----------------------------------------------------------------------------
+# Safety guard: if this script is executed directly on the login node, it only
+# submits itself to Slurm and exits. The simulations never run on the login node.
+# -----------------------------------------------------------------------------
+if [[ -z "${SLURM_JOB_ID:-}" ]]; then
+  if ! command -v sbatch >/dev/null 2>&1; then
+    echo "Error: this script must be submitted with Slurm, but sbatch was not found." >&2
+    exit 1
+  fi
+
+  echo "Not inside a Slurm allocation. Submitting this script with sbatch..."
+  sbatch "$0" "$@"
+  exit 0
+fi
 
 scriptDir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 picmRoot="${PICM_ROOT:-$(cd "${scriptDir}/../../.." && pwd)}"
@@ -15,7 +32,7 @@ startDir="$(pwd)"
 numCpuCores="${SLURM_CPUS_PER_TASK:-64}"
 executable="${PIC_BIN:-${picmRoot}/build-release/bin/PIC}"
 configDir="test/FLAPIC/manometer"
-logDir="${picmRoot}/results/FLAPIC/manometer/slurm-logs/${SLURM_JOB_ID:-local}"
+logDir="${picmRoot}/results/FLAPIC/manometer/slurm-logs/${SLURM_JOB_ID}"
 
 configs=(
   "manometer-pic.json"
@@ -32,7 +49,7 @@ fi
 if [[ ! -x "${executable}" ]]; then
   echo "PIC executable not found or not executable: ${executable}" >&2
   echo "Build it first with: cmake --build build-release" >&2
-  echo "Or run with: PIC_BIN=/path/to/PIC $0" >&2
+  echo "Or submit with: PIC_BIN=/path/to/PIC sbatch $0" >&2
   exit 1
 fi
 
@@ -44,9 +61,8 @@ export OMP_PLACES="${OMP_PLACES:-cores}"
 
 echo "Job info"
 echo "--------"
-echo
-echo "    Job ID: ${SLURM_JOB_ID:-local}"
-echo " Node list: ${SLURM_JOB_NODELIST:-local}"
+echo "    Job ID: ${SLURM_JOB_ID}"
+echo " Node list: ${SLURM_JOB_NODELIST:-unknown}"
 echo " cpus-per-task: ${numCpuCores}"
 echo " executable: ${executable}"
 echo " log dir: ${logDir}"
@@ -72,14 +88,10 @@ for config in "${configs[@]}"; do
 
   startTime="$(date +%s.%N)"
 
-  if [[ -n "${SLURM_JOB_ID:-}" ]] && command -v srun >/dev/null 2>&1; then
-    srun --ntasks=1 \
-      --cpus-per-task="${numCpuCores}" \
-      --cpu-bind=cores \
-      "${executable}" -c "${configPath}" >"${output}" 2>"${error}"
-  else
-    "${executable}" -c "${configPath}" >"${output}" 2>"${error}"
-  fi
+  srun --ntasks=1 \
+       --cpus-per-task="${numCpuCores}" \
+       --cpu-bind=cores \
+       "${executable}" -c "${configPath}" >"${output}" 2>"${error}"
 
   endTime="$(date +%s.%N)"
   elapsed="$(awk -v start="${startTime}" -v end="${endTime}" 'BEGIN { printf "%.6f", end - start }')"

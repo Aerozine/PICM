@@ -166,3 +166,31 @@ void Fields2D::VelocityNormCenterGrid() {
       normVelocity.Set(i, j, std::sqrt(uc * uc + vc * vc));
     }
 }
+
+void Fields2D::VorticityCenterGrid() {
+  const varType xMax = static_cast<varType>(nx) * dx;
+  const varType yMax = static_cast<varType>(ny) * dy;
+
+  OMP_PRAGMA(omp parallel for collapse(2))
+  for (int j = 0; j < ny; ++j)
+    for (int i = 0; i < nx; ++i) {
+      const varType x = (static_cast<varType>(i) + REAL_LITERAL(0.5)) * dx;
+      const varType y = (static_cast<varType>(j) + REAL_LITERAL(0.5)) * dy;
+
+      const varType xLeft =
+          std::max(REAL_LITERAL(0.0), x - dx * REAL_LITERAL(0.5));
+      const varType xRight = std::min(xMax, x + dx * REAL_LITERAL(0.5));
+      const varType yBottom =
+          std::max(REAL_LITERAL(0.0), y - dy * REAL_LITERAL(0.5));
+      const varType yTop = std::min(yMax, y + dy * REAL_LITERAL(0.5));
+
+      const varType dvdx =
+          (interpolateV(xRight, y) - interpolateV(xLeft, y)) /
+          std::max(xRight - xLeft, REAL_EPSILON);
+      const varType dudy =
+          (interpolateU(x, yTop) - interpolateU(x, yBottom)) /
+          std::max(yTop - yBottom, REAL_EPSILON);
+
+      vorticity.Set(i, j, dvdx - dudy);
+    }
+}

@@ -42,7 +42,7 @@ public:
   varType density;
   varType dt, dx, dy;
 
-  Grid2D u, v, p, div, normVelocity;
+  Grid2D u, v, p, div, normVelocity, vorticity;
 
   std::unique_ptr<Grid2D> phi;
   std::unique_ptr<Grid2D> kappa;
@@ -57,7 +57,7 @@ public:
            varType dy_, bool freeSurface = false, bool surfaceTension = false)
       : nx(nx_), ny(ny_), density(density_), dt(dt_), dx(dx_), dy(dy_),
         u(nx_ + 1, ny_), v(nx_, ny_ + 1), p(nx_ + 2, ny_ + 2), div(nx_, ny_),
-        normVelocity(nx_, ny_),
+        normVelocity(nx_, ny_), vorticity(nx_, ny_),
         Labels(std::make_unique<uint16_t[]>(
             static_cast<std::size_t>(nx_ + 2) * (ny_ + 2))) {
     const std::size_t labelCount =
@@ -119,4 +119,5 @@ public:
   void UpdateDivNorm();
   void Div();
   void VelocityNormCenterGrid();
+  void VorticityCenterGrid();
 };

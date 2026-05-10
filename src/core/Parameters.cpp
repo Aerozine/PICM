@@ -110,6 +110,7 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   write_p = j.value("write_p", write_p);
   write_div = j.value("write_div", write_div);
   write_norm_velocity = j.value("write_norm_velocity", write_norm_velocity);
+  write_vorticity = j.value("write_vorticity", write_vorticity);
   write_smoke = j.value("write_smoke", write_smoke);
   ppcy = j.value("ppcy", ppcy);
   ppcx = j.value("ppcx", ppcx);
@@ -245,7 +246,8 @@ std::ostream &operator<<(std::ostream &os, const Parameters &p) {
      << "  Output  : folder='" << p.folder << "'\n"
      << "  Write   : u=" << p.write_u << " v=" << p.write_v
      << " p=" << p.write_p << " div=" << p.write_div
-     << " norm=" << p.write_norm_velocity << '\n'
+     << " norm=" << p.write_norm_velocity
+     << " vort=" << p.write_vorticity << '\n'
      << "  freeSurface: " << (p.freeSurface ? "yes" : "no") << '\n'
      << "  InitVelU: " << (!p.velocityU_json.is_null() ? "defined" : "none")
      << '\n'

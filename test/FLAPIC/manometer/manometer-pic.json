@@ -14,6 +14,7 @@
   "write_p": true,
   "write_div": true,
   "write_norm_velocity": true,
+  "write_vorticity": true,
   "write_smoke": true,
   "write_particles": true,
   "folder": "results/FLAPIC/manometer/pic",

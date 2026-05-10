@@ -56,6 +56,9 @@ void Solver::InitializeOutputWriters() {
   if (params.write_norm_velocity)
     normVelocityWriter =
         std::make_unique<OutputWriter>(params.folder, "normVelocity");
+  if (params.write_vorticity)
+    vorticityWriter =
+        std::make_unique<OutputWriter>(params.folder, "vorticity");
   labelWriter = std::make_unique<OutputWriter>(params.folder, "label");
 }
 void Solver::WriteOutput(int step) const {
@@ -73,6 +76,8 @@ void Solver::WriteOutput(int step) const {
     ok &= divWriter->writeGrid2D(fields->div, "div");
   if (params.write_norm_velocity && normVelocityWriter)
     ok &= normVelocityWriter->writeGrid2D(fields->normVelocity, "normVelocity");
+  if (params.write_vorticity && vorticityWriter)
+    ok &= vorticityWriter->writeGrid2D(fields->vorticity, "vorticity");
 
   ok &= labelWriter->writeLabels(fields->Labels.get(), fields->nx + 2, fields->ny + 2,
                                  "label");

@@ -178,7 +178,8 @@ Simulation parameters are described in a JSON file. Common fields include:
 - `ppcx`, `ppcy` for particle methods
 - `coefPic` for FLIP blending
 - `kernelOrder`
-- output toggles such as `write_u`, `write_v`, `write_p`, `write_particles`
+- output toggles such as `write_u`, `write_v`, `write_p`,
+  `write_vorticity`, `write_particles`
 
 ### Method selection
 
@@ -300,6 +301,7 @@ Depending on the enabled flags, the solver can write:
 - `p`
 - `div`
 - `normVelocity`
+- `vorticity`
 - `smoke`
 - `particles`
 - `label`
