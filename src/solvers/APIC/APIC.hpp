@@ -12,6 +12,7 @@ protected:
 
 private:
   void accumulateAffineComponent(const Grid2D &grid, varType xg, varType yg,
-                                 int imax, int jmax, varType &value,
-                                 varType &gradX, varType &gradY) const;
+                                 int imax, int jmax, bool uComponent,
+                                 varType &value, varType &gradX,
+                                 varType &gradY) const;
 };

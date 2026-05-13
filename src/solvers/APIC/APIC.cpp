@@ -3,6 +3,59 @@
 #include <algorithm>
 #include <cmath>
 
+namespace {
+
+[[nodiscard]] varType sampleUFreeSlip(const Fields2D &fields,
+                                      const Grid2D &grid, int i, int j) {
+  i = std::clamp(i, 0, grid.nx - 1);
+  j = std::clamp(j, 0, grid.ny - 1);
+
+  const bool leftSolid = IS_SOLID(fields.Label(i, j + 1));
+  const bool rightSolid = IS_SOLID(fields.Label(i + 1, j + 1));
+  if (leftSolid != rightSolid)
+    return varType(0);
+  if (!leftSolid)
+    return grid.Get(i, j);
+
+  if (j > 0 && !IS_SOLID(fields.Label(i, j)) &&
+      !IS_SOLID(fields.Label(i + 1, j)))
+    return grid.Get(i, j - 1);
+  if (j + 1 < grid.ny && !IS_SOLID(fields.Label(i, j + 2)) &&
+      !IS_SOLID(fields.Label(i + 1, j + 2)))
+    return grid.Get(i, j + 1);
+  return varType(0);
+}
+
+[[nodiscard]] varType sampleVFreeSlip(const Fields2D &fields,
+                                      const Grid2D &grid, int i, int j) {
+  i = std::clamp(i, 0, grid.nx - 1);
+  j = std::clamp(j, 0, grid.ny - 1);
+
+  const bool bottomSolid = IS_SOLID(fields.Label(i + 1, j));
+  const bool topSolid = IS_SOLID(fields.Label(i + 1, j + 1));
+  if (bottomSolid != topSolid)
+    return varType(0);
+  if (!bottomSolid)
+    return grid.Get(i, j);
+
+  if (i > 0 && !IS_SOLID(fields.Label(i, j)) &&
+      !IS_SOLID(fields.Label(i, j + 1)))
+    return grid.Get(i - 1, j);
+  if (i + 1 < grid.nx && !IS_SOLID(fields.Label(i + 2, j)) &&
+      !IS_SOLID(fields.Label(i + 2, j + 1)))
+    return grid.Get(i + 1, j);
+  return varType(0);
+}
+
+[[nodiscard]] varType sampleFaceFreeSlip(const Fields2D &fields,
+                                         const Grid2D &grid, int i, int j,
+                                         bool uComponent) {
+  return uComponent ? sampleUFreeSlip(fields, grid, i, j)
+                    : sampleVFreeSlip(fields, grid, i, j);
+}
+
+} // namespace
+
 APIC::APIC(Parameters &params) : PIC(params) {}
 
 void APIC::ProjectParticlesOnGrid() {
@@ -110,8 +163,9 @@ void APIC::ProjectParticlesOnGrid() {
 }
 
 void APIC::accumulateAffineComponent(const Grid2D &grid, varType xg, varType yg,
-                                     int imax, int jmax, varType &value,
-                                     varType &gradX, varType &gradY) const {
+                                     int imax, int jmax, bool uComponent,
+                                     varType &value, varType &gradX,
+                                     varType &gradY) const {
   const int radius = params.kernelOrder;
   const int i0 = static_cast<int>(std::floor(xg));
   const int j0 = static_cast<int>(std::floor(yg));
@@ -136,7 +190,8 @@ void APIC::accumulateAffineComponent(const Grid2D &grid, varType xg, varType yg,
       if (w <= varType(0))
         continue;
 
-      const varType sample = grid.Get(i, j);
+      const varType sample =
+          sampleFaceFreeSlip(*fields, grid, i, j, uComponent);
       const varType dwx = (dhat(xg - varType(i)) / dx) * wy;
       const varType dwy = wx * (dhat(yg - varType(j)) / dy);
 
@@ -175,13 +230,15 @@ void APIC::ProjectGridOnParticles() {
         varType cuX = 0;
         varType cuY = 0;
         accumulateAffineComponent(fields->u, x / dx, y / dy - varType(0.5),
-                                  fields->u.nx, fields->u.ny, u, cuX, cuY);
+                                  fields->u.nx, fields->u.ny, true, u, cuX,
+                                  cuY);
 
         varType v = 0;
         varType cvX = 0;
         varType cvY = 0;
         accumulateAffineComponent(fields->v, x / dx - varType(0.5), y / dy,
-                                  fields->v.nx, fields->v.ny, v, cvX, cvY);
+                                  fields->v.nx, fields->v.ny, false, v, cvX,
+                                  cvY);
 
         cell.SetU(p, u);
         cell.SetV(p, v - dt * params.gravity);
