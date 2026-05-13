@@ -60,6 +60,26 @@ struct RankineVortexObject : public SceneObject {
   void applyVelocityV(Fields2D &f) override;
 };
 
+struct LambOseenVortexObject : public SceneObject {
+  std::string condition{"initial"}; ///< "initial" or "boundary".
+  int cx{0}, cy{0};                 ///< Centre cell indices.
+  int r{1};                         ///< Cavity radius in cells.
+  int coreR{-1};                    ///< Core radius in cells, optional.
+  varType coreRadius{0};            ///< Physical core radius, optional.
+  varType viscosity{0};             ///< Physical viscosity for core init.
+  varType physicalTime{0};          ///< Diffusion time for core init.
+  varType circulation{1};           ///< Circulation Gamma.
+  varType omega{0};                 ///< Optional centre angular velocity.
+  bool useOmega{false};             ///< Derive circulation from omega.
+  bool confine{true};               ///< Make the exterior of the cavity solid.
+  bool fillFluid{true};             ///< Fill the cavity with fluid.
+
+  void applySolid(Fields2D &f) override;
+  void applyFluid(Fields2D &f) override;
+  void applyVelocityU(Fields2D &f) override;
+  void applyVelocityV(Fields2D &f) override;
+};
+
 struct UTubeObject : public SceneObject {
   int leftX{0};       ///< Left leg inner x min.
   int rightX{0};      ///< Right leg inner x min.

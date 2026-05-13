@@ -279,6 +279,48 @@ varType rankineVelocityScale(const varType dx, const varType dy,
   return omega * coreRadius * coreRadius / d2;
 }
 
+constexpr varType PI = static_cast<varType>(3.1415926535897932384626433832795);
+
+varType lambOseenCoreRadius(const LambOseenVortexObject &obj,
+                            const Fields2D &f) {
+  if (obj.coreRadius > REAL_EPSILON)
+    return obj.coreRadius;
+
+  const varType gridScale = REAL_LITERAL(0.5) * (f.dx + f.dy);
+  if (obj.coreR > 0)
+    return static_cast<varType>(obj.coreR) * gridScale;
+
+  if (obj.viscosity > REAL_EPSILON && obj.physicalTime > REAL_EPSILON)
+    return std::sqrt(REAL_LITERAL(4.0) * obj.viscosity * obj.physicalTime);
+
+  return std::max(gridScale, static_cast<varType>(obj.r) * gridScale *
+                                 REAL_LITERAL(0.25));
+}
+
+varType lambOseenCirculation(const LambOseenVortexObject &obj,
+                             const varType coreRadius) {
+  if (!obj.useOmega)
+    return obj.circulation;
+
+  return REAL_LITERAL(2.0) * PI * obj.omega * coreRadius * coreRadius;
+}
+
+varType lambOseenVelocityScale(const varType dx, const varType dy,
+                               const varType circulation,
+                               const varType coreRadius) {
+  const varType core2 = coreRadius * coreRadius;
+  if (core2 <= REAL_EPSILON)
+    return REAL_LITERAL(0.0);
+
+  const varType d2 = dx * dx + dy * dy;
+  const varType denom = REAL_LITERAL(2.0) * PI;
+  if (d2 <= REAL_EPSILON)
+    return circulation / (denom * core2);
+
+  return circulation / (denom * d2) *
+         (REAL_LITERAL(1.0) - std::exp(-d2 / core2));
+}
+
 } // namespace
 
 void RankineVortexObject::applySolid(Fields2D &f) {
@@ -364,6 +406,96 @@ void RankineVortexObject::applyVelocityV(Fields2D &f) {
       const varType x = (static_cast<varType>(i) + REAL_LITERAL(0.5)) * f.dx;
       const varType dx = x - centerX;
       const varType scale = rankineVelocityScale(dx, dy, omega, coreRadius);
+      f.v.Set(i, j, scale * dx);
+      f.SetLabel(i + 1, j,
+                 condition == "initial" ? Fields2D::IC_V : Fields2D::BC_V);
+    }
+  }
+}
+
+void LambOseenVortexObject::applySolid(Fields2D &f) {
+  if (!confine)
+    return;
+  const int radius = std::max(r, 1);
+  for (int j = 0; j < f.p.ny; ++j) {
+    for (int i = 0; i < f.p.nx; ++i) {
+      if (insideIndexCircle(i, j, cx, cy, radius))
+        continue;
+      f.setSolid(i, j);
+      f.p.Set(i, j, FIELD_USOLID);
+    }
+  }
+}
+
+void LambOseenVortexObject::applyFluid(Fields2D &f) {
+  if (!fillFluid)
+    return;
+  const int radius = std::max(r, 1);
+  for (int j = 0; j < f.p.ny; ++j)
+    for (int i = 0; i < f.p.nx; ++i)
+      if (insideIndexCircle(i, j, cx, cy, radius))
+        f.setFluid(i, j);
+}
+
+void LambOseenVortexObject::applyVelocityU(Fields2D &f) {
+  if (condition != "initial" && condition != "boundary") {
+    std::cout << "Invalid condition for Lamb-Oseen vortex velocity.\n"
+              << "Available options: initial or boundary.\n";
+    return;
+  }
+
+  const varType coreRadius = lambOseenCoreRadius(*this, f);
+  const varType gamma = lambOseenCirculation(*this, coreRadius);
+  const varType centerY = static_cast<varType>(cy) * f.dy;
+
+  for (int j = 0; j < f.u.ny; ++j) {
+    const varType y = (static_cast<varType>(j) + REAL_LITERAL(0.5)) * f.dy;
+    const varType dy = y - centerY;
+    for (int i = 0; i < f.u.nx; ++i) {
+      const bool leftSolid = IS_SOLID(f.Label(i, j + 1));
+      const bool rightSolid = IS_SOLID(f.Label(i + 1, j + 1));
+      if (leftSolid || rightSolid) {
+        f.u.Set(i, j, REAL_LITERAL(0.0));
+        continue;
+      }
+
+      const varType x = static_cast<varType>(i) * f.dx;
+      const varType dx = x - static_cast<varType>(cx) * f.dx;
+      const varType scale =
+          lambOseenVelocityScale(dx, dy, gamma, coreRadius);
+      f.u.Set(i, j, -scale * dy);
+      f.SetLabel(i, j + 1,
+                 condition == "initial" ? Fields2D::IC_U : Fields2D::BC_U);
+    }
+  }
+}
+
+void LambOseenVortexObject::applyVelocityV(Fields2D &f) {
+  if (condition != "initial" && condition != "boundary") {
+    std::cout << "Invalid condition for Lamb-Oseen vortex velocity.\n"
+              << "Available options: initial or boundary.\n";
+    return;
+  }
+
+  const varType coreRadius = lambOseenCoreRadius(*this, f);
+  const varType gamma = lambOseenCirculation(*this, coreRadius);
+  const varType centerX = static_cast<varType>(cx) * f.dx;
+
+  for (int j = 0; j < f.v.ny; ++j) {
+    const varType y = static_cast<varType>(j) * f.dy;
+    const varType dy = y - static_cast<varType>(cy) * f.dy;
+    for (int i = 0; i < f.v.nx; ++i) {
+      const bool bottomSolid = IS_SOLID(f.Label(i + 1, j));
+      const bool topSolid = IS_SOLID(f.Label(i + 1, j + 1));
+      if (bottomSolid || topSolid) {
+        f.v.Set(i, j, REAL_LITERAL(0.0));
+        continue;
+      }
+
+      const varType x = (static_cast<varType>(i) + REAL_LITERAL(0.5)) * f.dx;
+      const varType dx = x - centerX;
+      const varType scale =
+          lambOseenVelocityScale(dx, dy, gamma, coreRadius);
       f.v.Set(i, j, scale * dx);
       f.SetLabel(i + 1, j,
                  condition == "initial" ? Fields2D::IC_V : Fields2D::BC_V);
@@ -615,6 +747,73 @@ parseRankineVortex(const nlohmann::json &j,
   return obj;
 }
 
+static std::unique_ptr<LambOseenVortexObject>
+parseLambOseenVortex(const nlohmann::json &j,
+                     const std::map<std::string, int> &vars) {
+  auto obj = std::make_unique<LambOseenVortexObject>();
+
+  if (j.contains("condition"))
+    obj->condition = j["condition"].get<std::string>();
+
+  if (j.contains("cx"))
+    obj->cx = resolveInt(j["cx"], vars);
+  else if (j.contains("x"))
+    obj->cx = resolveInt(j["x"], vars);
+
+  if (j.contains("cy"))
+    obj->cy = resolveInt(j["cy"], vars);
+  else if (j.contains("y"))
+    obj->cy = resolveInt(j["y"], vars);
+
+  if (j.contains("r"))
+    obj->r = resolveInt(j["r"], vars);
+  else if (j.contains("radius"))
+    obj->r = resolveInt(j["radius"], vars);
+
+  if (j.contains("core_r"))
+    obj->coreR = resolveInt(j["core_r"], vars);
+  else if (j.contains("coreRadius"))
+    obj->coreR = resolveInt(j["coreRadius"], vars);
+
+  if (j.contains("core_radius"))
+    obj->coreRadius = j["core_radius"].get<varType>();
+  else if (j.contains("core_radius_m"))
+    obj->coreRadius = j["core_radius_m"].get<varType>();
+  else if (j.contains("coreRadiusPhysical"))
+    obj->coreRadius = j["coreRadiusPhysical"].get<varType>();
+
+  if (j.contains("viscosity"))
+    obj->viscosity = j["viscosity"].get<varType>();
+  else if (j.contains("nu"))
+    obj->viscosity = j["nu"].get<varType>();
+
+  if (j.contains("physical_time"))
+    obj->physicalTime = j["physical_time"].get<varType>();
+  else if (j.contains("physicalTime"))
+    obj->physicalTime = j["physicalTime"].get<varType>();
+  else if (j.contains("time"))
+    obj->physicalTime = j["time"].get<varType>();
+
+  if (j.contains("circulation"))
+    obj->circulation = j["circulation"].get<varType>();
+  else if (j.contains("Gamma"))
+    obj->circulation = j["Gamma"].get<varType>();
+  else if (j.contains("gamma_vortex"))
+    obj->circulation = j["gamma_vortex"].get<varType>();
+
+  if (j.contains("omega")) {
+    obj->omega = j["omega"].get<varType>();
+    obj->useOmega = true;
+  } else if (j.contains("angular_velocity")) {
+    obj->omega = j["angular_velocity"].get<varType>();
+    obj->useOmega = true;
+  }
+
+  obj->confine = j.value("confine", obj->confine);
+  obj->fillFluid = j.value("fill_fluid", j.value("fillFluid", obj->fillFluid));
+  return obj;
+}
+
 static std::unique_ptr<UTubeObject>
 parseUTube(const nlohmann::json &j, const std::map<std::string, int> &vars) {
   auto obj = std::make_unique<UTubeObject>();
@@ -663,6 +862,10 @@ makeSceneObject(const std::string &type, const nlohmann::json &j,
       type == "rankineVortex" || type == "circular_vortex" ||
       type == "vortex_cavity")
     return parseRankineVortex(j, vars);
+  if (type == "lamb_oseen_vortex" || type == "lamb-oseen-vortex" ||
+      type == "lambOseenVortex" || type == "lamb_oseen" ||
+      type == "oseen_vortex")
+    return parseLambOseenVortex(j, vars);
   if (type == "u_tube" || type == "utube" || type == "u-tube" ||
       type == "tube_u" || type == "manometer" || type == "manometre")
     return parseUTube(j, vars);

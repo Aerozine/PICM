@@ -142,7 +142,7 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   interactionExponent = j.value("interactionExponent", interactionExponent);
   refill = j.value("refill", refill);
   kernelOrder = j.value("kernelOrder", kernelOrder);
-  coefPic = j.value("coefPic", coefPic);
+  coefPic = j.value("coefPic", j.value("coefpic", coefPic));
   max_cfl = j.value("max_cfl", max_cfl);
   write_particles = j.value("write_particles", write_particles);
   folder = j.value("folder", folder);
@@ -180,11 +180,21 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   if (j.contains("smoke"))
     smoke_json = j["smoke"];
   if (j.contains("rankine_vortex"))
-    rankineVortex_json = nlohmann::json{{"rankine_vortex", j["rankine_vortex"]}};
+    vortex_json = nlohmann::json{{"rankine_vortex", j["rankine_vortex"]}};
   else if (j.contains("rankineVortex"))
-    rankineVortex_json = nlohmann::json{{"rankine_vortex", j["rankineVortex"]}};
+    vortex_json = nlohmann::json{{"rankine_vortex", j["rankineVortex"]}};
   else if (j.contains("vortex_cavity"))
-    rankineVortex_json = nlohmann::json{{"vortex_cavity", j["vortex_cavity"]}};
+    vortex_json = nlohmann::json{{"vortex_cavity", j["vortex_cavity"]}};
+  else if (j.contains("lamb_oseen_vortex"))
+    vortex_json = nlohmann::json{{"lamb_oseen_vortex", j["lamb_oseen_vortex"]}};
+  else if (j.contains("lambOseenVortex"))
+    vortex_json = nlohmann::json{{"lamb_oseen_vortex", j["lambOseenVortex"]}};
+  else if (j.contains("lamb_oseen"))
+    vortex_json = nlohmann::json{{"lamb_oseen_vortex", j["lamb_oseen"]}};
+  else if (j.contains("lamb-oseen-vortex"))
+    vortex_json = nlohmann::json{{"lamb_oseen_vortex", j["lamb-oseen-vortex"]}};
+  else if (j.contains("oseen_vortex"))
+    vortex_json = nlohmann::json{{"lamb_oseen_vortex", j["oseen_vortex"]}};
 
   if (j.contains("solver")) {
     solver = solverConfigFromJson(j["solver"]);
@@ -210,8 +220,8 @@ void Parameters::applyToFields(Fields2D &fields) const {
   if (!solid_json.is_null())
     for (const auto &obj : parseSceneObjects(solid_json, vars))
       obj->applySolid(fields);
-  if (!rankineVortex_json.is_null())
-    for (const auto &obj : parseSceneObjects(rankineVortex_json, vars)) {
+  if (!vortex_json.is_null())
+    for (const auto &obj : parseSceneObjects(vortex_json, vars)) {
       obj->applySolid(fields);
       obj->applyFluid(fields);
       obj->applyVelocityU(fields);
@@ -284,8 +294,8 @@ std::ostream &operator<<(std::ostream &os, const Parameters &p) {
      << '\n'
      << "  InitVelV: " << (!p.velocityV_json.is_null() ? "defined" : "none")
      << '\n'
-     << "  Rankine : "
-     << (!p.rankineVortex_json.is_null() ? "defined" : "none") << '\n'
+     << "  Vortex  : "
+     << (!p.vortex_json.is_null() ? "defined" : "none") << '\n'
      << "  smoke   : " << (!p.smoke_json.is_null() ? "defined" : "none") << '\n'
      << "  Solid   : " << (!p.solid_json.is_null() ? "defined" : "none") << '\n'
      << "=============================\n";

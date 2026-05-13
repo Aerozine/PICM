@@ -1,0 +1,50 @@
+{
+  "dx": 0.02,
+  "dy": 0.02,
+  "dt": 0.002,
+  "nx": 256,
+  "ny": 256,
+  "nt": 600,
+  "ppcx": 3,
+  "ppcy": 3,
+  "density": 1000,
+  "sampling_rate": 20,
+  "write_u": true,
+  "write_v": true,
+  "write_p": false,
+  "write_div": false,
+  "write_norm_velocity": true,
+  "write_vorticity": true,
+  "write_smoke": false,
+  "write_particles": false,
+  "folder": "results/PIC/lamb-oseen-vortex",
+  "filename": "simulation",
+
+  "lamb_oseen_vortex": {
+    "condition": "initial",
+    "cx": "nx/2",
+    "cy": "ny/2",
+    "r": "nx/2-12",
+    "core_r": 20,
+    "omega": 2.0,
+    "viscosity": 0.002,
+    "physical_time": 20.0,
+    "confine": true,
+    "fill_fluid": true
+  },
+
+  "solver": {
+    "type": "cg",
+    "max_iterations": 100000,
+    "tolerance": 1e-3
+  },
+  "method": "pic",
+  "freeSurface": false,
+  "gravity": 0.0,
+  "refill": false,
+  "kernelOrder": 2,
+  "coefPic": 0.0,
+  "max_cfl": 0.9,
+  "surfaceTension": false,
+  "particleInteraction": false
+}
