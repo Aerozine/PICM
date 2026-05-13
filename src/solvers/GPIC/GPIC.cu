@@ -1419,7 +1419,8 @@ void GPIC::WriteOutput(int step) const {
 
     if (params.write_particles && particlesWriter_) {
         DownloadParticles();
-        const bool ok = particlesWriter_->writeCloud(*cloud_, "particles");
+        const double timeValue = static_cast<double>(step) * static_cast<double>(dt);
+        const bool ok = particlesWriter_->writeCloud(*cloud_, "particles", timeValue);
         if (!ok)
             std::cerr << "[GPIC] Warning: failed to write particles at step "
                       << step << '\n';

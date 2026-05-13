@@ -65,22 +65,25 @@ void Solver::WriteOutput(int step) const {
   if (step % params.sampling_rate != 0)
     return;
 
+  const double timeValue = static_cast<double>(step) * static_cast<double>(dt);
   bool ok = true;
   if (params.write_u && uWriter)
-    ok &= uWriter->writeGrid2D(fields->u, "u");
+    ok &= uWriter->writeGrid2D(fields->u, "u", timeValue);
   if (params.write_v && vWriter)
-    ok &= vWriter->writeGrid2D(fields->v, "v");
+    ok &= vWriter->writeGrid2D(fields->v, "v", timeValue);
   if (params.write_p && pWriter)
-    ok &= pWriter->writeGrid2D(fields->p, "p");
+    ok &= pWriter->writeGrid2D(fields->p, "p", timeValue);
   if (params.write_div && divWriter)
-    ok &= divWriter->writeGrid2D(fields->div, "div");
+    ok &= divWriter->writeGrid2D(fields->div, "div", timeValue);
   if (params.write_norm_velocity && normVelocityWriter)
-    ok &= normVelocityWriter->writeGrid2D(fields->normVelocity, "normVelocity");
+    ok &= normVelocityWriter->writeGrid2D(fields->normVelocity, "normVelocity",
+                                          timeValue);
   if (params.write_vorticity && vorticityWriter)
-    ok &= vorticityWriter->writeGrid2D(fields->vorticity, "vorticity");
+    ok &= vorticityWriter->writeGrid2D(fields->vorticity, "vorticity",
+                                       timeValue);
 
   ok &= labelWriter->writeLabels(fields->Labels.get(), fields->nx + 2, fields->ny + 2,
-                                 "label");
+                                 "label", timeValue);
   if (!ok)
     std::cerr << "[SemiLagrangian] Warning: failed to write output at step "
               << step << '\n';

@@ -12,6 +12,14 @@
 
 namespace fs = std::filesystem;
 
+namespace {
+
+double outputTimeOrFrame(const double time_value, const int frame) {
+  return time_value >= 0.0 ? time_value : static_cast<double>(frame);
+}
+
+} // namespace
+
 OutputWriter::OutputWriter(const std::string &output_dir,
                            const std::string &pvd_name)
     : output_dir_(output_dir), base_name_(pvd_name), current_step_(0),
@@ -78,7 +86,8 @@ OutputWriter::preparePayload(const std::vector<varType> &values) {
 
 // Public
 
-bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
+bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id,
+                               const double time_value) {
   if (pvd_finalised_)
     return false;
 
@@ -161,13 +170,14 @@ bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id) {
       << "</VTKFile>\n";
 
   // Update PVD index
-  appendPVDEntry(vti_name, static_cast<double>(current_step_));
+  appendPVDEntry(vti_name, outputTimeOrFrame(time_value, current_step_));
   ++current_step_;
   return true;
 }
 
 bool OutputWriter::writeParticles(const Particles &particles,
-                                  const std::string &id) {
+                                  const std::string &id,
+                                  const double time_value) {
   const int nAlive = particles.size();
 
   std::vector<varType> normValues;
@@ -195,10 +205,12 @@ bool OutputWriter::writeParticles(const Particles &particles,
     pointValues.push_back(static_cast<varType>(0));
   }
 
-  return writeParticlePolyData(normValues, uValues, vValues, pointValues, id);
+  return writeParticlePolyData(normValues, uValues, vValues, pointValues, id,
+                               time_value);
 }
 
-bool OutputWriter::writeCloud(const Cloud2D &cloud, const std::string &id) {
+bool OutputWriter::writeCloud(const Cloud2D &cloud, const std::string &id,
+                              const double time_value) {
   const int nAlive = cloud.totalSize();
 
   std::vector<varType> normValues;
@@ -231,14 +243,16 @@ bool OutputWriter::writeCloud(const Cloud2D &cloud, const std::string &id) {
     }
   }
 
-  return writeParticlePolyData(normValues, uValues, vValues, pointValues, id);
+  return writeParticlePolyData(normValues, uValues, vValues, pointValues, id,
+                               time_value);
 }
 
 bool OutputWriter::writeParticlePolyData(
     const std::vector<varType> &normValues,
     const std::vector<varType> &uValues,
     const std::vector<varType> &vValues,
-    const std::vector<varType> &pointValues, const std::string &id) {
+    const std::vector<varType> &pointValues, const std::string &id,
+    const double time_value) {
   if (pvd_finalised_)
     return false;
 
@@ -407,7 +421,7 @@ bool OutputWriter::writeParticlePolyData(
   out << "\n  </AppendedData>\n"
       << "</VTKFile>\n";
 
-  appendPVDEntry(vtp_name, static_cast<double>(current_step_));
+  appendPVDEntry(vtp_name, outputTimeOrFrame(time_value, current_step_));
   ++current_step_;
   return true;
 }
@@ -432,7 +446,8 @@ void OutputWriter::finalisePVD() {
   pvd_finalised_ = true;
 }
 bool OutputWriter::writeLabels(const uint16_t *labels, int nx, int ny,
-                               const std::string &id) {
+                               const std::string &id,
+                               const double time_value) {
   if (pvd_finalised_)
     return false;
 
@@ -502,7 +517,7 @@ bool OutputWriter::writeLabels(const uint16_t *labels, int nx, int ny,
   out << "\n  </AppendedData>\n"
       << "</VTKFile>\n";
 
-  appendPVDEntry(vti_name, static_cast<double>(current_step_));
+  appendPVDEntry(vti_name, outputTimeOrFrame(time_value, current_step_));
   ++current_step_;
   return true;
 }

@@ -66,7 +66,8 @@ void PIC::WriteOutput(int step) const {
   Solver::WriteOutput(step);
 
   if (params.write_particles && particlesWriter) {
-    const bool ok = particlesWriter->writeCloud(*cloud, "particles");
+    const double timeValue = static_cast<double>(step) * static_cast<double>(dt);
+    const bool ok = particlesWriter->writeCloud(*cloud, "particles", timeValue);
     if (!ok)
       std::cerr << "[PIC] Warning: failed to write particles at step " << step
                 << '\n';

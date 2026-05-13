@@ -17,15 +17,18 @@ public:
   OutputWriter(const OutputWriter &) = delete;
   OutputWriter &operator=(const OutputWriter &) = delete;
 
-  bool writeGrid2D(const Grid2D &grid, const std::string &id);
-  bool writeParticles(const Particles &particles, const std::string &id);
-  bool writeCloud(const Cloud2D &cloud, const std::string &id);
+  bool writeGrid2D(const Grid2D &grid, const std::string &id,
+                   double time_value = -1.0);
+  bool writeParticles(const Particles &particles, const std::string &id,
+                      double time_value = -1.0);
+  bool writeCloud(const Cloud2D &cloud, const std::string &id,
+                  double time_value = -1.0);
 
   /// @param labels  Pointer to a flat (nx*ny) array of uint16_t cell labels.
   /// @param nx      Width  of the label grid.
   /// @param ny      Height of the label grid.
   bool writeLabels(const uint16_t *labels, int nx, int ny,
-                   const std::string &id);
+                   const std::string &id, double time_value = -1.0);
 
   void finalisePVD();
 
@@ -47,7 +50,7 @@ private:
                              const std::vector<varType> &uValues,
                              const std::vector<varType> &vValues,
                              const std::vector<varType> &pointValues,
-                             const std::string &id);
+                             const std::string &id, double time_value);
 
   static constexpr const char *vtkTypeName() noexcept {
 #ifdef USE_FLOAT

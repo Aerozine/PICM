@@ -147,7 +147,9 @@ void SemiLagrangian::WriteOutput(int step) const {
   Solver::WriteOutput(step);
 
   if (params.write_smoke && smokeWriter)
-    smokeWriter->writeGrid2D(*smokeMap, "smoke");
+    smokeWriter->writeGrid2D(*smokeMap, "smoke",
+                             static_cast<double>(step) *
+                                 static_cast<double>(dt));
 }
 
 void SemiLagrangian::Run() {
