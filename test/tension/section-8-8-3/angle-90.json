@@ -4,9 +4,9 @@
   "dt": 1e-8,
   "nx": 300,
   "ny": 100,
-  "nt": 5000,
-  "ppcx": 5,
-  "ppcy": 5,
+  "nt": 7000,
+  "ppcx": 4,
+  "ppcy": 4,
   "density": 1000,
   "sampling_rate": 20,
   "write_u": false,
@@ -16,7 +16,7 @@
   "write_norm_velocity": false,
   "write_smoke": false,
   "write_particles": true,
-  "folder": "results/tension/angle-30",
+  "folder": "results/tension/angle-90",
   "filename": "simulation",
 
   "fluid": {
@@ -59,8 +59,8 @@
 
   "solver": {
     "type": "red_black_gauss_seidel",
-    "max_iterations": 1e6,
-    "tolerance": 1e-5
+    "max_iterations": 1e4,
+    "tolerance": 1e-4
   },
   "method": "pic",
   "freeSurface": "yes",
@@ -69,6 +69,6 @@
   "surfaceTension": true,
   "particleInteraction": false,
   "gamma": 0.073,
-  "contactAngle": 1.570796327,
+  "physicalContactAngleDegrees": 90.0,
   "max_cfl": 0.9
 }

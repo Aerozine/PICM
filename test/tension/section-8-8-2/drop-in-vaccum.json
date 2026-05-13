@@ -1,0 +1,72 @@
+{
+  "dx": 1e-5,
+  "dy": 1e-5,
+  "dt": 1e-6,
+  "nx": 200,
+  "ny": 200,
+  "nt": 1000,
+  "ppcx": 3,
+  "ppcy": 3,
+  "density": 1000,
+  "sampling_rate": 5,
+  "write_u": true,
+  "write_v": true,
+  "write_p": true,
+  "write_div": true,
+  "write_norm_velocity": true,
+  "write_smoke": true,
+  "write_particles": true,
+  "folder": "results/surfaceTension/laplace/drop-in-vaccum",
+  "filename": "simulation",
+
+  "fluid": {
+    "cylinder": {
+      "x": "nx/2",
+      "y": "ny/2",
+      "r": "ny/4"
+    }
+  },
+
+  "solid": {
+    "rectangle": [
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "0"
+      },
+      {
+        "x1": "0",
+        "y1": "ny+1",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "0",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "nx+1",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      }
+    ]
+  },
+
+  "solver": {
+    "type": "red_black_gauss_seidel",
+    "max_iterations": 1e5,
+    "tolerance": 1e-3
+  },
+  "method": "pic",
+  "freeSurface": "yes",
+  "gravity": 0.0,
+  "refill": false,
+  "surfaceTension": true,
+  "particleInteraction": false,
+  "gamma": 0.073,
+  "max_cfl": 0.9
+}

@@ -3,6 +3,7 @@ todo.txt
 *.d
 venv
 *.mp4
+*.gif
 *.pyc
 */*/__pycache__/
 # Compiled Object files

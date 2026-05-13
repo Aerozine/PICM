@@ -1,0 +1,82 @@
+{
+  "dx": 0.02,
+  "dy": 0.02,
+  "dt": 0.0025,
+  "nx": 1000,
+  "ny": 800,
+  "nt": 5000,
+  "ppcx": 4,
+  "ppcy": 4,
+  "density": 1000,
+  "sampling_rate": 20,
+  "write_u": true,
+  "write_v": true,
+  "write_p": true,
+  "write_div": true,
+  "write_norm_velocity": true,
+  "write_vorticity": true,
+  "write_smoke": true,
+  "write_particles": true,
+  "folder": "results/FLAPIC/manometer/apic",
+  "filename": "simulation",
+
+  "fluid": {
+    "u_tube": {
+      "left_x": "nx/4",
+      "right_x": "nx*2/3",
+      "bottom_y": "ny/12",
+      "top_y": "ny*11/12",
+      "tube_width": "nx/8",
+      "left_level": "ny*5/6",
+      "right_level": "ny*5/8"
+    }
+  },
+
+  "solid": {
+    "rectangle": [
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "0"
+      },
+      {
+        "x1": "0",
+        "y1": "ny+1",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "0",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "nx+1",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      }
+    ],
+    "u_tube": {
+      "left_x": "nx/4",
+      "right_x": "nx*2/3",
+      "bottom_y": "ny/12",
+      "top_y": "ny*11/12",
+      "tube_width": "nx/8",
+      "wall": "nx/40"
+    }
+  },
+
+  "solver": {
+    "type": "red_black_gauss_seidel",
+    "max_iterations": 1e5,
+    "tolerance": 1e-3
+  },
+  "method": "apic",
+  "freeSurface": true,
+  "gravity": 9.81,
+  "refill": false,
+  "kernelOrder": 2
+}

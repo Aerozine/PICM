@@ -1,0 +1,47 @@
+{
+  "dx": 0.02,
+  "dy": 0.02,
+  "dt": 0.002,
+  "nx": 400,
+  "ny": 400,
+  "nt": 2000,
+  "ppcx": 2,
+  "ppcy": 2,
+  "density": 1000,
+  "sampling_rate": 8,
+  "write_u": true,
+  "write_v": true,
+  "write_p": true,
+  "write_div": true,
+  "write_norm_velocity": true,
+  "write_vorticity": true,
+  "write_smoke": false,
+  "write_particles": true,
+  "folder": "results/PIC/rankine-vortex",
+  "filename": "simulation",
+
+  "rankine_vortex": {
+    "condition": "initial",
+    "cx": "nx/2",
+    "cy": "ny/2",
+    "r": "nx/3",
+    "core_r": "60",
+    "omega": 2.5,
+    "confine": true,
+    "fill_fluid": true
+  },
+
+  "solver": {
+    "type": "cg",
+    "max_iterations": 100000,
+    "tolerance": 1e-3
+  },
+  "method": "pic",
+  "freeSurface": false,
+  "gravity": 0.0,
+  "refill": false,
+  "kernelOrder": 2,
+  "max_cfl": 0.9,
+  "surfaceTension": false,
+  "particleInteraction": false
+}
