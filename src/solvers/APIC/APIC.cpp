@@ -2,56 +2,30 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iostream>
 
 namespace {
 
-[[nodiscard]] varType sampleUFreeSlip(const Fields2D &fields,
-                                      const Grid2D &grid, int i, int j) {
+[[nodiscard]] bool sampleFaceForAffine(const Fields2D &fields,
+                                       const Grid2D &grid, int i, int j,
+                                       bool uComponent, varType &sample) {
   i = std::clamp(i, 0, grid.nx - 1);
   j = std::clamp(j, 0, grid.ny - 1);
 
-  const bool leftSolid = IS_SOLID(fields.Label(i, j + 1));
-  const bool rightSolid = IS_SOLID(fields.Label(i + 1, j + 1));
-  if (leftSolid != rightSolid)
-    return varType(0);
-  if (!leftSolid)
-    return grid.Get(i, j);
+  if (uComponent) {
+    const labeltype left = fields.Label(i, j + 1);
+    const labeltype right = fields.Label(i + 1, j + 1);
+    if (IS_SOLID(left) || IS_SOLID(right))
+      return false;
+  } else {
+    const labeltype bottom = fields.Label(i + 1, j);
+    const labeltype top = fields.Label(i + 1, j + 1);
+    if (IS_SOLID(bottom) || IS_SOLID(top))
+      return false;
+  }
 
-  if (j > 0 && !IS_SOLID(fields.Label(i, j)) &&
-      !IS_SOLID(fields.Label(i + 1, j)))
-    return grid.Get(i, j - 1);
-  if (j + 1 < grid.ny && !IS_SOLID(fields.Label(i, j + 2)) &&
-      !IS_SOLID(fields.Label(i + 1, j + 2)))
-    return grid.Get(i, j + 1);
-  return varType(0);
-}
-
-[[nodiscard]] varType sampleVFreeSlip(const Fields2D &fields,
-                                      const Grid2D &grid, int i, int j) {
-  i = std::clamp(i, 0, grid.nx - 1);
-  j = std::clamp(j, 0, grid.ny - 1);
-
-  const bool bottomSolid = IS_SOLID(fields.Label(i + 1, j));
-  const bool topSolid = IS_SOLID(fields.Label(i + 1, j + 1));
-  if (bottomSolid != topSolid)
-    return varType(0);
-  if (!bottomSolid)
-    return grid.Get(i, j);
-
-  if (i > 0 && !IS_SOLID(fields.Label(i, j)) &&
-      !IS_SOLID(fields.Label(i, j + 1)))
-    return grid.Get(i - 1, j);
-  if (i + 1 < grid.nx && !IS_SOLID(fields.Label(i + 2, j)) &&
-      !IS_SOLID(fields.Label(i + 2, j + 1)))
-    return grid.Get(i + 1, j);
-  return varType(0);
-}
-
-[[nodiscard]] varType sampleFaceFreeSlip(const Fields2D &fields,
-                                         const Grid2D &grid, int i, int j,
-                                         bool uComponent) {
-  return uComponent ? sampleUFreeSlip(fields, grid, i, j)
-                    : sampleVFreeSlip(fields, grid, i, j);
+  sample = grid.Get(i, j);
+  return true;
 }
 
 } // namespace
@@ -190,8 +164,10 @@ void APIC::accumulateAffineComponent(const Grid2D &grid, varType xg, varType yg,
       if (w <= varType(0))
         continue;
 
-      const varType sample =
-          sampleFaceFreeSlip(*fields, grid, i, j, uComponent);
+      varType sample = 0;
+      if (!sampleFaceForAffine(*fields, grid, i, j, uComponent, sample))
+        continue;
+
       const varType dwx = (dhat(xg - varType(i)) / dx) * wy;
       const varType dwy = wx * (dhat(yg - varType(j)) / dy);
 
@@ -246,5 +222,47 @@ void APIC::ProjectGridOnParticles() {
         cell.SetCv(p, cvX, cvY);
       }
     }
+  }
+}
+
+void APIC::VelocityNormFromParticles() const {
+  OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
+  for (int cj = 0; cj < ny; ++cj) {
+    for (int ci = 0; ci < nx; ++ci) {
+      const Particles &cell = (*cloud)(ci, cj);
+      const int n = cell.size();
+      if (n == 0) {
+        fields->normVelocity.Set(ci, cj, varType(0));
+        continue;
+      }
+
+      varType sumSq = 0;
+      for (int p = 0; p < n; ++p) {
+        const varType u = cell.GetU(p);
+        const varType v = cell.GetV(p);
+        sumSq += u * u + v * v;
+      }
+      fields->normVelocity.Set(
+          ci, cj, std::sqrt(sumSq / static_cast<varType>(n)));
+    }
+  }
+}
+
+void APIC::WriteOutput(int step) const {
+  if (step % params.sampling_rate != 0)
+    return;
+
+  if (params.write_norm_velocity)
+    VelocityNormFromParticles();
+  if (params.write_vorticity)
+    fields->VorticityCenterGrid();
+
+  Solver::WriteOutput(step);
+
+  if (params.write_particles && particlesWriter) {
+    const bool ok = particlesWriter->writeCloud(*cloud, "particles");
+    if (!ok)
+      std::cerr << "[APIC] Warning: failed to write particles at step " << step
+                << '\n';
   }
 }

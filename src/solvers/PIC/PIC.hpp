@@ -63,6 +63,6 @@ protected:
   void UpdatePhiFromParticles() const;
   void ComputeSurfaceTensionOnFaces() const;
 
-private:
+protected:
   std::unique_ptr<OutputWriter> particlesWriter;
 };

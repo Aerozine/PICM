@@ -9,8 +9,10 @@ public:
 protected:
   void ProjectParticlesOnGrid() override;
   void ProjectGridOnParticles() override;
+  void WriteOutput(int step) const override;
 
 private:
+  void VelocityNormFromParticles() const;
   void accumulateAffineComponent(const Grid2D &grid, varType xg, varType yg,
                                  int imax, int jmax, bool uComponent,
                                  varType &value, varType &gradX,
