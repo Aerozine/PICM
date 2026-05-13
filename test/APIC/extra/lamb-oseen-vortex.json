@@ -17,7 +17,7 @@
   "write_vorticity": true,
   "write_smoke": false,
   "write_particles": true,
-  "folder": "results/PIC/lamb-oseen-vortex",
+  "folder": "results/APIC/lamb-oseen-vortex",
   "filename": "simulation",
 
   "lamb_oseen_vortex": {
@@ -38,7 +38,7 @@
     "max_iterations": 100000,
     "tolerance": 1e-3
   },
-  "method": "pic",
+  "method": "apic",
   "freeSurface": false,
   "gravity": 0.0,
   "refill": false,
