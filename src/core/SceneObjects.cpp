@@ -262,6 +262,117 @@ void CylinderObject::applyAir(Fields2D &f) {
 
 namespace {
 
+bool insideIndexCircle(const int x, const int y, const int cx, const int cy,
+                       const int r) {
+  const int dx = x - cx;
+  const int dy = y - cy;
+  return dx * dx + dy * dy <= r * r;
+}
+
+varType rankineVelocityScale(const varType dx, const varType dy,
+                             const varType omega, const varType coreRadius) {
+  const varType d2 = dx * dx + dy * dy;
+  if (d2 <= REAL_EPSILON)
+    return omega;
+  if (coreRadius <= REAL_EPSILON || d2 <= coreRadius * coreRadius)
+    return omega;
+  return omega * coreRadius * coreRadius / d2;
+}
+
+} // namespace
+
+void RankineVortexObject::applySolid(Fields2D &f) {
+  if (!confine)
+    return;
+  const int radius = std::max(r, 1);
+  for (int j = 0; j < f.p.ny; ++j) {
+    for (int i = 0; i < f.p.nx; ++i) {
+      if (insideIndexCircle(i, j, cx, cy, radius))
+        continue;
+      f.setSolid(i, j);
+      f.p.Set(i, j, FIELD_USOLID);
+    }
+  }
+}
+
+void RankineVortexObject::applyFluid(Fields2D &f) {
+  if (!fillFluid)
+    return;
+  const int radius = std::max(r, 1);
+  for (int j = 0; j < f.p.ny; ++j)
+    for (int i = 0; i < f.p.nx; ++i)
+      if (insideIndexCircle(i, j, cx, cy, radius))
+        f.setFluid(i, j);
+}
+
+void RankineVortexObject::applyVelocityU(Fields2D &f) {
+  if (condition != "initial" && condition != "boundary") {
+    std::cout << "Invalid condition for Rankine vortex velocity.\n"
+              << "Available options: initial or boundary.\n";
+    return;
+  }
+
+  const int core = coreR > 0 ? coreR : r;
+  const varType coreRadius =
+      static_cast<varType>(core) * REAL_LITERAL(0.5) * (f.dx + f.dy);
+  const varType centerY = static_cast<varType>(cy) * f.dy;
+
+  for (int j = 0; j < f.u.ny; ++j) {
+    const varType y = (static_cast<varType>(j) + REAL_LITERAL(0.5)) * f.dy;
+    const varType dy = y - centerY;
+    for (int i = 0; i < f.u.nx; ++i) {
+      const bool leftSolid = IS_SOLID(f.Label(i, j + 1));
+      const bool rightSolid = IS_SOLID(f.Label(i + 1, j + 1));
+      if (leftSolid || rightSolid) {
+        f.u.Set(i, j, REAL_LITERAL(0.0));
+        continue;
+      }
+
+      const varType x = static_cast<varType>(i) * f.dx;
+      const varType dx = x - static_cast<varType>(cx) * f.dx;
+      const varType scale = rankineVelocityScale(dx, dy, omega, coreRadius);
+      f.u.Set(i, j, -scale * dy);
+      f.SetLabel(i, j + 1,
+                 condition == "initial" ? Fields2D::IC_U : Fields2D::BC_U);
+    }
+  }
+}
+
+void RankineVortexObject::applyVelocityV(Fields2D &f) {
+  if (condition != "initial" && condition != "boundary") {
+    std::cout << "Invalid condition for Rankine vortex velocity.\n"
+              << "Available options: initial or boundary.\n";
+    return;
+  }
+
+  const int core = coreR > 0 ? coreR : r;
+  const varType coreRadius =
+      static_cast<varType>(core) * REAL_LITERAL(0.5) * (f.dx + f.dy);
+  const varType centerX = static_cast<varType>(cx) * f.dx;
+
+  for (int j = 0; j < f.v.ny; ++j) {
+    const varType y = static_cast<varType>(j) * f.dy;
+    const varType dy = y - static_cast<varType>(cy) * f.dy;
+    for (int i = 0; i < f.v.nx; ++i) {
+      const bool bottomSolid = IS_SOLID(f.Label(i + 1, j));
+      const bool topSolid = IS_SOLID(f.Label(i + 1, j + 1));
+      if (bottomSolid || topSolid) {
+        f.v.Set(i, j, REAL_LITERAL(0.0));
+        continue;
+      }
+
+      const varType x = (static_cast<varType>(i) + REAL_LITERAL(0.5)) * f.dx;
+      const varType dx = x - centerX;
+      const varType scale = rankineVelocityScale(dx, dy, omega, coreRadius);
+      f.v.Set(i, j, scale * dx);
+      f.SetLabel(i + 1, j,
+                 condition == "initial" ? Fields2D::IC_V : Fields2D::BC_V);
+    }
+  }
+}
+
+namespace {
+
 struct UTubeGeometry {
   int leftX;
   int rightX;
@@ -466,6 +577,44 @@ parseCylinder(const nlohmann::json &j, const std::map<std::string, int> &vars) {
   return obj;
 }
 
+static std::unique_ptr<RankineVortexObject>
+parseRankineVortex(const nlohmann::json &j,
+                   const std::map<std::string, int> &vars) {
+  auto obj = std::make_unique<RankineVortexObject>();
+
+  if (j.contains("condition"))
+    obj->condition = j["condition"].get<std::string>();
+
+  if (j.contains("cx"))
+    obj->cx = resolveInt(j["cx"], vars);
+  else if (j.contains("x"))
+    obj->cx = resolveInt(j["x"], vars);
+
+  if (j.contains("cy"))
+    obj->cy = resolveInt(j["cy"], vars);
+  else if (j.contains("y"))
+    obj->cy = resolveInt(j["y"], vars);
+
+  if (j.contains("r"))
+    obj->r = resolveInt(j["r"], vars);
+  else if (j.contains("radius"))
+    obj->r = resolveInt(j["radius"], vars);
+
+  if (j.contains("core_r"))
+    obj->coreR = resolveInt(j["core_r"], vars);
+  else if (j.contains("coreRadius"))
+    obj->coreR = resolveInt(j["coreRadius"], vars);
+
+  if (j.contains("omega"))
+    obj->omega = j["omega"].get<varType>();
+  else if (j.contains("angular_velocity"))
+    obj->omega = j["angular_velocity"].get<varType>();
+
+  obj->confine = j.value("confine", obj->confine);
+  obj->fillFluid = j.value("fill_fluid", j.value("fillFluid", obj->fillFluid));
+  return obj;
+}
+
 static std::unique_ptr<UTubeObject>
 parseUTube(const nlohmann::json &j, const std::map<std::string, int> &vars) {
   auto obj = std::make_unique<UTubeObject>();
@@ -510,6 +659,10 @@ makeSceneObject(const std::string &type, const nlohmann::json &j,
     return parseRectangle(j, vars);
   if (type == "cylinder")
     return parseCylinder(j, vars);
+  if (type == "rankine_vortex" || type == "rankine-vortex" ||
+      type == "rankineVortex" || type == "circular_vortex" ||
+      type == "vortex_cavity")
+    return parseRankineVortex(j, vars);
   if (type == "u_tube" || type == "utube" || type == "u-tube" ||
       type == "tube_u" || type == "manometer" || type == "manometre")
     return parseUTube(j, vars);

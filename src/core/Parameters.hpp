@@ -91,6 +91,7 @@ private:
   nlohmann::json fluid_json;
   nlohmann::json smoke_json;
   nlohmann::json particles_json;
+  nlohmann::json rankineVortex_json;
 
   /**
    * @brief Populate members from a parsed JSON object.

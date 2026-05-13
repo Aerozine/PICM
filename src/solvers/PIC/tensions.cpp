@@ -156,18 +156,18 @@ void PIC::ComputeSurfaceTensionOnFaces() const
     auto phiGhostX = [&](int i, int j, int di) -> varType {
         int ni = i + di;
         if (ni < 0 || ni >= nx)
-            return fields->phi->Get(i, j) - di * dx * cosTheta;
+            return fields->phi->Get(i, j);
         if (IS_SOLID(fields->Label(ni + 1, j + 1)))
-            return fields->phi->Get(i, j) - di * dx * cosTheta;
+            return fields->phi->Get(i, j);
         return fields->phi->Get(ni, j);
     };
 
     auto phiGhostY = [&](int i, int j, int dj) -> varType {
         int nj = j + dj;
         if (nj < 0 || nj >= ny)
-            return fields->phi->Get(i, j) - dj * dy * cosTheta;
+            return fields->phi->Get(i, j);
         if (IS_SOLID(fields->Label(i + 1, nj + 1)))
-            return fields->phi->Get(i, j) - dj * dy * cosTheta;
+            return fields->phi->Get(i, j);
         return fields->phi->Get(i, nj);
     };
 
@@ -191,6 +191,113 @@ void PIC::ComputeSurfaceTensionOnFaces() const
         }
     }
 
+    const varType targetWallComponent =
+        std::clamp(-cosTheta, REAL_LITERAL(-1.0), REAL_LITERAL(1.0));
+    const varType targetTangentComponent =
+        std::sqrt(std::max(REAL_LITERAL(0.0),
+                           REAL_LITERAL(1.0) -
+                               targetWallComponent * targetWallComponent));
+
+    const auto wallNormal = [&](int i, int j, varType &wx, varType &wy) {
+        wx = REAL_LITERAL(0.0);
+        wy = REAL_LITERAL(0.0);
+        if (i <= 0 || IS_SOLID(fields->Label(i, j + 1)))
+            wx += REAL_LITERAL(1.0);
+        if (i >= nx - 1 || IS_SOLID(fields->Label(i + 2, j + 1)))
+            wx -= REAL_LITERAL(1.0);
+        if (j <= 0 || IS_SOLID(fields->Label(i + 1, j)))
+            wy += REAL_LITERAL(1.0);
+        if (j >= ny - 1 || IS_SOLID(fields->Label(i + 1, j + 2)))
+            wy -= REAL_LITERAL(1.0);
+
+        const varType wn = std::hypot(wx, wy);
+        if (wn <= REAL_EPSILON)
+            return false;
+        wx /= wn;
+        wy /= wn;
+        return true;
+    };
+
+    const auto nearFluidAirInterface = [&](int i, int j) {
+        bool hasFluid = IS_FLUID(fields->Label(i + 1, j + 1));
+        bool hasAir = IS_AIR(fields->Label(i + 1, j + 1));
+        for (int dj = -1; dj <= 1; ++dj) {
+            for (int di = -1; di <= 1; ++di) {
+                const int ii = i + di;
+                const int jj = j + dj;
+                if (ii < 0 || ii >= nx || jj < 0 || jj >= ny)
+                    continue;
+                const labeltype label = fields->Label(ii + 1, jj + 1);
+                if (IS_SOLID(label))
+                    continue;
+                hasFluid = hasFluid || IS_FLUID(label);
+                hasAir = hasAir || IS_AIR(label);
+            }
+        }
+        return hasFluid && hasAir;
+    };
+
+    const auto airDirection = [&](int i, int j, varType &ax, varType &ay) {
+        ax = REAL_LITERAL(0.0);
+        ay = REAL_LITERAL(0.0);
+        for (int dj = -1; dj <= 1; ++dj) {
+            for (int di = -1; di <= 1; ++di) {
+                if (di == 0 && dj == 0)
+                    continue;
+                const int ii = i + di;
+                const int jj = j + dj;
+                if (ii < 0 || ii >= nx || jj < 0 || jj >= ny)
+                    continue;
+                const labeltype label = fields->Label(ii + 1, jj + 1);
+                if (IS_AIR(label)) {
+                    ax += static_cast<varType>(di);
+                    ay += static_cast<varType>(dj);
+                }
+            }
+        }
+    };
+
+    OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
+    for (int j = 0; j < ny; ++j) {
+        for (int i = 0; i < nx; ++i) {
+            if (IS_SOLID(fields->Label(i + 1, j + 1)))
+                continue;
+
+            varType wx, wy;
+            if (!wallNormal(i, j, wx, wy) || !nearFluidAirInterface(i, j))
+                continue;
+
+            const varType nx0 = fields->normalX->Get(i, j);
+            const varType ny0 = fields->normalY->Get(i, j);
+            const varType normalWallComponent = nx0 * wx + ny0 * wy;
+            varType tx = nx0 - normalWallComponent * wx;
+            varType ty = ny0 - normalWallComponent * wy;
+            varType tn = std::hypot(tx, ty);
+
+            if (tn <= CSF_NORMAL_GRAD_EPS) {
+                varType ax, ay;
+                airDirection(i, j, ax, ay);
+                const varType airWallComponent = ax * wx + ay * wy;
+                tx = ax - airWallComponent * wx;
+                ty = ay - airWallComponent * wy;
+                tn = std::hypot(tx, ty);
+            }
+
+            if (tn <= CSF_NORMAL_GRAD_EPS) {
+                tx = -wy;
+                ty = wx;
+                tn = REAL_LITERAL(1.0);
+            }
+
+            tx /= tn;
+            ty /= tn;
+            fields->normalX->Set(
+                i, j, targetTangentComponent * tx + targetWallComponent * wx);
+            fields->normalY->Set(
+                i, j, targetTangentComponent * ty + targetWallComponent * wy);
+        }
+    }
+
     OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
     for (int j = 0; j < ny; ++j) {
         for (int i = 0; i < nx; ++i) {
@@ -198,13 +305,17 @@ void PIC::ComputeSurfaceTensionOnFaces() const
             if (IS_SOLID(fields->Label(i + 1, j + 1))) continue;
 
             auto nxVal = [&](int ii, int jj) -> varType {
-                if (ii < 0 || ii >= nx || jj < 0 || jj >= ny) return 0.0;
-                if (IS_SOLID(fields->Label(ii + 1, jj + 1))) return 0.0;
+                if (ii < 0 || ii >= nx || jj < 0 || jj >= ny)
+                    return fields->normalX->Get(i, j);
+                if (IS_SOLID(fields->Label(ii + 1, jj + 1)))
+                    return fields->normalX->Get(i, j);
                 return fields->normalX->Get(ii, jj);
             };
             auto nyVal = [&](int ii, int jj) -> varType {
-                if (ii < 0 || ii >= nx || jj < 0 || jj >= ny) return 0.0;
-                if (IS_SOLID(fields->Label(ii + 1, jj + 1))) return 0.0;
+                if (ii < 0 || ii >= nx || jj < 0 || jj >= ny)
+                    return fields->normalY->Get(i, j);
+                if (IS_SOLID(fields->Label(ii + 1, jj + 1)))
+                    return fields->normalY->Get(i, j);
                 return fields->normalY->Get(ii, jj);
             };
 

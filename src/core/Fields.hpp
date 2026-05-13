@@ -109,12 +109,30 @@ public:
     return (nx + 2) * j + i;
   }
 
-  [[nodiscard]] varType interpolateU(varType x, varType y) const;
-  [[nodiscard]] varType interpolateV(varType x, varType y) const;
+  /**
+   * Bilinear interpolation with free-slip solid boundary handling.
+   *   field == 0  →  u-face  (staggered in y, nx+1 × ny)
+   *   field == 1  →  v-face  (staggered in x, nx × ny+1)
+   *   field == 2  →  cell-centre (nx × ny, e.g. smoke, phi)
+   */
+  template <unsigned char field>
+  [[nodiscard]] varType interpolate(const Grid2D &grid, varType x,
+                                    varType y) const;
+
+  [[nodiscard]] varType interpolateU(varType x, varType y) const {
+    return interpolate<0>(u, x, y);
+  }
+  [[nodiscard]] varType interpolateV(varType x, varType y) const {
+    return interpolate<1>(v, x, y);
+  }
   [[nodiscard]] varType interpolateU(const Grid2D &grid, varType x,
-                                     varType y) const;
+                                     varType y) const {
+    return interpolate<0>(grid, x, y);
+  }
   [[nodiscard]] varType interpolateV(const Grid2D &grid, varType x,
-                                     varType y) const;
+                                     varType y) const {
+    return interpolate<1>(grid, x, y);
+  }
 
   void UpdateDivNorm();
   void Div();

@@ -45,6 +45,21 @@ struct CylinderObject : public SceneObject {
   void applyAir(Fields2D &f) override;
 };
 
+struct RankineVortexObject : public SceneObject {
+  std::string condition{"initial"}; ///< "initial" or "boundary".
+  int cx{0}, cy{0};                 ///< Centre cell indices.
+  int r{1};                         ///< Cavity radius in cells.
+  int coreR{-1};                    ///< Rankine core radius; defaults to r.
+  varType omega{0};                 ///< Angular velocity in rad/s.
+  bool confine{true};               ///< Make the exterior of the cavity solid.
+  bool fillFluid{true};             ///< Fill the cavity with fluid.
+
+  void applySolid(Fields2D &f) override;
+  void applyFluid(Fields2D &f) override;
+  void applyVelocityU(Fields2D &f) override;
+  void applyVelocityV(Fields2D &f) override;
+};
+
 struct UTubeObject : public SceneObject {
   int leftX{0};       ///< Left leg inner x min.
   int rightX{0};      ///< Right leg inner x min.
