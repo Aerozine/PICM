@@ -26,7 +26,7 @@
     "cy": "ny/2",
     "r": "nx/3",
     "core_r": "60",
-    "omega": 1,
+    "omega": 2.5,
     "confine": true,
     "fill_fluid": true
   },
@@ -34,14 +34,14 @@
   "solver": {
     "type": "cg",
     "max_iterations": 100000,
-    "tolerance": 1e-4
+    "tolerance": 1e-3
   },
-  "method": "pic",
+  "method": "flip",
   "freeSurface": false,
   "gravity": 0.0,
   "refill": false,
   "kernelOrder": 2,
-  "max_cfl": 0.5,
+  "max_cfl": 0.9,
   "surfaceTension": false,
   "particleInteraction": false
 }

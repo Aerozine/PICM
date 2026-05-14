@@ -26,7 +26,7 @@
     "cy": "ny/2",
     "r": "nx/2-12",
     "core_r": 20,
-    "omega": 2.0,
+    "omega": 1.0,
     "viscosity": 0.002,
     "physical_time": 20.0,
     "confine": true,
@@ -44,7 +44,7 @@
   "refill": false,
   "kernelOrder": 2,
   "coefPic": 0.0,
-  "max_cfl": 0.9,
+  "max_cfl": 0.5,
   "surfaceTension": false,
   "particleInteraction": false
 }

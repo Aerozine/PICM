@@ -22,7 +22,7 @@
   "velocityu": {
     "rectangle": {
       "condition": "boundary",
-      "val": 5,
+      "val": 1,
       "x1": "0",
       "y1": "0",
       "x2": "0",
@@ -56,10 +56,11 @@
   "solver": {
     "type": "red_black_gauss_seidel",
     "max_iterations": 1e5,
-    "tolerance": 1e-2
+    "tolerance": 1e-3
   },
   "method": "pic",
   "freeSurface": false,
   "gravity": 0.0,
-  "refill": true
+  "refill": true,
+  "max_cfl": 0.5
 }

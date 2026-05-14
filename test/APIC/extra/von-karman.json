@@ -53,8 +53,8 @@
     },
 
     "solver": {
-        "type": "red_black_gauss_seidel",
-        "max_iterations": 1e5,
+        "type": "cg",
+        "max_iterations": 1e4,
         "tolerance": 1e-2
     },
     "method": "apic",
