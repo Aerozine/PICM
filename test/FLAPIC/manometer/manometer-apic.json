@@ -2,11 +2,11 @@
   "dx": 0.02,
   "dy": 0.02,
   "dt": 0.0025,
-  "nx": 1000,
-  "ny": 800,
+  "nx": 300,
+  "ny": 200,
   "nt": 5000,
-  "ppcx": 4,
-  "ppcy": 4,
+  "ppcx": 3,
+  "ppcy": 3,
   "density": 1000,
   "sampling_rate": 20,
   "write_u": true,
@@ -27,8 +27,8 @@
       "bottom_y": "ny/12",
       "top_y": "ny*11/12",
       "tube_width": "nx/8",
-      "left_level": "ny*5/6",
-      "right_level": "ny*5/8"
+      "left_level": "18*ny/20",
+      "right_level": "ny*5/20"
     }
   },
 
@@ -70,9 +70,9 @@
   },
 
   "solver": {
-    "type": "red_black_gauss_seidel",
-    "max_iterations": 1e5,
-    "tolerance": 1e-3
+    "type": "cg",
+    "max_iterations": 1e4,
+    "tolerance": 1e-2
   },
   "method": "apic",
   "freeSurface": true,
