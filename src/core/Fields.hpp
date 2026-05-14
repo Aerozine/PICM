@@ -115,27 +115,25 @@ public:
    *   field == 1  →  v-face  (staggered in x, nx × ny+1)
    *   field == 2  →  cell-centre (nx × ny, e.g. smoke, phi)
    */
-  template <unsigned char field>
-  [[nodiscard]] varType interpolate(const Grid2D &grid, varType x,
-                                    varType y) const;
 
-  [[nodiscard]] varType interpolateU(varType x, varType y) const {
-    return interpolate<0>(u, x, y);
-  }
-  [[nodiscard]] varType interpolateV(varType x, varType y) const {
-    return interpolate<1>(v, x, y);
-  }
-  [[nodiscard]] varType interpolateU(const Grid2D &grid, varType x,
-                                     varType y) const {
-    return interpolate<0>(grid, x, y);
-  }
-  [[nodiscard]] varType interpolateV(const Grid2D &grid, varType x,
-                                     varType y) const {
-    return interpolate<1>(grid, x, y);
-  }
+  varType interpolateU(varType x, varType y) const;
+
+  varType interpolateV(varType x, varType y) const;
+
+  varType interpolateU(const Grid2D &grid, const varType x, const varType y) const;
+
+  varType interpolateV(const Grid2D &grid, const varType x, const varType y) const;
 
   void UpdateDivNorm();
+
   void Div();
   void VelocityNormCenterGrid();
   void VorticityCenterGrid();
 };
+
+varType bilerp(const varType f00, const varType f10, const varType f01, const varType f11, const varType fx,
+               const varType fy);
+
+varType sampleUFreeSlip(const Fields2D &fields, const Grid2D &grid, int i, int j);
+
+varType sampleVFreeSlip(const Fields2D &fields, const Grid2D &grid, int i, int j);

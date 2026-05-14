@@ -1,13 +1,18 @@
 #include "Fields.hpp"
-
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 
-namespace {
 
+varType bilerp(const varType f00, const varType f10,
+                             const varType f01, const varType f11,
+                             const varType fx, const varType fy) {
+  return (REAL_LITERAL(1.0) - fy) *
+             ((REAL_LITERAL(1.0) - fx) * f00 + fx * f10) +
+         fy * ((REAL_LITERAL(1.0) - fx) * f01 + fx * f11);
+}
 
-[[nodiscard]] varType sampleUFreeSlip(const Fields2D &fields,
+varType sampleUFreeSlip(const Fields2D &fields,
                                       const Grid2D &grid, int i, int j) {
   i = std::clamp(i, 0, grid.nx - 1);
   j = std::clamp(j, 0, grid.ny - 1);
@@ -28,7 +33,7 @@ namespace {
   return REAL_LITERAL(0.0);
 }
 
-[[nodiscard]] varType sampleVFreeSlip(const Fields2D &fields,
+varType sampleVFreeSlip(const Fields2D &fields,
                                       const Grid2D &grid, int i, int j) {
   i = std::clamp(i, 0, grid.nx - 1);
   j = std::clamp(j, 0, grid.ny - 1);
@@ -49,88 +54,70 @@ namespace {
   return REAL_LITERAL(0.0);
 }
 
-} // namespace
 
-template <unsigned char field>
-varType Fields2D::interpolate(const Grid2D &grid, varType x, varType y) const {
-  varType i_real = x / dx;
-  varType j_real = y / dy;
+varType Fields2D::interpolateU(varType x, varType y) const {
+  return interpolateU(u, x, y);
+}
 
-  if constexpr (field == 0) {
-    // u-face: no x offset (face at i·dx), half-cell offset in y
-    j_real -= REAL_LITERAL(0.5);
-  } else if constexpr (field == 1) {
-    // v-face: half-cell offset in x, no y offset (face at j·dy)
-    i_real -= REAL_LITERAL(0.5);
-  } else {
-    // cell-centre: half-cell offset in both axes
-    i_real -= REAL_LITERAL(0.5);
-    j_real -= REAL_LITERAL(0.5);
-  }
+varType Fields2D::interpolateV(varType x, varType y) const {
+  return interpolateV(v, x, y);
+}
 
-  const varType ic =
-      std::clamp(i_real, REAL_LITERAL(0.0), static_cast<varType>(grid.nx - 1));
-  const varType jc =
-      std::clamp(j_real, REAL_LITERAL(0.0), static_cast<varType>(grid.ny - 1));
+varType Fields2D::interpolateU(const Grid2D &grid, const varType x,
+                               const varType y) const {
+  assert(grid.nx == nx + 1);
+  assert(grid.ny == ny);
 
-  const int i0 = static_cast<int>(std::floor(ic));
-  const int j0 = static_cast<int>(std::floor(jc));
+  const varType iReal =
+      std::clamp(x / dx, REAL_LITERAL(0.0), static_cast<varType>(grid.nx - 1));
+  const varType jReal =
+      std::clamp(y / dy - REAL_LITERAL(0.5), REAL_LITERAL(0.0),
+                 static_cast<varType>(grid.ny - 1));
+
+  const int i0 = static_cast<int>(std::floor(iReal));
+  const int j0 = static_cast<int>(std::floor(jReal));
   const int i1 = std::min(i0 + 1, grid.nx - 1);
   const int j1 = std::min(j0 + 1, grid.ny - 1);
 
-  const varType fx = ic - static_cast<varType>(i0);
-  const varType fy = jc - static_cast<varType>(j0);
-
-  varType f00, f10, f01, f11;
-  if constexpr (field == 0) {
-    f00 = sampleUFreeSlip(*this, grid, i0, j0);
-    f10 = sampleUFreeSlip(*this, grid, i1, j0);
-    f01 = sampleUFreeSlip(*this, grid, i0, j1);
-    f11 = sampleUFreeSlip(*this, grid, i1, j1);
-  } else if constexpr (field == 1) {
-    f00 = sampleVFreeSlip(*this, grid, i0, j0);
-    f10 = sampleVFreeSlip(*this, grid, i1, j0);
-    f01 = sampleVFreeSlip(*this, grid, i0, j1);
-    f11 = sampleVFreeSlip(*this, grid, i1, j1);
-  } else {
-    f00 = grid.Get(i0, j0);
-    f10 = grid.Get(i1, j0);
-    f01 = grid.Get(i0, j1);
-    f11 = grid.Get(i1, j1);
-  }
-
   const varType value =
-      (REAL_LITERAL(1.0) - fy) *
-          ((REAL_LITERAL(1.0) - fx) * f00 + fx * f10) +
-      fy * ((REAL_LITERAL(1.0) - fx) * f01 + fx * f11);
+      bilerp(sampleUFreeSlip(*this, grid, i0, j0),
+             sampleUFreeSlip(*this, grid, i1, j0),
+             sampleUFreeSlip(*this, grid, i0, j1),
+             sampleUFreeSlip(*this, grid, i1, j1), iReal - i0, jReal - j0);
   assert(std::isfinite(value));
   return value;
 }
 
-template varType Fields2D::interpolate<0>(const Grid2D &, varType, varType) const;
-template varType Fields2D::interpolate<1>(const Grid2D &, varType, varType) const;
-template varType Fields2D::interpolate<2>(const Grid2D &, varType, varType) const;
+varType Fields2D::interpolateV(const Grid2D &grid, const varType x,
+                               const varType y) const {
+  assert(grid.nx == nx);
+  assert(grid.ny == ny + 1);
+
+  const varType iReal =
+      std::clamp(x / dx - REAL_LITERAL(0.5), REAL_LITERAL(0.0),
+                 static_cast<varType>(grid.nx - 1));
+  const varType jReal =
+      std::clamp(y / dy, REAL_LITERAL(0.0), static_cast<varType>(grid.ny - 1));
+
+  const int i0 = static_cast<int>(std::floor(iReal));
+  const int j0 = static_cast<int>(std::floor(jReal));
+  const int i1 = std::min(i0 + 1, grid.nx - 1);
+  const int j1 = std::min(j0 + 1, grid.ny - 1);
+
+  const varType value =
+      bilerp(sampleVFreeSlip(*this, grid, i0, j0),
+             sampleVFreeSlip(*this, grid, i1, j0),
+             sampleVFreeSlip(*this, grid, i0, j1),
+             sampleVFreeSlip(*this, grid, i1, j1), iReal - i0, jReal - j0);
+  assert(std::isfinite(value));
+  return value;
+}
 
 void Fields2D::UpdateDivNorm() {
-  OMP_PRAGMA(omp parallel for collapse(2))
-  for (int j = 0; j < ny; ++j)
-    for (int i = 0; i < nx; ++i) {
-      const varType x = (REAL_LITERAL(0.5) + static_cast<float>(i)) * dx;
-      const varType y = (REAL_LITERAL(0.5) + static_cast<float>(j)) * dy;
-      const varType uc = interpolateU(x, y);
-      const varType vc = interpolateV(x, y);
-      normVelocity.Set(i, j, std::sqrt(uc * uc + vc * vc));
-      if (IS_AIR(Label(i + 1, j + 1))) {
-        div.Set(i, j, 0.0);
-        continue;
-      }
-      const varType dudx = (u.Get(i + 1, j) - u.Get(i, j)) / dx;
-      const varType dvdy = (v.Get(i, j + 1) - v.Get(i, j)) / dy;
-      assert(std::isfinite(dudx));
-      assert(std::isfinite(dvdy));
-      div.Set(i, j, dudx + dvdy);
-    }
+    Div();
+    VelocityNormCenterGrid();
 }
+
 void Fields2D::Div() {
   OMP_PRAGMA(omp parallel for collapse(2))
   for (int j = 0; j < ny; ++j)
@@ -161,6 +148,7 @@ void Fields2D::VelocityNormCenterGrid() {
       normVelocity.Set(i, j, std::sqrt(uc * uc + vc * vc));
     }
 }
+
 
 void Fields2D::VorticityCenterGrid() {
   const varType xMax = static_cast<varType>(nx) * dx;
