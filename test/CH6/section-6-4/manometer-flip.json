@@ -16,7 +16,7 @@
   "write_norm_velocity": true,
   "write_smoke": true,
   "write_particles": true,
-  "folder": "results/PIC/manometre-oscillant-refined",
+  "folder": "results/CH6/section-6-4/manometer-flip",
   "filename": "simulation",
 
   "fluid": {
@@ -26,8 +26,8 @@
       "bottom_y": "ny/12",
       "top_y": "ny*11/12",
       "tube_width": "nx/8",
-      "left_level": "ny*5/6",
-      "right_level": "ny*5/8"
+      "left_level": "18*ny/20",
+      "right_level": "0*ny/20"
     }
   },
 

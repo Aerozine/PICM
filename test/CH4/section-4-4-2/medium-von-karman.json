@@ -14,7 +14,7 @@
   "write_div": true,
   "write_norm_velocity": true,
 
-  "folder": "../postProd/data/SL/von-karman/strouhal/",
+  "folder": "results/CH4/section-4-4-2",
   "filename": "simulation",
 
   "velocityu": {
