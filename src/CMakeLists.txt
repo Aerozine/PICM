@@ -5,7 +5,6 @@ file(GLOB SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/solvers/*/*.cpp")
 
 add_subdirectory(core/IterativeMethod)
-add_subdirectory(solvers/GPIC)
 
 add_executable(PIC ${SOURCES})
 
@@ -37,7 +36,7 @@ target_link_libraries(PIC PUBLIC
     IterativeMethod_CPU)           # always linked
 if(USE_GPU)
 if(USE_CUDA_FOUND)
-    target_link_libraries(PIC PRIVATE IterativeMethod_GPU GPIC_GPU CUDA::cudart)
+    target_link_libraries(PIC PRIVATE IterativeMethod_GPU CUDA::cudart)
     target_compile_definitions(PIC PRIVATE USE_CUDA)
 endif()
 endif ()

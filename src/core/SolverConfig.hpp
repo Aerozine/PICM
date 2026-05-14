@@ -11,10 +11,7 @@ struct SolverConfig {
     VanillaPIC,
     FLIP,
     Mixed_FLIP_PIC,
-    APIC,
-    GPIC,
-    GFLIP,
-    GAPIC
+    APIC
   };
 
   Method method = Method::SL;

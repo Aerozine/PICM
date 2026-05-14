@@ -4,7 +4,6 @@
 #include "solvers/PIC/PIC.hpp"
 #include "solvers/SemiLagrangian/SemiLagrangian.hpp"
 #ifdef USE_CUDA
-#include "solvers/GPIC/GPIC.hpp"
 #endif
 
 #include <iostream>
@@ -48,23 +47,7 @@ int main(int argc, char *argv[]) {
     solver.Run();
     break;
   }
-#ifdef USE_CUDA
-  case SolverConfig::Method::GPIC:
-  case SolverConfig::Method::GFLIP:
-  case SolverConfig::Method::GAPIC: {
-    std::cout << solverMethodName(params.solver.method) << " (GPU)\n";
-    GPIC solver(params);
-    solver.Run();
-    break;
-  }
-#else
-  case SolverConfig::Method::GPIC:
-  case SolverConfig::Method::GFLIP:
-  case SolverConfig::Method::GAPIC:
-    std::cerr << "[" << solverMethodName(params.solver.method)
-              << "] Requires -DUSE_GPU=ON build.\n";
-    return 1;
-#endif
+    
   }
   std::cout << "Simulation completed successfully!\n";
   return 0;

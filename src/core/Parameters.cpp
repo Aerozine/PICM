@@ -75,12 +75,6 @@ SolverConfig::Method solverMethodFromJson(const nlohmann::json &j) {
     return SolverConfig::Method::Mixed_FLIP_PIC;
   if (s == "apic")
     return SolverConfig::Method::APIC;
-  if (s == "gpic" || s == "gpu_pic")
-    return SolverConfig::Method::GPIC;
-  if (s == "gflip" || s == "gpu_flip")
-    return SolverConfig::Method::GFLIP;
-  if (s == "gapic" || s == "gpu_apic")
-    return SolverConfig::Method::GAPIC;
   std::cerr << "[SolverConfig] Unknown method '" << s
             << "' – defaulting to sl.\n";
   return SolverConfig::Method::SL;
@@ -98,12 +92,6 @@ std::string solverMethodName(SolverConfig::Method m) {
     return "mixed_flip_pic";
   case SolverConfig::Method::APIC:
     return "apic";
-  case SolverConfig::Method::GPIC:
-    return "gpic";
-  case SolverConfig::Method::GFLIP:
-    return "gflip";
-  case SolverConfig::Method::GAPIC:
-    return "gapic";
   }
   return "unknown";
 }

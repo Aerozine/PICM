@@ -5,8 +5,8 @@
   "nx": 300,
   "ny": 200,
   "nt": 6000,
-  "ppcx": 4,
-  "ppcy": 4,
+  "ppcx": 3,
+  "ppcy": 3,
   "density": 1000,
   "sampling_rate": 10,
   "write_u": true,
@@ -70,7 +70,7 @@
 
   "solver": {
     "type": "red_black_gauss_seidel",
-    "max_iterations": 1e5,
+    "max_iterations": 1e4,
     "tolerance": 1e-2
   },
   "method": "apic",
