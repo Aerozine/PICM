@@ -9,7 +9,6 @@ option(USE_FAST_ALG "prioritize speed over precision"          OFF)
 option(USE_PARALLEL        "Enable OpenMP CPU parallelism"     ON)
 option(USE_GPU             "Enable CUDA GPU pressure solvers"  OFF)
 
-# Optional: user can set -DGPU_ARCH=89 or -DGPU_ARCH=sm_89 on the command line.
 # Leave empty for CMake native auto-detect.
 set(GPU_ARCH "" CACHE STRING
     "CUDA architecture number or sm_XX string (e.g. 89 or sm_89). \
@@ -119,10 +118,6 @@ endif()
 
 set(USE_CUDA_FOUND FALSE)
 if(USE_GPU)
-    # Let CMake find the toolkit itself. The active WSL compiler can be
-    # selected with PATH, CUDACXX, CMAKE_CUDA_COMPILER, or CUDAToolkit_ROOT.
-    # Avoid hardcoding /usr/local/cuda so alternate installations (for example
-    # the NVIDIA HPC SDK) can be selected without editing the project.
     find_package(CUDAToolkit QUIET)
     if(CUDAToolkit_FOUND)
         set(USE_CUDA_FOUND TRUE)
@@ -137,7 +132,7 @@ if(USE_GPU)
 else()
     message(STATUS "CUDA: disabled (USE_GPU=OFF)")
 endif()
-
+# fancy cuda things
 set(PICM_CUDA_ARCHITECTURES "" CACHE STRING
     "Resolved CUDA architectures used by PICM GPU targets.")
 if(USE_CUDA_FOUND)

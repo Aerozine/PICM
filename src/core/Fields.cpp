@@ -3,17 +3,16 @@
 #include <cassert>
 #include <cmath>
 
-
-varType bilerp(const varType f00, const varType f10,
-                             const varType f01, const varType f11,
-                             const varType fx, const varType fy) {
+// bilinear interpolation
+varType bilerp(const varType f00, const varType f10, const varType f01,
+               const varType f11, const varType fx, const varType fy) {
   return (REAL_LITERAL(1.0) - fy) *
              ((REAL_LITERAL(1.0) - fx) * f00 + fx * f10) +
          fy * ((REAL_LITERAL(1.0) - fx) * f01 + fx * f11);
 }
 
-varType sampleUFreeSlip(const Fields2D &fields,
-                                      const Grid2D &grid, int i, int j) {
+varType sampleUFreeSlip(const Fields2D &fields, const Grid2D &grid, int i,
+                        int j) {
   i = std::clamp(i, 0, grid.nx - 1);
   j = std::clamp(j, 0, grid.ny - 1);
 
@@ -33,8 +32,8 @@ varType sampleUFreeSlip(const Fields2D &fields,
   return REAL_LITERAL(0.0);
 }
 
-varType sampleVFreeSlip(const Fields2D &fields,
-                                      const Grid2D &grid, int i, int j) {
+varType sampleVFreeSlip(const Fields2D &fields, const Grid2D &grid, int i,
+                        int j) {
   i = std::clamp(i, 0, grid.nx - 1);
   j = std::clamp(j, 0, grid.ny - 1);
 
@@ -53,7 +52,6 @@ varType sampleVFreeSlip(const Fields2D &fields,
     return grid.Get(i + 1, j);
   return REAL_LITERAL(0.0);
 }
-
 
 varType Fields2D::interpolateU(varType x, varType y) const {
   return interpolateU(u, x, y);
@@ -114,8 +112,8 @@ varType Fields2D::interpolateV(const Grid2D &grid, const varType x,
 }
 
 void Fields2D::UpdateDivNorm() {
-    Div();
-    VelocityNormCenterGrid();
+  Div();
+  VelocityNormCenterGrid();
 }
 
 void Fields2D::Div() {
@@ -149,7 +147,6 @@ void Fields2D::VelocityNormCenterGrid() {
     }
 }
 
-
 void Fields2D::VorticityCenterGrid() {
   const varType xMax = static_cast<varType>(nx) * dx;
   const varType yMax = static_cast<varType>(ny) * dy;
@@ -167,12 +164,10 @@ void Fields2D::VorticityCenterGrid() {
           std::max(REAL_LITERAL(0.0), y - dy * REAL_LITERAL(0.5));
       const varType yTop = std::min(yMax, y + dy * REAL_LITERAL(0.5));
 
-      const varType dvdx =
-          (interpolateV(xRight, y) - interpolateV(xLeft, y)) /
-          std::max(xRight - xLeft, REAL_EPSILON);
-      const varType dudy =
-          (interpolateU(x, yTop) - interpolateU(x, yBottom)) /
-          std::max(yTop - yBottom, REAL_EPSILON);
+      const varType dvdx = (interpolateV(xRight, y) - interpolateV(xLeft, y)) /
+                           std::max(xRight - xLeft, REAL_EPSILON);
+      const varType dudy = (interpolateU(x, yTop) - interpolateU(x, yBottom)) /
+                           std::max(yTop - yBottom, REAL_EPSILON);
 
       vorticity.Set(i, j, dvdx - dudy);
     }

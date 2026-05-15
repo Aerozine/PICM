@@ -109,10 +109,12 @@ void APIC::ProjectParticlesOnGrid() {
   }
 }
 
-void APIC::accumulateStandardAffineComponent(
-    const Grid2D &grid, varType xg, varType yg, int imax, int jmax,
-    bool uComponent, varType particleX, varType particleY, varType &value,
-    varType &affineX, varType &affineY) const {
+void APIC::accumulateStandardAffineComponent(const Grid2D &grid, varType xg,
+                                             varType yg, int imax, int jmax,
+                                             bool uComponent, varType particleX,
+                                             varType particleY, varType &value,
+                                             varType &affineX,
+                                             varType &affineY) const {
   const int radius = params.kernelOrder;
   const int i0 = static_cast<int>(std::floor(xg));
   const int j0 = static_cast<int>(std::floor(yg));
@@ -140,9 +142,8 @@ void APIC::accumulateStandardAffineComponent(
       if (w <= varType(0))
         continue;
 
-      const varType sample = uComponent
-                                  ? sampleUFreeSlip(*fields, grid, i, j)
-                                  : sampleVFreeSlip(*fields, grid, i, j);
+      const varType sample = uComponent ? sampleUFreeSlip(*fields, grid, i, j)
+                                        : sampleVFreeSlip(*fields, grid, i, j);
       const varType xFace =
           uComponent ? varType(i) * dx : (varType(i) + varType(0.5)) * dx;
       const varType yFace =
@@ -196,7 +197,6 @@ void APIC::accumulateStandardAffineComponent(
   }
 }
 
-
 void APIC::ProjectGridOnParticles() {
   OMP_PRAGMA(omp parallel for collapse(2) schedule(static))
   for (int cj = 0; cj < ny; ++cj) {
@@ -216,10 +216,10 @@ void APIC::ProjectGridOnParticles() {
         varType v = 0;
         varType cvX = 0;
         varType cvY = 0;
-        accumulateStandardAffineComponent(
-            fields->v, x / dx - varType(0.5), y / dy, fields->v.nx,
-            fields->v.ny, false, x, y, v, cvX, cvY);
-        
+        accumulateStandardAffineComponent(fields->v, x / dx - varType(0.5),
+                                          y / dy, fields->v.nx, fields->v.ny,
+                                          false, x, y, v, cvX, cvY);
+
         cell.SetU(p, u);
         cell.SetV(p, v - dt * params.gravity);
         cell.SetCu(p, cuX, cuY);

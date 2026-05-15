@@ -119,12 +119,13 @@ void Parameters::loadFromJson(const nlohmann::json &j) {
   gamma = j.value("gamma", gamma);
   contactAngle = j.value("contactAngle", contactAngle);
   if (j.contains("physicalContactAngle"))
-    contactAngle = physicalToSolverContactAngle(j["physicalContactAngle"].get<varType>());
+    contactAngle =
+        physicalToSolverContactAngle(j["physicalContactAngle"].get<varType>());
   if (j.contains("physicalContactAngleDegrees"))
     contactAngle = physicalToSolverContactAngle(
         degreesToRadians(j["physicalContactAngleDegrees"].get<varType>()));
   surfaceTension = j.value("surfaceTension", surfaceTension);
-  particleInteraction= j.value("particleInteraction", particleInteraction);
+  particleInteraction = j.value("particleInteraction", particleInteraction);
   particleRadius = j.value("particleRadius", particleRadius);
   interactionStiffness = j.value("interactionStiffness", interactionStiffness);
   interactionExponent = j.value("interactionExponent", interactionExponent);
@@ -275,15 +276,15 @@ std::ostream &operator<<(std::ostream &os, const Parameters &p) {
      << "  Output  : folder='" << p.folder << "'\n"
      << "  Write   : u=" << p.write_u << " v=" << p.write_v
      << " p=" << p.write_p << " div=" << p.write_div
-     << " norm=" << p.write_norm_velocity
-     << " vort=" << p.write_vorticity << '\n'
+     << " norm=" << p.write_norm_velocity << " vort=" << p.write_vorticity
+     << '\n'
      << "  freeSurface: " << (p.freeSurface ? "yes" : "no") << '\n'
      << "  InitVelU: " << (!p.velocityU_json.is_null() ? "defined" : "none")
      << '\n'
      << "  InitVelV: " << (!p.velocityV_json.is_null() ? "defined" : "none")
      << '\n'
-     << "  Vortex  : "
-     << (!p.vortex_json.is_null() ? "defined" : "none") << '\n'
+     << "  Vortex  : " << (!p.vortex_json.is_null() ? "defined" : "none")
+     << '\n'
      << "  smoke   : " << (!p.smoke_json.is_null() ? "defined" : "none") << '\n'
      << "  Solid   : " << (!p.solid_json.is_null() ? "defined" : "none") << '\n'
      << "=============================\n";

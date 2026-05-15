@@ -27,7 +27,7 @@ public:
 
   varType gravity = 0.0;
   varType coefPic = 0.05;
-  varType particleRadius = dx/10.0;
+  varType particleRadius = dx / 10.0;
   varType gamma = 0.073;
   varType contactAngle = 3.0 * M_PI / 2.0;
   varType max_cfl = REAL_LITERAL(0.95);

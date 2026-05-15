@@ -76,14 +76,5 @@ public:
   /// @brief Write a value into cell (i, j).
   void Set(const int i, const int j, const varType val) { A[nx * j + i] = val; }
 
-  /**
-   * @brief Bilinearly interpolation
-   * @param x     Physical x-coordinate.
-   * @param y     Physical y-coordinate.
-   * @param dx    Cell width  in x.
-   * @param dy    Cell height in y.
-   * @param field Stagger type: 0 = u-face, 1 = v-face, other = cell-centre.
-   */
-
   varType *A = nullptr;
 };

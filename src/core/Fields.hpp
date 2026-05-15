@@ -7,7 +7,9 @@
 #include <memory>
 
 #define FIELD_USOLID NAN
-
+/* set of macro and bitmask
+ |IC | BC|type of matter|
+*/
 #define IS_SOLID(cell) ((((cell)) & Fields2D::SOLID) != 0)
 #define IS_AIR(cell) ((((cell)) & Fields2D::AIR) != 0)
 #define IS_FLUID(cell) (!IS_SOLID(cell) && !IS_AIR(cell))
@@ -58,8 +60,8 @@ public:
       : nx(nx_), ny(ny_), density(density_), dt(dt_), dx(dx_), dy(dy_),
         u(nx_ + 1, ny_), v(nx_, ny_ + 1), p(nx_ + 2, ny_ + 2), div(nx_, ny_),
         normVelocity(nx_, ny_), vorticity(nx_, ny_),
-        Labels(std::make_unique<uint16_t[]>(
-            static_cast<std::size_t>(nx_ + 2) * (ny_ + 2))) {
+        Labels(std::make_unique<uint16_t[]>(static_cast<std::size_t>(nx_ + 2) *
+                                            (ny_ + 2))) {
     const std::size_t labelCount =
         static_cast<std::size_t>(nx_ + 2) * (ny_ + 2);
     const uint16_t initLabel =
@@ -95,6 +97,11 @@ public:
     Labels[idx(i, j)] = static_cast<uint16_t>(t);
   }
 
+  /*
+   * fancy magic function , it clears the bits associated to matter ( A and not
+   * A = 0) and then or the bits for setting the type WITHOUT modifying the BC
+   * IC bits
+   */
   inline void setSolid(int i, int j) {
     Labels[idx(i, j)] = (Labels[idx(i, j)] & ~CELL_TYPE_MASK) | SOLID;
   }
@@ -111,18 +118,20 @@ public:
 
   /**
    * Bilinear interpolation with free-slip solid boundary handling.
-   *   field == 0  →  u-face  (staggered in y, nx+1 × ny)
-   *   field == 1  →  v-face  (staggered in x, nx × ny+1)
-   *   field == 2  →  cell-centre (nx × ny, e.g. smoke, phi)
+   *   field == 0   u-face  (staggered in y, nx+1 × ny)
+   *   field == 1   v-face  (staggered in x, nx × ny+1)
+   *   field == 2   cell-centre (nx × ny, e.g. smoke, phi)
    */
 
   varType interpolateU(varType x, varType y) const;
 
   varType interpolateV(varType x, varType y) const;
 
-  varType interpolateU(const Grid2D &grid, const varType x, const varType y) const;
+  varType interpolateU(const Grid2D &grid, const varType x,
+                       const varType y) const;
 
-  varType interpolateV(const Grid2D &grid, const varType x, const varType y) const;
+  varType interpolateV(const Grid2D &grid, const varType x,
+                       const varType y) const;
 
   void UpdateDivNorm();
 
@@ -131,9 +140,11 @@ public:
   void VorticityCenterGrid();
 };
 
-varType bilerp(const varType f00, const varType f10, const varType f01, const varType f11, const varType fx,
-               const varType fy);
+varType bilerp(const varType f00, const varType f10, const varType f01,
+               const varType f11, const varType fx, const varType fy);
 
-varType sampleUFreeSlip(const Fields2D &fields, const Grid2D &grid, int i, int j);
+varType sampleUFreeSlip(const Fields2D &fields, const Grid2D &grid, int i,
+                        int j);
 
-varType sampleVFreeSlip(const Fields2D &fields, const Grid2D &grid, int i, int j);
+varType sampleVFreeSlip(const Fields2D &fields, const Grid2D &grid, int i,
+                        int j);

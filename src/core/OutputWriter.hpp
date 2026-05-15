@@ -11,6 +11,7 @@ class Cloud2D;
 
 class OutputWriter {
 public:
+  /* the only part that needs really to be taken into account */
   OutputWriter(const std::string &output_dir, const std::string &pvd_name);
   ~OutputWriter();
 

@@ -12,13 +12,9 @@
 
 namespace fs = std::filesystem;
 
-namespace {
-
 double outputTimeOrFrame(const double time_value, const int frame) {
   return time_value >= 0.0 ? time_value : static_cast<double>(frame);
 }
-
-} // namespace
 
 OutputWriter::OutputWriter(const std::string &output_dir,
                            const std::string &pvd_name)
@@ -117,7 +113,7 @@ bool OutputWriter::writeGrid2D(const Grid2D &grid, const std::string &id,
   if (!out.is_open())
     return false;
 
-    // Write VTK XML header
+  // Write VTK XML header
 #ifdef HAVE_ZLIB
   const char *compressorAttr = " compressor=\"vtkZLibDataCompressor\"";
 #else
@@ -248,8 +244,7 @@ bool OutputWriter::writeCloud(const Cloud2D &cloud, const std::string &id,
 }
 
 bool OutputWriter::writeParticlePolyData(
-    const std::vector<varType> &normValues,
-    const std::vector<varType> &uValues,
+    const std::vector<varType> &normValues, const std::vector<varType> &uValues,
     const std::vector<varType> &vValues,
     const std::vector<varType> &pointValues, const std::string &id,
     const double time_value) {
@@ -257,7 +252,8 @@ bool OutputWriter::writeParticlePolyData(
     return false;
 
   const int nAlive = static_cast<int>(normValues.size());
-  if (uValues.size() != normValues.size() || vValues.size() != normValues.size())
+  if (uValues.size() != normValues.size() ||
+      vValues.size() != normValues.size())
     return false;
   if (pointValues.size() != static_cast<std::size_t>(nAlive) * 3)
     return false;
@@ -446,8 +442,7 @@ void OutputWriter::finalisePVD() {
   pvd_finalised_ = true;
 }
 bool OutputWriter::writeLabels(const uint16_t *labels, int nx, int ny,
-                               const std::string &id,
-                               const double time_value) {
+                               const std::string &id, const double time_value) {
   if (pvd_finalised_)
     return false;
 

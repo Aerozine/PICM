@@ -47,7 +47,6 @@ int main(int argc, char *argv[]) {
     solver.Run();
     break;
   }
-    
   }
   std::cout << "Simulation completed successfully!\n";
   return 0;

@@ -293,8 +293,8 @@ varType lambOseenCoreRadius(const LambOseenVortexObject &obj,
   if (obj.viscosity > REAL_EPSILON && obj.physicalTime > REAL_EPSILON)
     return std::sqrt(REAL_LITERAL(4.0) * obj.viscosity * obj.physicalTime);
 
-  return std::max(gridScale, static_cast<varType>(obj.r) * gridScale *
-                                 REAL_LITERAL(0.25));
+  return std::max(gridScale,
+                  static_cast<varType>(obj.r) * gridScale * REAL_LITERAL(0.25));
 }
 
 varType lambOseenCirculation(const LambOseenVortexObject &obj,
@@ -461,8 +461,7 @@ void LambOseenVortexObject::applyVelocityU(Fields2D &f) {
 
       const varType x = static_cast<varType>(i) * f.dx;
       const varType dx = x - static_cast<varType>(cx) * f.dx;
-      const varType scale =
-          lambOseenVelocityScale(dx, dy, gamma, coreRadius);
+      const varType scale = lambOseenVelocityScale(dx, dy, gamma, coreRadius);
       f.u.Set(i, j, -scale * dy);
       f.SetLabel(i, j + 1,
                  condition == "initial" ? Fields2D::IC_U : Fields2D::BC_U);
@@ -494,8 +493,7 @@ void LambOseenVortexObject::applyVelocityV(Fields2D &f) {
 
       const varType x = (static_cast<varType>(i) + REAL_LITERAL(0.5)) * f.dx;
       const varType dx = x - centerX;
-      const varType scale =
-          lambOseenVelocityScale(dx, dy, gamma, coreRadius);
+      const varType scale = lambOseenVelocityScale(dx, dy, gamma, coreRadius);
       f.v.Set(i, j, scale * dx);
       f.SetLabel(i + 1, j,
                  condition == "initial" ? Fields2D::IC_V : Fields2D::BC_V);
@@ -562,12 +560,10 @@ bool isInsideVerticalLeg(const UTubeGeometry &g, const int i, const int j,
   const double y = static_cast<double>(j) + 0.5;
   if (y < g.centerY)
     return false;
-  const bool leftLeg =
-      y <= static_cast<double>(leftTop) + 0.5 &&
-      std::abs(x - g.leftCenterX) <= halfWidth;
-  const bool rightLeg =
-      y <= static_cast<double>(rightTop) + 0.5 &&
-      std::abs(x - g.rightCenterX) <= halfWidth;
+  const bool leftLeg = y <= static_cast<double>(leftTop) + 0.5 &&
+                       std::abs(x - g.leftCenterX) <= halfWidth;
+  const bool rightLeg = y <= static_cast<double>(rightTop) + 0.5 &&
+                        std::abs(x - g.rightCenterX) <= halfWidth;
   return leftLeg || rightLeg;
 }
 
@@ -607,18 +603,18 @@ bool readIntField(const nlohmann::json &j, const char *key,
 
 void UTubeObject::applySolid(Fields2D &f) {
   const UTubeGeometry g = normalizedUTube(*this);
-  const int iMin = std::max(
-      static_cast<int>(std::floor(g.centerX - g.bendRadius - g.halfWidth -
-                                  g.wall)),
-      0);
-  const int iMax = std::min(
-      static_cast<int>(std::ceil(g.centerX + g.bendRadius + g.halfWidth +
-                                 g.wall)),
-      f.p.nx - 1);
-  const int jMin = std::max(
-      static_cast<int>(std::floor(g.centerY - g.bendRadius - g.halfWidth -
-                                  g.wall)),
-      0);
+  const int iMin =
+      std::max(static_cast<int>(
+                   std::floor(g.centerX - g.bendRadius - g.halfWidth - g.wall)),
+               0);
+  const int iMax =
+      std::min(static_cast<int>(
+                   std::ceil(g.centerX + g.bendRadius + g.halfWidth + g.wall)),
+               f.p.nx - 1);
+  const int jMin =
+      std::max(static_cast<int>(
+                   std::floor(g.centerY - g.bendRadius - g.halfWidth - g.wall)),
+               0);
   const int jMax = std::min(g.topY, f.p.ny - 1);
 
   for (int j = jMin; j <= jMax; ++j)

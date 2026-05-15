@@ -1,7 +1,7 @@
 #include "Solver.hpp"
 #include <iostream>
 // Pressure solve dispatch
-
+// select the solver based on the solverconfig
 inline void solvePressure(const Parameters &p, Fields2D &f) {
   varType tol = p.solver.tolerance;
   int maxIters = p.solver.maxIters;
@@ -58,16 +58,16 @@ inline void updateVelocities(const Parameters &params, Fields2D &fields) {
       } else if (IS_SOLID(right) || IS_SOLID(left)) {
         fields.u.Set(i, j, 0.0);
         continue;
-      } 
+      }
 
       varType pLeft = fields.p.Get(i, j + 1);
       varType pRight = fields.p.Get(i + 1, j + 1);
 
       if (params.surfaceTension) {
         if (IS_AIR(left) && IS_FLUID(right)) {
-            pLeft = fields.interface_u->Get(i, j);
+          pLeft = fields.interface_u->Get(i, j);
         } else if (IS_FLUID(left) && IS_AIR(right)) {
-            pRight = fields.interface_u->Get(i, j);
+          pRight = fields.interface_u->Get(i, j);
         }
       }
       fields.u.Set(i, j, fields.u.Get(i, j) - coef * (pRight - pLeft));
@@ -93,9 +93,9 @@ inline void updateVelocities(const Parameters &params, Fields2D &fields) {
 
       if (params.surfaceTension) {
         if (IS_AIR(down) && IS_FLUID(up)) {
-            pDown = fields.interface_v->Get(i, j);
+          pDown = fields.interface_v->Get(i, j);
         } else if (IS_FLUID(down) && IS_AIR(up)) {
-            pUp = fields.interface_v->Get(i, j);
+          pUp = fields.interface_v->Get(i, j);
         }
       }
       fields.v.Set(i, j, fields.v.Get(i, j) - coef * (pUp - pDown));

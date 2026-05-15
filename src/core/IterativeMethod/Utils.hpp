@@ -27,8 +27,8 @@
  *           |          |
  *           +----------+
  */
-[[nodiscard]] inline varType
-neighbourSum(const Fields2D &f, const int i, const int j) noexcept {
+[[nodiscard]] inline varType neighbourSum(const Fields2D &f, const int i,
+                                          const int j) noexcept {
   assert(i >= 1 && i < f.p.nx - 1);
   assert(j >= 1 && j < f.p.ny - 1);
 
@@ -85,7 +85,8 @@ neighbourSum(const Fields2D &f, const int i, const int j) noexcept {
 }
 
 [[nodiscard]] inline varType gsUpdate(const Fields2D &f, const int i,
-                                      const int j, const varType coef) noexcept {
+                                      const int j,
+                                      const varType coef) noexcept {
   return (-coef * f.div.Get(i - 1, j - 1) + neighbourSum(f, i, j)) / 4.0;
 }
 

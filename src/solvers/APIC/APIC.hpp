@@ -10,11 +10,12 @@ protected:
   void ProjectGridOnParticles() override;
 
 private:
-  void accumulateStandardAffineComponent(
-      const Grid2D &grid, varType xg, varType yg, int imax, int jmax,
-      bool uComponent, varType particleX, varType particleY, varType &value,
-      varType &affineX, varType &affineY) const;
-
+  void accumulateStandardAffineComponent(const Grid2D &grid, varType xg,
+                                         varType yg, int imax, int jmax,
+                                         bool uComponent, varType particleX,
+                                         varType particleY, varType &value,
+                                         varType &affineX,
+                                         varType &affineY) const;
 
   /*
    * Les quatre valeurs existantes stockent directement C_p:

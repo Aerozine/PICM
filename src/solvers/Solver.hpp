@@ -5,6 +5,7 @@
 #include "../core/Parameters.hpp"
 #include <memory>
 
+// abstract solver class that implements all the basics of a solvers
 class Solver {
 public:
   explicit Solver(Parameters &params);

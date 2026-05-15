@@ -5,7 +5,8 @@
 Solver::Solver(Parameters &params)
     : params(params), nx(params.nx), ny(params.ny), dx(params.dx),
       dy(params.dy), dt(params.dt), density(params.density),
-      fields(new Fields2D(nx, ny, density, dt, dx, dy, params.freeSurface,params.surfaceTension)) {
+      fields(new Fields2D(nx, ny, density, dt, dx, dy, params.freeSurface,
+                          params.surfaceTension)) {
   InitializeOutputWriters();
 }
 
@@ -79,11 +80,11 @@ void Solver::WriteOutput(int step) const {
     ok &= normVelocityWriter->writeGrid2D(fields->normVelocity, "normVelocity",
                                           timeValue);
   if (params.write_vorticity && vorticityWriter)
-    ok &= vorticityWriter->writeGrid2D(fields->vorticity, "vorticity",
-                                       timeValue);
+    ok &=
+        vorticityWriter->writeGrid2D(fields->vorticity, "vorticity", timeValue);
 
-  ok &= labelWriter->writeLabels(fields->Labels.get(), fields->nx + 2, fields->ny + 2,
-                                 "label", timeValue);
+  ok &= labelWriter->writeLabels(fields->Labels.get(), fields->nx + 2,
+                                 fields->ny + 2, "label", timeValue);
   if (!ok)
     std::cerr << "[SemiLagrangian] Warning: failed to write output at step "
               << step << '\n';

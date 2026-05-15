@@ -6,12 +6,12 @@
 // we can look at the cloud to see if there is particle
 // it there is we can simply set fluid
 void PIC::UpdateCellState() const {
-    // In a fully-filled simulation the initial labels are the domain state.
-    // Do not turn temporarily empty PIC cells into AIR: refill may add
-    // particles after this pass, and the pressure solve would then see a
-    // one-step stale air column at inflows.
-    if (!params.freeSurface)
-      return;
+  // In a fully-filled simulation the initial labels are the domain state.
+  // Do not turn temporarily empty PIC cells into AIR: refill may add
+  // particles after this pass, and the pressure solve would then see a
+  // one-step stale air column at inflows.
+  if (!params.freeSurface)
+    return;
 
     OMP_PRAGMA(omp parallel for collapse(2))
     for (int j = 0; j < ny; ++j) {
