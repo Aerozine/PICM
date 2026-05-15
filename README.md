@@ -1,6 +1,6 @@
 # PICM
 
-A small C++ codebase for 2D fluid simulation and method comparison:
+A small 2D fluid simulation and method comparison:
 Semi-Lagrangian, PIC, FLIP, and APIC.
 
 Outputs are written as VTK files and can be opened directly in ParaView.
@@ -20,7 +20,7 @@ cmake --build build-release
 ```
 
 You need CMake, Ninja, and a C++17 compiler. Eigen, OpenMP, Zlib, and CUDA are
-detected automatically when available.
+detected automatically when available or fetched.
 
 ## Run One Case
 
@@ -31,15 +31,11 @@ detected automatically when available.
 Each JSON file describes the grid, method, pressure solver, boundary
 conditions, and output folder.
 
-## Run Report Cases
+## Run ALL the Report Cases
 
 ```bash
 ./run.sh
 ```
-
-The script builds in release mode, then runs every `test/CH*/**/*.json` case,
-following the same idea as the `heatsink` targets in the Makefile.
-
 ## Clean
 
 ```bash

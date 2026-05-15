@@ -108,7 +108,7 @@
   },
 
   "solver": {
-    "type": "red_black_gauss_seidel",
+    "type": "cg",
     "max_iterations": 100000,
     "tolerance": 1e-2
   },
