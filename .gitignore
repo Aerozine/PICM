@@ -1,5 +1,6 @@
 todo.txt
 # Prerequisites
+sync.sh
 *.d
 venv
 *.mp4
