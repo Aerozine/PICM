@@ -1,0 +1,62 @@
+{
+  "dx": 0.05,
+  "dy": 0.05,
+  "dt": 0.01,
+  "nx": 160,
+  "ny": 80,
+  "nt": 1000,
+  "ppcx": 3,
+  "ppcy": 3,
+  "density": 1000,
+  "sampling_rate": 1,
+  "write_u": true,
+  "write_v": true,
+  "write_p": true,
+  "write_div": false,
+  "write_norm_velocity": true,
+  "write_vorticity": false,
+  "write_smoke": true,
+  "write_particles": false,
+  "filename": "simulation",
+  "velocityu": {
+    "rectangle": {
+      "condition": "boundary",
+      "val": 5,
+      "x1": "0",
+      "y1": "0",
+      "x2": "0",
+      "y2": "ny"
+    }
+  },
+  "solid": {
+    "cylinder": {
+      "x": "nx/6",
+      "y": "ny/2",
+      "r": "ny/10"
+    },
+    "rectangle": [
+      {
+        "x1": "0",
+        "y1": "ny+1",
+        "x2": "nx+1",
+        "y2": "ny+1"
+      },
+      {
+        "x1": "0",
+        "y1": "0",
+        "x2": "nx+1",
+        "y2": "0"
+      }
+    ]
+  },
+  "solver": {
+    "type": "cg",
+    "max_iterations": 10000,
+    "tolerance": 0.01
+  },
+  "freeSurface": false,
+  "gravity": 0.0,
+  "refill": true,
+  "folder": "results/CH6/section-6-1/vk-apic",
+  "method": "apic"
+}
