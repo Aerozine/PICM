@@ -30,6 +30,7 @@ detected automatically when available or fetched.
 
 Each JSON file describes the grid, method, pressure solver, boundary
 conditions, and output folder.
+`test/CH*` mirrors the report chapters; `test/extra` keeps older runs that are not always rechecked.
 
 ## Run ALL the Report Cases
 
