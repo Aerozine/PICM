@@ -4,19 +4,16 @@
 #include <vector>
 
 // we can look at the cloud to see if there is particle
-// it there is we can simply set fluid
+// if there is we can simply set fluid
+
 void PIC::UpdateCellState() const {
-  // In a fully-filled simulation the initial labels are the domain state.
-  // Do not turn temporarily empty PIC cells into AIR: refill may add
-  // particles after this pass, and the pressure solve would then see a
-  // one-step stale air column at inflows.
-  if (!params.freeSurface)
+  if (!params.freeSurface) {
     return;
+  }
 
     OMP_PRAGMA(omp parallel for collapse(2))
     for (int j = 0; j < ny; ++j) {
       for (int i = 0; i < nx; ++i) {
-        // early exit
         const labeltype current = fields->Label(i + 1, j + 1);
         if (IS_SOLID(current) || IS_BC_U(current) || IS_BC_V(current))
           continue;
@@ -28,7 +25,9 @@ void PIC::UpdateCellState() const {
       }
     }
 
-    // trick to help contact angles
+    // if () block underneath generated using IA tools
+    // Remove isolated low-density fluid cells touching walls.
+    // This avoids tiny wall-adjacent specks that disturb contact angles.
     if (params.surfaceTension) {
       const int targetPPC = std::max(1, params.ppcx * params.ppcy);
       const int sparseWallThreshold = std::max(1, targetPPC / 4);

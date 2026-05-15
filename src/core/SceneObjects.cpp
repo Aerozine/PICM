@@ -260,6 +260,8 @@ void CylinderObject::applyAir(Fields2D &f) {
   }
 }
 
+// AI assistance was used for the helpers below.
+// this code define complex scenes such as the manometer, vortex, Lamb-Oseen,...
 namespace {
 
 bool insideIndexCircle(const int x, const int y, const int cx, const int cy,
