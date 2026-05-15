@@ -16,7 +16,7 @@
   "write_norm_velocity": false,
   "write_smoke": false,
   "write_particles": true,
-  "folder": "results/tension/angle-135",
+  "folder": "results/CH7/section-7-8-3/angle-60",
   "filename": "simulation",
 
   "fluid": {
@@ -69,6 +69,6 @@
   "surfaceTension": true,
   "particleInteraction": false,
   "gamma": 0.073,
-  "physicalContactAngleDegrees": 135.0,
+  "physicalContactAngleDegrees": 60.0,
   "max_cfl": 0.9
 }

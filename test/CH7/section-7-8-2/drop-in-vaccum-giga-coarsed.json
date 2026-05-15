@@ -1,14 +1,14 @@
 {
-  "dx": 0.02,
-  "dy": 0.02,
-  "dt": 0.025,
-  "nx": 300,
-  "ny": 300,
-  "nt": 2500,
-  "ppcx": 5,
-  "ppcy": 5,
+  "dx": 8e-5,
+  "dy": 8e-5,
+  "dt": 1e-6,
+  "nx": 25,
+  "ny": 25,
+  "nt": 1000,
+  "ppcx": 3,
+  "ppcy": 3,
   "density": 1000,
-  "sampling_rate": 10,
+  "sampling_rate": 5,
   "write_u": true,
   "write_v": true,
   "write_p": true,
@@ -16,24 +16,15 @@
   "write_norm_velocity": true,
   "write_smoke": true,
   "write_particles": true,
-  "folder": "results/surfaceTension/laplace/cross",
+  "folder": "results/CH7/section-7-8-2/drop-in-vaccum-giga-coarsed",
   "filename": "simulation",
 
   "fluid": {
-    "rectangle": [
-      {
-        "x1": "2*nx/20",
-        "y1": "19*ny/40",
-        "x2": "18*nx/20",
-        "y2": "21*ny/40"
-      },
-      {
-        "x1": "19*nx/40",
-        "y1": "2*ny/20",
-        "x2": "21*nx/40",
-        "y2": "18*ny/20"
-      }
-    ]
+    "cylinder": {
+      "x": "nx/2",
+      "y": "ny/2",
+      "r": "ny/4"
+    }
   },
 
   "solid": {
@@ -76,5 +67,6 @@
   "refill": false,
   "surfaceTension": true,
   "particleInteraction": false,
-  "gamma": 10.0
+  "gamma": 0.073,
+  "max_cfl": 0.9
 }

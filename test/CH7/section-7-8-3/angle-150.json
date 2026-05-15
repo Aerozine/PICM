@@ -1,29 +1,30 @@
 {
   "dx": 1e-6,
   "dy": 1e-6,
-  "dt": 5e-9,
-  "nx": 512,
-  "ny": 128,
-  "nt": 15000,
+  "dt": 1e-8,
+  "nx": 300,
+  "ny": 100,
+  "nt": 7000,
   "ppcx": 4,
   "ppcy": 4,
   "density": 1000,
-  "sampling_rate": 300,
+  "sampling_rate": 20,
   "write_u": false,
   "write_v": false,
   "write_p": false,
-  "write_div": true,
+  "write_div": false,
   "write_norm_velocity": false,
   "write_smoke": false,
   "write_particles": true,
-  "folder": "results/tensions/section-8-8-3/personal/angle-135",
+  "folder": "results/CH7/section-7-8-3/angle-150",
   "filename": "simulation",
 
   "fluid": {
-    "cylinder": {
-      "x": "nx/2",
-      "y": "ny/7",
-      "r": "ny/6"
+    "rectangle": {
+      "x1": "110",
+      "y1": "1",
+      "x2": "190",
+      "y2": "20"
     }
   },
 
@@ -58,8 +59,8 @@
 
   "solver": {
     "type": "cg",
-    "max_iterations": 1e5,
-    "tolerance": 1e-2
+    "max_iterations": 1e4,
+    "tolerance": 1e-4
   },
   "method": "pic",
   "freeSurface": "yes",
@@ -68,6 +69,6 @@
   "surfaceTension": true,
   "particleInteraction": false,
   "gamma": 0.073,
-  "contactAngle": 0.785398163,
-  "max_cfl": 0.95
+  "physicalContactAngleDegrees": 150.0,
+  "max_cfl": 0.9
 }

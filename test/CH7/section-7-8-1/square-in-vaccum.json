@@ -4,11 +4,11 @@
   "dt": 1e-6,
   "nx": 200,
   "ny": 200,
-  "nt": 1000,
+  "nt": 2700,
   "ppcx": 3,
   "ppcy": 3,
   "density": 1000,
-  "sampling_rate": 5,
+  "sampling_rate": 10,
   "write_u": true,
   "write_v": true,
   "write_p": true,
@@ -16,14 +16,15 @@
   "write_norm_velocity": true,
   "write_smoke": true,
   "write_particles": true,
-  "folder": "results/surfaceTension/laplace/drop-in-vaccum",
+  "folder": "results/CH7/section-7-8-1/square-in-vaccum",
   "filename": "simulation",
 
   "fluid": {
-    "cylinder": {
-      "x": "nx/2",
-      "y": "ny/2",
-      "r": "ny/4"
+    "rectangle": {
+      "x1": "nx/4",
+      "y1": "ny/4",
+      "x2": "3*nx/4",
+      "y2": "3*ny/4"
     }
   },
 
