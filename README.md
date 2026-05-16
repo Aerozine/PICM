@@ -1,4 +1,4 @@
-# PICM
+# 🌊 PICM 🌊
 
 A small 2D fluid simulation and method comparison:
 Semi-Lagrangian, PIC, FLIP, and APIC.

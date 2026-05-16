@@ -16,7 +16,7 @@
   "write_norm_velocity": false,
   "write_vorticity": true,
   "write_smoke": false,
-  "write_particles": false,
+  "write_particles": true,
   "filename": "simulation",
   "lamb_oseen_vortex": {
     "condition": "initial",
