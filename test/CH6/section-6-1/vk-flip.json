@@ -16,7 +16,7 @@
   "write_norm_velocity": true,
   "write_vorticity": false,
   "write_smoke": true,
-  "write_particles": false,
+  "write_particles": true,
   "filename": "simulation",
   "velocityu": {
     "rectangle": {

@@ -16,7 +16,7 @@
   "write_norm_velocity": true,
   "write_vorticity": true,
   "write_smoke": false,
-  "write_particles": false,
+  "write_particles": true,
   "filename": "simulation",
   "rankine_vortex": {
     "condition": "initial",
