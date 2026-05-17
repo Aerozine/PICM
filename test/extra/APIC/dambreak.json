@@ -58,9 +58,9 @@
   },
 
   "solver": {
-    "type": "cg",
+    "type": "red_black_gauss_seidel",
     "max_iterations": 1e5,
-    "tolerance": 1e-2
+    "tolerance": 1e-3
   },
   "method": "apic",
   "freeSurface": true,
